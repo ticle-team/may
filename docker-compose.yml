@@ -10,9 +10,9 @@ services:
     ports:
       - "6432:5432"
     networks:
-      - shaple-builder-chatbot-network
+      - shaple-builder-web-network
     restart: always
 
 networks:
-  shaple-builder-chatbot-network:
+  shaple-builder-web-network:
     driver: bridge

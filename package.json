@@ -5,12 +5,18 @@
   "license": "ISC",
   "scripts": {
     "dev:next": "next dev",
-    "dev:wss": "cross-env PORT=3001 tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json ",
+    "dev:wss": "tsx watch src/server/wssDevServer.ts --tsconfig tsconfig.server.json ",
     "build:1-next": "cross-env NODE_ENV=production next build",
     "build:2-server": "tsc --project tsconfig.server.json",
-    "build": "run-s build:*"
+    "build": "run-s build:*",
+    "build:proto": "proto-loader-gen-types --longs=String --enums=String --defaults --oneofs --grpcLib=@grpc/grpc-js --outDir=src/proto/ src/proto/*.proto",
+    "clean:proto": "rimraf src/proto/*.ts && rimraf src/proto/shaple/*.ts",
+    "proto": "run-s clean:proto build:proto"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.10.1",
+    "@grpc/proto-loader": "^0.7.10",
+    "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.1.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.10",
@@ -25,8 +31,12 @@
     "pg-boss": "^9.0.3",
     "react": "^18",
     "react-dom": "^18",
+    "react-markdown": "^9.0.1",
+    "react-syntax-highlighter": "^15.5.0",
+    "reflect-metadata": "^0.2.1",
+    "remark-gfm": "^4.0.0",
     "superjson": "^2.2.1",
-    "tsx": "^4.7.1",
+    "typedi": "^0.10.0",
     "ws": "^8.16.0",
     "zod": "^3.22.4"
   },
@@ -41,7 +51,9 @@
     "eslint-config-next": "14.1.0",
     "npm-run-all": "^4.1.5",
     "postcss": "^8",
+    "rimraf": "^5.0.5",
     "tailwindcss": "^3.3.0",
+    "tsx": "^4.7.1",
     "typescript": "^5"
   }
 }

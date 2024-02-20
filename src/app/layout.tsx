@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full">
-      <body className={classNames(inter.className, "h-full")}>{children}</body>
+      <body className={classNames(inter.className, "flex flex-row justify-center h-full w-full")}>{children}</body>
     </html>
   );
 }

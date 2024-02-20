@@ -1,93 +1,150 @@
 import { baseProcedure, router } from "@/server/trpc";
 import { z } from "zod";
 import { observable } from "@trpc/server/observable";
-import PgBoss from "pg-boss";
-import {
-  ConversationEvent,
-  conversationHistory,
-  ConversationOutput,
-} from "@/types";
-import OpenAI from "openai";
+import { RecommendServicesOutput, Room, room } from "@/types";
+import assert from "assert";
+import { RecommendFunctionsRequest } from "@/proto/shaple/RecommendFunctionsRequest";
+import { RecommendFunctionsResponse } from "@/proto/shaple/RecommendFunctionsResponse";
+import { get_sbai } from "@/server/services/third_party";
+import { OpenRoomRequest } from "@/proto/shaple/OpenRoomRequest";
+import { OpenRoomResponse } from "@/proto/shaple/OpenRoomResponse";
+import { GetRoomResponse } from "@/proto/shaple/GetRoomResponse";
 
-const boss = new PgBoss("postgres://postgres:postgres@localhost:6432/postgres");
-boss.on("error", (error) => console.error(error));
-boss.start();
-
-const openai = new OpenAI();
-
-export const conversationRouter = router({
-  onChat: baseProcedure.subscription(async () => {
-    return observable<ConversationOutput>((emit) => {
-      const onChat = async (job: PgBoss.Job<ConversationEvent>) => {
-        const { history } = job.data;
-        console.log("history: ", history);
-
-        emit.next({ type: "begin" });
-        const completionStream = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
-          messages: history.map((h) => {
-            return {
-              role: h.role,
-              content: h.text,
-            };
-          }),
-          stream: true,
-        });
-
-        let index = 0;
-        for await (const completion of completionStream) {
-          console.log("completion: ", completion);
-          const chunk = {
-            sequence: index++,
-            text: completion.choices[0].delta.content!,
-          };
-          emit.next({
-            type: "continue",
-            chunk,
-          });
-        }
-        emit.next({ type: "end" });
-      };
-
-      boss.work("chat", onChat).then(() => {
-        console.log("START onChat");
-      });
-
-      return () => {
-        boss.offWork("chat");
-      };
-    });
-  }),
-  chat: baseProcedure
-    .input(
-      z.object({
-        history: conversationHistory,
-        message: z.string(),
-      }),
-    )
+export default router({
+  openRoom: baseProcedure
     .output(
       z.object({
-        history: conversationHistory,
+        roomId: z.number(),
       }),
     )
-    .mutation(async (opts) => {
-      const { history, message } = opts.input;
-      console.log("mutate chat history: ", history, ", message: ", message);
+    .mutation(async () => {
+      const sbai = get_sbai();
+      try {
+        const resp = await new Promise<OpenRoomResponse>((resolve, reject) => {
+          sbai.OpenRoom({} as OpenRoomRequest, (err, resp) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(resp as OpenRoomResponse);
+            }
+          });
+        });
 
-      const newHistory = [
-        ...history,
-        {
-          role: "user",
-          text: message,
-        },
-      ];
-      const jobId = await boss.send("chat", {
-        history: newHistory,
-      } as ConversationEvent);
-      console.log("jobId: ", jobId);
+        return {
+          roomId: resp.roomId as number,
+        };
+      } finally {
+        sbai.close();
+      }
+    }),
+  getRoom: baseProcedure
+    .input(
+      z.object({
+        roomId: z.number(),
+      }),
+    )
+    .output(room)
+    .query(async ({ input: { roomId } }): Promise<Room> => {
+      if (roomId == 0) {
+        return {
+          id: 0,
+          history: [],
+        };
+      }
 
-      return {
-        history: newHistory,
-      };
+      const sbai = get_sbai();
+      try {
+        const { history } = await new Promise<GetRoomResponse>(
+          (resolve, reject) => {
+            sbai.GetRoom({ roomId } as OpenRoomRequest, (err, resp) => {
+              if (err) {
+                reject(err);
+              } else {
+                resolve(resp as GetRoomResponse);
+              }
+            });
+          },
+        );
+
+        return {
+          id: roomId,
+          history:
+            history?.map(
+              ({ userInput, botAnswer, recommendFunctionsSummary }) => ({
+                userInput: userInput ?? "",
+                botAnswer: botAnswer ?? null,
+                recommendFunctionsSummary: recommendFunctionsSummary
+                  ? {
+                      functionGroups: recommendFunctionsSummary.functionGroups!,
+                      functions: recommendFunctionsSummary.functions!,
+                    }
+                  : null,
+              }),
+            ) ?? [],
+        };
+      } finally {
+        sbai.close();
+      }
+    }),
+  recommendServices: baseProcedure
+    .input(
+      z.object({
+        roomId: z.number(),
+        userInput: z.string(),
+      }),
+    )
+    .subscription(({ input: { roomId, userInput } }) => {
+      assert(userInput.length > 0, "userInput must not be empty");
+      const sbai = get_sbai();
+      const stream = sbai.RecommendFunctions({
+        roomId,
+        userInput,
+      } as RecommendFunctionsRequest);
+
+      return observable<RecommendServicesOutput>((emit) => {
+        const onData = (resp: RecommendFunctionsResponse) => {
+          switch (resp.body) {
+            case "detail":
+              emit.next({
+                type: "detail",
+                seqNum: resp.detail!.seqNum,
+                chunk: resp.detail!.chunk,
+              } as RecommendServicesOutput);
+              break;
+            case "summary":
+              emit.next({
+                type: "summary",
+                domain: resp.summary!.domain,
+                functionGroups: resp.summary!.functionGroups,
+                functions: resp.summary!.functions,
+              } as RecommendServicesOutput);
+              break;
+            default:
+              emit.error(new Error("unknown response"));
+          }
+        };
+
+        const onError = (err: Error) => {
+          console.error("recommendServices error: ", err);
+          emit.error(err);
+        };
+
+        const onEnd = () => {
+          console.log("recommendServices end");
+          emit.next({
+            type: "end",
+          });
+          emit.complete();
+        };
+
+        stream.on("data", onData);
+        stream.on("error", onError);
+        stream.on("end", onEnd);
+
+        return () => {
+          console.log("close subscription");
+          sbai.close();
+        };
+      });
     }),
 });

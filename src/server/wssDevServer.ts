@@ -5,7 +5,13 @@ import { WebSocketServer } from 'ws';
 const wss = new WebSocketServer({
   port: 3001,
 });
-const handler = applyWSSHandler({ wss, router: appRouter });
+const handler = applyWSSHandler({
+  wss,
+  router: appRouter,
+  onError: (opts) => {
+    console.error('Error', opts.error);
+  }
+});
 
 wss.on('connection', (ws) => {
   console.log(`➕➕ Connection (${wss.clients.size})`);

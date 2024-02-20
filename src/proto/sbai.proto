@@ -1,0 +1,74 @@
+syntax = 'proto3';
+
+package shaple;
+
+service ShapleBuilderAI {
+  rpc OpenRoom(OpenRoomRequest) returns (OpenRoomResponse) {}
+  rpc CloseRoom(CloseRoomRequest) returns (CloseRoomResponse) {}
+  rpc GetRoom(GetRoomRequest) returns (GetRoomResponse) {}
+
+  rpc RecommendFunctions(RecommendFunctionsRequest) returns (stream RecommendFunctionsResponse) {}
+
+  rpc PublishFeed(PublishFeedRequest) returns (PublishFeedResponse) {}
+}
+
+message OpenRoomRequest {}
+
+message OpenRoomResponse {
+  int64 room_id = 1;
+}
+
+message CloseRoomRequest {
+  int64 room_id = 1;
+}
+
+message CloseRoomResponse {}
+
+message GetRoomRequest {
+  int64 room_id = 1;
+}
+
+message Turn {
+  int64 turn_id = 1;
+  string user_input = 2;
+  string bot_answer = 3;
+  RecommendFunctionsSummary recommend_functions_summary = 4;
+}
+
+message GetRoomResponse {
+  repeated Turn history = 1;
+}
+
+message RecommendFunctionsRequest {
+  int64 room_id = 2;
+  string user_input = 3;
+}
+
+message RecommendFunctionsSummary {
+  string domain = 1;
+  repeated string function_groups = 2;
+  repeated string functions = 3;
+}
+
+message RecommendFunctionsResponse {
+  message Detail {
+    int64 seq_num = 1;
+    string chunk = 2;
+  }
+
+
+  oneof body {
+    Detail detail = 1;
+    RecommendFunctionsSummary summary = 2;
+  }
+}
+
+message PublishFeedRequest {
+  string version = 1;
+  bytes functions_dataframe = 2;
+  bytes function_map_dataframe = 3;
+}
+
+message PublishFeedResponse {
+  string version = 1;
+}
