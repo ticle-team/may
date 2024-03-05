@@ -8,6 +8,6 @@ export interface RecommendFunctionsRequest {
 }
 
 export interface RecommendFunctionsRequest__Output {
-  'roomId': (string);
+  'roomId': (number);
   'userInput': (string);
 }

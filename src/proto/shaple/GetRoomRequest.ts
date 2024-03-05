@@ -7,5 +7,5 @@ export interface GetRoomRequest {
 }
 
 export interface GetRoomRequest__Output {
-  'roomId': (string);
+  'roomId': (number);
 }

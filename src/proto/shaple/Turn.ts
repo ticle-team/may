@@ -11,7 +11,7 @@ export interface Turn {
 }
 
 export interface Turn__Output {
-  'turnId': (string);
+  'turnId': (number);
   'userInput': (string);
   'botAnswer': (string);
   'recommendFunctionsSummary': (_shaple_RecommendFunctionsSummary__Output | null);

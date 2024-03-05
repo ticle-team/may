@@ -3,7 +3,8 @@ import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
 
 const wss = new WebSocketServer({
-  port: 3001,
+  host: '0.0.0.0',
+  port: parseInt(process.env.PORT || "3001"),
 });
 const handler = applyWSSHandler({
   wss,
@@ -19,7 +20,7 @@ wss.on('connection', (ws) => {
     console.log(`➖➖ Connection (${wss.clients.size})`);
   });
 });
-console.log('✅ WebSocket Server listening on ws://localhost:3001');
+console.log('✅ WebSocket Server listening on ws://0.0.0.0:3001');
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM');

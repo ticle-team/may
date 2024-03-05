@@ -1,0 +1,9 @@
+/.next.*
+/.next
+/dist
+.git
+/node_modules
+/docker-compose.yml
+/.gitignore
+/.env.local
+/Dockerfile

@@ -7,5 +7,5 @@ export interface CloseRoomRequest {
 }
 
 export interface CloseRoomRequest__Output {
-  'roomId': (string);
+  'roomId': (number);
 }

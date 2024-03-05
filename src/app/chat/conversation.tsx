@@ -106,11 +106,16 @@ export default function Conversation() {
     if (!room.isSuccess) {
       return;
     }
-    const turn = room.data!.history[room.data!.history.length - 1];
-    if (turn.recommendFunctionsSummary) {
-      setServiceSummary(turn.recommendFunctionsSummary);
+    const {history} = room.data!;
+    if (history.length === 0) {
+      return;
     }
-  }, [room])
+
+    const lastTurn = history[history.length - 1];
+    if (lastTurn.recommendFunctionsSummary) {
+      setServiceSummary(lastTurn.recommendFunctionsSummary);
+    }
+  }, [room]);
 
   return (
     <>
@@ -208,7 +213,7 @@ export default function Conversation() {
                   <span>function groups: </span>
                   <span className="flex flex-row gap-2">
                 {serviceSummary.functionGroups.map((fg, i) => (
-                  <Badge key={`fg-${i}`} className="max-w-sm">{fg}</Badge>
+                  <Badge key={`fg-${i}`}>{fg}</Badge>
                 ))}
                 </span>
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import {httpBatchLink, splitLink, wsLink} from "@trpc/client";
+import {httpLink, splitLink, wsLink} from "@trpc/client";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import React, {useState} from "react";
 
@@ -21,8 +21,8 @@ export default function TRPCProvider({children}: { children: React.ReactNode }) 
           true: wsLink({
             client: wsClient,
           }),
-          false:httpBatchLink({
-            url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/trpc`,
+          false: httpLink({
+            url: `/api/trpc`,
           }),
         }),
       ],

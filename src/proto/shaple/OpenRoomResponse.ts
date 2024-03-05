@@ -7,5 +7,5 @@ export interface OpenRoomResponse {
 }
 
 export interface OpenRoomResponse__Output {
-  'roomId': (string);
+  'roomId': (number);
 }

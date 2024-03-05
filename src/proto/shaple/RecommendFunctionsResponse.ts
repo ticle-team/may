@@ -9,7 +9,7 @@ export interface _shaple_RecommendFunctionsResponse_Detail {
 }
 
 export interface _shaple_RecommendFunctionsResponse_Detail__Output {
-  'seqNum': (string);
+  'seqNum': (number);
   'chunk': (string);
 }
 

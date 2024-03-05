@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import type {Metadata} from "next";
+import {Inter} from "next/font/google";
 import "./globals.css";
 import classNames from "classnames";
-import TRPCProvider from "@/app/_trpc/Provider";
+import Script from "next/script";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({subsets: ["latin"]});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -12,13 +12,15 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-  children,
-}: Readonly<{
+                                     children,
+                                   }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body className={classNames(inter.className, "flex flex-row justify-center h-full w-full")}>{children}</body>
+    <html lang="en" className="h-full bg-white">
+      <body className={classNames(inter.className, "flex flex-row justify-center h-full w-full")}>
+        {children}
+      </body>
     </html>
   );
 }
