@@ -11,7 +11,7 @@ const protoDef = protoLoader.loadSync('src/proto/sbai.proto', {
 });
 const proto = (grpc.loadPackageDefinition(protoDef) as unknown) as ProtoGrpcType;
 
-export function get_sbai() {
+export function getSBAI() {
   const url = new URL(process.env.SBAI_URL || 'grpc://localhost:50051?ssl=false');
 
   const secured = url.searchParams.get('ssl') === 'true';

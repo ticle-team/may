@@ -5,7 +5,7 @@ import { RecommendServicesOutput, Room, room } from "@/types";
 import assert from "assert";
 import { RecommendFunctionsRequest } from "@/proto/shaple/RecommendFunctionsRequest";
 import { RecommendFunctionsResponse } from "@/proto/shaple/RecommendFunctionsResponse";
-import { get_sbai } from "@/server/services/third_party";
+import { getSBAI } from "@/server/services/third_party";
 import { OpenRoomRequest } from "@/proto/shaple/OpenRoomRequest";
 import { OpenRoomResponse } from "@/proto/shaple/OpenRoomResponse";
 import { GetRoomResponse } from "@/proto/shaple/GetRoomResponse";
@@ -18,7 +18,7 @@ export default router({
       }),
     )
     .mutation(async () => {
-      const sbai = get_sbai();
+      const sbai = getSBAI();
       try {
         const resp = await new Promise<OpenRoomResponse>((resolve, reject) => {
           sbai.OpenRoom({} as OpenRoomRequest, (err, resp) => {
@@ -52,7 +52,7 @@ export default router({
         };
       }
 
-      const sbai = get_sbai();
+      const sbai = getSBAI();
       try {
         const { history } = await new Promise<GetRoomResponse>(
           (resolve, reject) => {
@@ -95,7 +95,7 @@ export default router({
     )
     .subscription(({ input: { roomId, userInput } }) => {
       assert(userInput.length > 0, "userInput must not be empty");
-      const sbai = get_sbai();
+      const sbai = getSBAI();
       const stream = sbai.RecommendFunctions({
         roomId,
         userInput,

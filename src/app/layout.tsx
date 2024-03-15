@@ -1,8 +1,10 @@
+import {ReactNode} from "react";
 import type {Metadata} from "next";
 import {Inter} from "next/font/google";
 import "./globals.css";
 import classNames from "classnames";
 import Script from "next/script";
+import TRPCProvider from "@/app/_trpc/Provider";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -14,12 +16,14 @@ export const metadata: Metadata = {
 export default function RootLayout({
                                      children,
                                    }: Readonly<{
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <html lang="en" className="h-full bg-white">
       <body className={classNames(inter.className, "flex flex-row justify-center h-full w-full")}>
+      <TRPCProvider>
         {children}
+      </TRPCProvider>
       </body>
     </html>
   );
