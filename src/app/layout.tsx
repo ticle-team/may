@@ -3,8 +3,8 @@ import type {Metadata} from "next";
 import {Inter} from "next/font/google";
 import "./globals.css";
 import classNames from "classnames";
-import Script from "next/script";
 import TRPCProvider from "@/app/_trpc/Provider";
+import Layout from "./_components/Layout";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -21,9 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full bg-white">
       <body className={classNames(inter.className, "flex flex-row justify-center h-full w-full")}>
-      <TRPCProvider>
-        {children}
-      </TRPCProvider>
+        <TRPCProvider>
+          <Layout>
+            {children}
+          </Layout>
+        </TRPCProvider>
       </body>
     </html>
   );
