@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pages = [
-    { href: '/organization', hideSideMenu: false, hideHeader: false, hideChatBar: false },
+    { href: '/organization', hideSideMenu: false, hideHeader: false, hideChatBar: true },
     { href: '/stage', hideSideMenu: false, hideHeader: false, hideChatBar: false },
     { href: '/project', hideSideMenu: false, hideHeader: false, hideChatBar: false },
     { href: '/planet', hideSideMenu: false, hideHeader: false, hideChatBar: false },
@@ -23,7 +23,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <SideMenu currentMenu={currentPage?.href ?? ""} hidden={currentPage?.hideSideMenu} />
       <div className={`grow ${(currentPage?.hideSideMenu ?? true) ? "" : "pl-72"}`}>
         <Header hidden={currentPage?.hideHeader} />
-        <div className="flex flex-col h-[calc(100%-64px)]">
+        <div className="flex flex-col items-center h-[calc(100%-64px)]">
           {children}
           <ChatBar hidden={currentPage?.hideChatBar} hideSideMenu={currentPage?.hideSideMenu} />
         </div>
