@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link";
-import { LogoIcon } from "../_components/Icons";
+import { LogoIcon } from "@/app/_components/Icons";
 import { useRouter } from "next/navigation";
 
 export default function Page() {

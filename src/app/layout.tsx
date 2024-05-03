@@ -4,7 +4,7 @@ import {Inter} from "next/font/google";
 import "./globals.css";
 import classNames from "classnames";
 import TRPCProvider from "@/app/_trpc/Provider";
-import Layout from "./_components/Layout";
+import Layout from "@/app/_components/Layout";
 
 const inter = Inter({subsets: ["latin"]});
 

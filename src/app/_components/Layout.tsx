@@ -2,7 +2,7 @@
 
 import SideMenu from "@/app/_components/SideMenu";
 import Header from "@/app/_components/Header";
-import ChatBar from './ChatBar';
+import ChatBar from '@/app/_components/ChatBar';
 import { usePathname } from 'next/navigation'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
