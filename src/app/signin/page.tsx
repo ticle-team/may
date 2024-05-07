@@ -2,13 +2,30 @@
 
 import Link from "next/link";
 import { LogoIcon } from "@/app/_components/Icons";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
+// TODO : will be replaced with the actual redirect URL
+const DISABLED_CALLBACK_URLS = ["/resetpassword"];
+// TODO : will be replaced with the actual redirect URL
+const DEFAULT_REDIRECT_URL = "/organization";
 export default function Page() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  let callbackUrl = searchParams?.get('callbackUrl') || DEFAULT_REDIRECT_URL;
+
+  if (typeof location !== 'undefined') {
+    const pathname = new URL(callbackUrl, location.origin).pathname;
+    if (DISABLED_CALLBACK_URLS.includes(pathname)) {
+      callbackUrl = DEFAULT_REDIRECT_URL;
+    }
+  }
 
   const handleLogin = () => {
-    router.push("/organization");
+    // TODO : Implement login logic
+    if (typeof location !== 'undefined') {
+      router.push(callbackUrl);
+    }
   }
 
   return (
