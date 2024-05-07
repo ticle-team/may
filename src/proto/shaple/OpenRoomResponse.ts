@@ -3,9 +3,9 @@
 import type { Long } from '@grpc/proto-loader';
 
 export interface OpenRoomResponse {
-  'roomId'?: (number | string | Long);
+  roomId?: number | string | Long;
 }
 
 export interface OpenRoomResponse__Output {
-  'roomId': (number);
+  roomId: number;
 }

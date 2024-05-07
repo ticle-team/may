@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  pluralize       = true
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["may", "shaple_builder"]
+}
+
+model User {
+  id        Int      @id @default(autoincrement()) @map("id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt BigInt   @default(0) @map("deleted_at")
+  ownerId   String   @map("owner_id")
+  Thread    Thread[]
+
+  @@unique([deletedAt, ownerId])
+  @@map("users")
+  @@schema("may")
+}
+
+model Thread {
+  id             Int      @id @default(autoincrement()) @map("id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      BigInt   @default(0) @map("deleted_at")
+  authorId       Int      @map("author_id")
+  author         User     @relation(fields: [authorId], references: [id])
+  openaiThreadId String   @map("openai_thread_id")
+  Stack          Stack[]
+
+  @@map("threads")
+  @@schema("may")
+}
+
+model Stack {
+  id       Int         @id @default(autoincrement()) @map("id")
+  threadId Int         @map("thread_id")
+  thread   Thread      @relation(fields: [threadId], references: [id])
+  stackId  Int         @map("stack_id")
+  stack    ShapleStack @relation(fields: [stackId], references: [id])
+
+  @@map("stacks")
+  @@schema("may")
+}
+
+model ShapleStack {
+  id    Int     @id @default(autoincrement()) @map("id")
+  Stack Stack[]
+
+  @@map("stacks")
+  @@schema("shaple_builder")
+}

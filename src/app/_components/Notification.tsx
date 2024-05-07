@@ -1,22 +1,22 @@
-import {Fragment, useEffect, useState} from 'react'
-import { Transition } from '@headlessui/react'
-import { CheckCircleIcon } from '@heroicons/react/24/outline'
-import { XMarkIcon } from '@heroicons/react/20/solid'
-import classNames from "classnames";
+import { Fragment, useEffect, useState } from 'react';
+import { Transition } from '@headlessui/react';
+import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/20/solid';
+import classNames from 'classnames';
 
 export type NotificationProps = {
   open: boolean;
   message: string;
   title: string;
-  type: 'success'|'error'|'warning';
-}
+  type: 'success' | 'error' | 'warning';
+};
 
 export default function Notification({
-                                       open,
-                                       message,
-                                       title,
-                                       type = 'success',
-                                     }: NotificationProps) {
+  open,
+  message,
+  title,
+  type = 'success',
+}: NotificationProps) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -46,21 +46,22 @@ export default function Notification({
               <div className="p-4">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
-                    <CheckCircleIcon className={classNames(
-                      "h-6 w-6",
-                      {
-                        "text-green-400": type === 'success',
-                        "text-red-400": type === 'error',
-                        "text-yellow-400": type === 'warning',
-                      }
-                    )} aria-hidden="true" />
+                    <CheckCircleIcon
+                      className={classNames('h-6 w-6', {
+                        'text-green-400': type === 'success',
+                        'text-red-400': type === 'error',
+                        'text-yellow-400': type === 'warning',
+                      })}
+                      aria-hidden="true"
+                    />
                   </div>
                   <div className="ml-3 w-0 flex-1 pt-0.5">
                     <p className="text-sm font-medium text-gray-900">{title}</p>
-                    {
-                      message !== "" &&
-                        <p className="mt-1 text-sm text-gray-500">Anyone with a link can now view this file.</p>
-                    }
+                    {message !== '' && (
+                      <p className="mt-1 text-sm text-gray-500">
+                        Anyone with a link can now view this file.
+                      </p>
+                    )}
                   </div>
                   <div className="ml-4 flex flex-shrink-0">
                     <button
@@ -81,5 +82,5 @@ export default function Notification({
         </div>
       </div>
     </>
-  )
+  );
 }

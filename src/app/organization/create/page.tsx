@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from "react";
-import Step1Section from "./Step1Section";
-import Step2Section from "./Step2Section";
-import Step3Section from "./Step3Section";
+import { useEffect, useState } from 'react';
+import Step1Section from './Step1Section';
+import Step2Section from './Step2Section';
+import Step3Section from './Step3Section';
 
 export default function Page() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -11,7 +11,7 @@ export default function Page() {
 
   const handleNextStep = () => {
     setCurrentStep((prev) => prev + 1);
-  }
+  };
 
   useEffect(() => {
     switch (currentStep) {
@@ -29,9 +29,5 @@ export default function Page() {
     }
   }, [currentStep]);
 
-  return (
-    <div>
-      {currentSection}
-    </div>
-  )
+  return <div>{currentSection}</div>;
 }

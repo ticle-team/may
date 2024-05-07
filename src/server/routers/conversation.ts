@@ -1,14 +1,14 @@
-import { baseProcedure, router } from "@/server/trpc";
-import { z } from "zod";
-import { observable } from "@trpc/server/observable";
-import { RecommendServicesOutput, Room, room } from "@/types";
-import assert from "assert";
-import { RecommendFunctionsRequest } from "@/proto/shaple/RecommendFunctionsRequest";
-import { RecommendFunctionsResponse } from "@/proto/shaple/RecommendFunctionsResponse";
-import { getSBAI } from "@/server/services/third_party";
-import { OpenRoomRequest } from "@/proto/shaple/OpenRoomRequest";
-import { OpenRoomResponse } from "@/proto/shaple/OpenRoomResponse";
-import { GetRoomResponse } from "@/proto/shaple/GetRoomResponse";
+import { baseProcedure, router } from '@/server/trpc';
+import { z } from 'zod';
+import { observable } from '@trpc/server/observable';
+import { RecommendServicesOutput, Room, room } from '@/types';
+import assert from 'assert';
+import { RecommendFunctionsRequest } from '@/proto/shaple/RecommendFunctionsRequest';
+import { RecommendFunctionsResponse } from '@/proto/shaple/RecommendFunctionsResponse';
+import { getSBAI } from '@/server/services/third_party';
+import { OpenRoomRequest } from '@/proto/shaple/OpenRoomRequest';
+import { OpenRoomResponse } from '@/proto/shaple/OpenRoomResponse';
+import { GetRoomResponse } from '@/proto/shaple/GetRoomResponse';
 
 export default router({
   openRoom: baseProcedure
@@ -71,7 +71,7 @@ export default router({
           history:
             history?.map(
               ({ userInput, botAnswer, recommendFunctionsSummary }) => ({
-                userInput: userInput ?? "",
+                userInput: userInput ?? '',
                 botAnswer: botAnswer ?? null,
                 recommendFunctionsSummary: recommendFunctionsSummary
                   ? {
@@ -94,7 +94,7 @@ export default router({
       }),
     )
     .subscription(({ input: { roomId, userInput } }) => {
-      assert(userInput.length > 0, "userInput must not be empty");
+      assert(userInput.length > 0, 'userInput must not be empty');
       const sbai = getSBAI();
       const stream = sbai.RecommendFunctions({
         roomId,
@@ -104,45 +104,45 @@ export default router({
       return observable<RecommendServicesOutput>((emit) => {
         const onData = (resp: RecommendFunctionsResponse) => {
           switch (resp.body) {
-            case "detail":
+            case 'detail':
               emit.next({
-                type: "detail",
+                type: 'detail',
                 seqNum: resp.detail!.seqNum,
                 chunk: resp.detail!.chunk,
               } as RecommendServicesOutput);
               break;
-            case "summary":
+            case 'summary':
               emit.next({
-                type: "summary",
+                type: 'summary',
                 domain: resp.summary!.domain,
                 functionGroups: resp.summary!.functionGroups,
                 functions: resp.summary!.functions,
               } as RecommendServicesOutput);
               break;
             default:
-              emit.error(new Error("unknown response"));
+              emit.error(new Error('unknown response'));
           }
         };
 
         const onError = (err: Error) => {
-          console.error("recommendServices error: ", err);
+          console.error('recommendServices error: ', err);
           emit.error(err);
         };
 
         const onEnd = () => {
-          console.log("recommendServices end");
+          console.log('recommendServices end');
           emit.next({
-            type: "end",
+            type: 'end',
           });
           emit.complete();
         };
 
-        stream.on("data", onData);
-        stream.on("error", onError);
-        stream.on("end", onEnd);
+        stream.on('data', onData);
+        stream.on('error', onError);
+        stream.on('end', onEnd);
 
         return () => {
-          console.log("close subscription");
+          console.log('close subscription');
           sbai.close();
         };
       });

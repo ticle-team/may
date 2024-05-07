@@ -1,16 +1,17 @@
-import React from "react";
-import classNames from "classnames";
-import Link from "next/link";
+import React from 'react';
+import classNames from 'classnames';
+import Link from 'next/link';
 
 type Props = {
-  hidden?: boolean,
-}
+  hidden?: boolean;
+};
 
 export default function Header({ hidden = true }: Props) {
   const headerClass = classNames({
-    'flex h-16 shrink-0 justify-end items-center gap-x-6 bg-white border-b border-gray-900/10 px-4 shadow-sm sm:px-6 lg:px-8': true,
+    'flex h-16 shrink-0 justify-end items-center gap-x-6 bg-white border-b border-gray-900/10 px-4 shadow-sm sm:px-6 lg:px-8':
+      true,
     'sticky top-0 z-40': true,
-    'hidden': hidden,
+    hidden: hidden,
   });
 
   return (
@@ -31,4 +32,4 @@ export default function Header({ hidden = true }: Props) {
       </button>
     </div>
   );
-};
+}

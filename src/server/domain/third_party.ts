@@ -1,6 +1,6 @@
 import * as protoLoader from '@grpc/proto-loader';
 import * as grpc from '@grpc/grpc-js';
-import {ProtoGrpcType} from '@/proto/sbai';
+import { ProtoGrpcType } from '@/proto/sbai';
 
 const protoDef = protoLoader.loadSync('src/proto/sbai.proto', {
   keepCase: false,
@@ -9,10 +9,12 @@ const protoDef = protoLoader.loadSync('src/proto/sbai.proto', {
   defaults: true,
   oneofs: true,
 });
-const proto = (grpc.loadPackageDefinition(protoDef) as unknown) as ProtoGrpcType;
+const proto = grpc.loadPackageDefinition(protoDef) as unknown as ProtoGrpcType;
 
 export function getSBAI() {
-  const url = new URL(process.env.SBAI_URL || 'grpc://localhost:50051?ssl=false');
+  const url = new URL(
+    process.env.SBAI_URL || 'grpc://localhost:50051?ssl=false',
+  );
 
   const secured = url.searchParams.get('ssl') === 'true';
 

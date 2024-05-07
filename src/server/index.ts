@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { router } from '@/server/trpc';
 import { appRouter } from '@/server/routers';
 
