@@ -5,22 +5,28 @@ import Header from "@/app/_components/Header";
 import ChatBar from '@/app/_components/ChatBar';
 import { usePathname } from 'next/navigation'
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  const pages = [
-    { href: '/organization', hideSideMenu: false, hideHeader: false, hideChatBar: true },
-    { href: '/stage', hideSideMenu: false, hideHeader: false, hideChatBar: false },
-    { href: '/project', hideSideMenu: false, hideHeader: false, hideChatBar: false },
-    { href: '/planet', hideSideMenu: false, hideHeader: false, hideChatBar: false },
-    { href: '/guide', hideSideMenu: false, hideHeader: false, hideChatBar: false },
-    { href: '/signin', hideSideMenu: true, hideHeader: true, hideChatBar: true },
-  ];
+type PageProps = {
+  hideSideMenu: boolean;
+  hideHeader: boolean;
+  hideChatBar: boolean;
+};
 
-  const currnetPath = usePathname().split('/')[1];
-  const currentPage = pages.find((item) => item.href.split('/')[1] === currnetPath);
+export default function Layout({ children }: { children: React.ReactNode }) {
+  const pages: Map<string, PageProps> = new Map([
+    ['/organization', { hideSideMenu: false, hideHeader: false, hideChatBar: true }],
+    ['/stage', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
+    ['/project', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
+    ['/planet', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
+    ['/guide', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
+    ['/signin', { hideSideMenu: true, hideHeader: true, hideChatBar: true }],
+  ]);
+
+  const currentPath = `/${usePathname().split('/')[1]}`;
+  const currentPage = pages.get(currentPath);
 
   return (
     <div className='flex w-full h-full flex-1'>
-      <SideMenu currentMenu={currentPage?.href ?? ""} hidden={currentPage?.hideSideMenu} />
+      <SideMenu currentMenu={currentPath} hidden={currentPage?.hideSideMenu} />
       <div className={`grow ${(currentPage?.hideSideMenu ?? true) ? "" : "pl-72"}`}>
         <Header hidden={currentPage?.hideHeader} />
         <div className="flex flex-col items-center h-[calc(100%-64px)]">
