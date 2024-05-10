@@ -1,34 +1,33 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Dispatch, Fragment, SetStateAction, useEffect, useState } from 'react';
 import { Transition } from '@headlessui/react';
 import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import { XMarkIcon } from '@heroicons/react/20/solid';
 import classNames from 'classnames';
 
-export type NotificationProps = {
-  open: boolean;
+export type ToastData = {
   message: string;
   title: string;
   type: 'success' | 'error' | 'warning';
 };
 
-export default function Notification({
-  open,
+type Props = ToastData & {
+  show: boolean;
+  setShow: Dispatch<SetStateAction<boolean>>;
+};
+
+export default function Toast({
+  show,
+  setShow,
   message,
   title,
   type = 'success',
-}: NotificationProps) {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    setShow(open);
-  }, [open]);
-
+}: Props) {
   return (
     <>
       {/* Global notification live region, render this permanently at the end of the document */}
       <div
         aria-live="assertive"
-        className="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-20"
+        className="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-20 z-50"
       >
         <div className="flex w-full flex-col items-center space-y-4 sm:items-end">
           {/* Notification panel, dynamically insert this into the live region when it needs to be displayed */}
@@ -58,9 +57,7 @@ export default function Notification({
                   <div className="ml-3 w-0 flex-1 pt-0.5">
                     <p className="text-sm font-medium text-gray-900">{title}</p>
                     {message !== '' && (
-                      <p className="mt-1 text-sm text-gray-500">
-                        Anyone with a link can now view this file.
-                      </p>
+                      <p className="mt-1 text-sm text-gray-500">{message}</p>
                     )}
                   </div>
                   <div className="ml-4 flex flex-shrink-0">
