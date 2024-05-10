@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shaple-builder
+  namespace: dev
+  labels:
+    app: shaple-builder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shaple-builder
+  template:
+    metadata:
+      labels:
+        app: shaple-builder
+    spec:
+      nodeSelector:
+        type: default
+      containers:
+        - name: main
+          image: stoacloud/stoacloud:latest
+          imagePullPolicy: Always
+          #          command: ["tail", "-f", "/dev/null"]
+          command: ["sh", "-e", "-c"]
+          args:
+            - |
+              # this statements are for the repair-file-permissions command notified by oci warning.
+              ## begin
+              cp .oci/oci_api_key_orig.pem .oci/oci_api_key.pem
+              chown 1000 .oci/oci_api_key.pem
+              chmod 600 .oci/oci_api_key.pem
+              cp .oci/config_orig .oci/config
+              chown 1000 .oci/config
+              chmod 600 .oci/config
+              oci setup repair-file-permissions --file /shaple/.oci/config
+              ## end
+
+              bin/shaplebuilder serve \
+                --k8s.kubeconfig kube/config.yaml \
+                --db.name shaple \
+                --stack.defaultDomain local.shaple.io
+                --s3.accessKey $S3_ACCESS_KEY \
+                --s3.secretKey $S3_SECRET_KEY \
+                --db.host postgres.default.svc.cluster.local
+          ports:
+            - containerPort: 8080
+          env:
+            - name: LOG_LEVEL
+              value: "DEBUG"
+            - name: HOME
+              value: /shaple
+            - name: GIN_MODE
+              value: release
+          volumeMounts:
+            - mountPath: /shaple/kube/config.yaml
+              name: config
+              readOnly: true
+              subPath: kube_config.yaml
+            - mountPath: /shaple/config/dev.yml
+              name: secret
+              readOnly: true
+              subPath: config.yml
+            - mountPath: /shaple/.oci/config_orig
+              name: config
+              readOnly: true
+              subPath: oci_config
+            - mountPath: /shaple/.oci/oci_api_key_orig.pem
+              name: secret
+              readOnly: true
+              subPath: oci_api_key.pem
+          resources:
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+      imagePullSecrets:
+        - name: ocirsecret
+      volumes:
+        - name: config
+          configMap:
+            name: shaple-builder-config
+            items:
+              - key: kube_config.yaml
+                path: kube_config.yaml
+              - key: oci_config
+                path: oci_config
+        - name: secret
+          secret:
+            secretName: shaple-builder-secret
+            items:
+              - key: config.yml
+                path: config.yml
+              - key: oci_api_key.pem
+                path: oci_api_key.pem
