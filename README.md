@@ -1,9 +1,17 @@
-# shaple-builder-web
+# MAY
 
-## Configuration
+## Contributing
 
-`app.env` 파일을 사용하여 app을 설정할 수 있습니다. `.env.local` 이외의 dotenv 파일은 사용하지 않고 아래의 파일들을 사용해주시기 바랍니다.
+### Formatting
+- Use prettier to format your code
+  - e.g. do formatting prettier on save code in webstorm by 'prettier settings'
 
-- app.env
-- app.env.dev
-- app.env.prod
+### Unit Test & Integration Test
+1. `yarn test:setup`: Run the test setup script. this script contains `kind` configuration with stoacloud
+2. `yarn test`: Run all tests
+3. `yarn test:teardown`: Remove `kind` cluster. Be careful, this will remove all databases in the cluster.
+
+### Commit
+- Use conventional commits for commit messages.
+- Before commit your code, run `yarn format` to format your code.
+- And, must be passed all tests before pushing your code.
