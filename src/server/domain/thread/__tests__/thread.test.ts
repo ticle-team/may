@@ -18,18 +18,13 @@ describe('thread', () => {
     ...loadEnvConfig(process.cwd(), true).combinedEnv,
   };
 
-  let user: User;
+  const ownerId = '123123';
   let mockOpenAI: OpenAIAssistantMock;
   beforeEach(async () => {
     mockOpenAI = createOpenAIAssistantMock();
     Container.set(OpenAIAssistant, mockOpenAI);
 
     const prisma = Container.get(PrismaService);
-    user = await prisma.user.create({
-      data: {
-        ownerId: '123123',
-      },
-    });
   });
 
   afterEach(async () => {
@@ -48,7 +43,7 @@ describe('thread', () => {
       deleted: true,
     } as ThreadDeleted);
     const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(user.id);
+    const thread = await threadService.create(ownerId);
     expect(thread.openaiThreadId).toBe(openaiThreadId);
     await threadService.delete(thread.id);
 
@@ -66,7 +61,7 @@ describe('thread', () => {
     } as ThreadDeleted);
 
     const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(user.id);
+    const thread = await threadService.create(ownerId);
     expect(thread.openaiThreadId).toBe(openaiThreadId);
     await threadService.addUserMessage(thread.id, '안녕하세요');
 

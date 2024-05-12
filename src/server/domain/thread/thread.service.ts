@@ -45,7 +45,7 @@ export class ThreadService {
       });
     }
     return this.prisma.$transaction(async (tx) => {
-      await this.threadStore.deleteThreadById(tx, threadId);
+      return this.threadStore.deleteThreadById(tx, threadId);
     });
   }
 

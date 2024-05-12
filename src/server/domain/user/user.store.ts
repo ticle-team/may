@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 import { PrismaService } from '@/server/common/prisma.service';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient, User } from '@prisma/client';
+import { undefined } from 'zod';
 
 @Service()
 export class UserStore {

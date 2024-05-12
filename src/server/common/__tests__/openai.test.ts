@@ -19,7 +19,7 @@ describe('openai', () => {
     expect(resp.id).toBe(stackCreationAssistantID);
   });
 
-  it('runs', async () => {
+  it.skip('runs', async () => {
     const openai = Container.get(OpenAIAssistant);
     const assistant = await openai.getAssistant(stackCreationAssistantID);
     expect(assistant.id).not.toBe('');
@@ -34,31 +34,45 @@ describe('openai', () => {
       `lastError: ${run.last_error?.message}, code: ${run.last_error?.code}`,
     ).toBe('completed');
 
-    const messages = await openai.getMessages(thread.id);
-    const lastMessage = messages.data[-1];
+    const { messages } = await openai.getMessages(thread.id);
+    const lastMessage = messages[0];
     expect(lastMessage.role).toBe('assistant');
+    expect(lastMessage.content).not.toBe('');
     console.log(lastMessage.content);
 
-    // const stream = openai.runStream(thread.id, assistant.id);
-    // const answer = await new Promise((resolve) => {
-    //   const answers: string[] = [];
-    //   stream.on('textCreated', ({ value }) => {
-    //     console.log(value);
-    //     answers.push(value);
-    //   });
-    //   stream.on('textDelta', ({ value }) => {
-    //     console.log(value);
-    //     if (value !== undefined && value !== '') {
-    //       answers.push(value);
-    //     }
-    //   });
-    //   stream.on('textDone', () => {
-    //     const answer = answers.join('');
-    //     resolve(answer);
-    //   });
-    // });
+    await openai.deleteMessage(thread.id, message.id);
+    await openai.deleteThread(thread.id);
+  }, 10000);
 
-    // expect(answer).not.toBe('');
+  it.skip('run stream', async () => {
+    const openai = Container.get(OpenAIAssistant);
+    const assistant = await openai.getAssistant(stackCreationAssistantID);
+    expect(assistant.id).not.toBe('');
+    const thread = await openai.createThread();
+    expect(thread.id).not.toBe('');
+    const message = await openai.createMessage(thread.id, '안녕하세요');
+    expect(message.id).not.toBe('');
+
+    const stream = openai.runStream(thread.id, assistant.id);
+    const answer = await new Promise((resolve) => {
+      const answers: string[] = [];
+      stream.on('textCreated', () => {
+        console.log('text created');
+      });
+      stream.on('textDelta', ({ value }) => {
+        console.log(value);
+        if (value !== undefined && value !== '') {
+          answers.push(value);
+        }
+      });
+      stream.on('textDone', () => {
+        const answer = answers.join('');
+        resolve(answer);
+      });
+    });
+
+    expect(answer).not.toBe('');
+    console.log(answer);
 
     await openai.deleteMessage(thread.id, message.id);
     await openai.deleteThread(thread.id);
