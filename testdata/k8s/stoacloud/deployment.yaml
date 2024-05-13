@@ -36,7 +36,9 @@ spec:
               ## end
 
               bin/shaplebuilder serve \
+                --stack.skipHealthCheck true \
                 --k8s.kubeconfig kube/config.yaml \
+                --k8s.context "kind-kind" \
                 --db.name test \
                 --s3.accessKey $S3_ACCESS_KEY \
                 --s3.secretKey $S3_SECRET_KEY \
@@ -64,7 +66,7 @@ spec:
                   key: s3_secret_key
           volumeMounts:
             - mountPath: /shaple/kube/config.yaml
-              name: config
+              name: kubeconfig
               readOnly: true
               subPath: kube_config.yaml
             - mountPath: /shaple/.oci/config_orig
@@ -103,10 +105,14 @@ spec:
           configMap:
             name: shaple-builder-config
             items:
-              - key: kube_config.yaml
-                path: kube_config.yaml
               - key: oci_config
                 path: oci_config
+        - name: kubeconfig
+          configMap:
+            name: shaple-builder-kubeconfig
+            items:
+              - key: kube_config.yaml
+                path: kube_config.yaml
         - name: secret
           secret:
             secretName: shaple-builder

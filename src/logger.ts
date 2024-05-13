@@ -1,22 +1,12 @@
-import { createLogger, transports, format } from 'winston';
+import { createLogger, format, transports } from 'winston';
 
 export function getLogger(label: string) {
   return createLogger({
     transports: [
       new transports.Console({
-        level: 'debug',
+        level: process.env.LOG_LEVEL || 'debug',
         format: format.combine(
-          format.padLevels({
-            levels: {
-              error: 0,
-              warn: 1,
-              info: 2,
-              http: 3,
-              verbose: 4,
-              debug: 5,
-              silly: 6,
-            },
-          }),
+          format.errors({ stack: true }),
           format.label({ label }),
           format.timestamp({
             format: 'YYYY-MM-DD HH:mm:ss',
@@ -24,9 +14,14 @@ export function getLogger(label: string) {
           format.colorize({
             level: true,
           }),
+          format.splat(),
+          format.metadata({
+            fillExcept: ['label', 'message', 'level', 'timestamp'],
+          }),
+          // format.prettyPrint(),
           format.printf(
             (info) =>
-              `${info.timestamp} ${info.level} [${info.label}] -- ${info.message}`,
+              `${info.timestamp} ${info.level} [${info.label}] -- ${info.message}\nmetadata=${JSON.stringify(info.metadata, null, 2)}`,
           ),
         ),
       }),

@@ -5,10 +5,10 @@ import { TRPCError } from '@trpc/server';
 import { getLogger } from '@/logger';
 import { UserStore } from '@/server/domain/user/user.store';
 import { PrismaService } from '@/server/common/prisma.service';
+import { TextContentBlock } from 'openai/resources/beta/threads';
+import { ChatMessage } from '@/models/ai';
 
 const logger = getLogger('ThreadService');
-
-new PrismaService().$transaction;
 
 @Service()
 export class ThreadService {
@@ -21,11 +21,17 @@ export class ThreadService {
 
   async create(
     ownerId: string, // this is a string, gotrue user id
+    projectId: number,
   ) {
     return this.prisma.$transaction(async (tx) => {
       const user = await this.userStore.getUser(tx, ownerId);
       const thread = await this.openaiAssistant.createThread();
-      return await this.threadStore.createThread(tx, user.id, thread.id);
+      return await this.threadStore.createThread(
+        tx,
+        user.id,
+        thread.id,
+        projectId,
+      );
     });
   }
 
@@ -49,8 +55,22 @@ export class ThreadService {
     });
   }
 
-  async getMessages(threadId: number) {
+  async getTextMessages(
+    threadId: number,
+    options?: {
+      before?: string;
+      limit?: number;
+    },
+  ) {
     const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
-    return this.openaiAssistant.getMessages(openaiThreadId);
+    const { messages, after } = await this.openaiAssistant.getTextMessages(
+      openaiThreadId,
+      options,
+    );
+
+    return {
+      messages,
+      after,
+    };
   }
 }

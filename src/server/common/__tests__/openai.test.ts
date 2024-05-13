@@ -1,12 +1,16 @@
 import { loadEnvConfig } from '@next/env';
 import { Container } from 'typedi';
-import { createOpenAI, OpenAIAssistant } from '@/server/common/openai.service';
+import {
+  OpenAIAssistant,
+  OpenAICompletions,
+} from '@/server/common/openai.service';
+import { TextDeltaBlock } from 'openai/src/resources/beta/threads/messages';
 
 process.env = {
   ...process.env,
   ...loadEnvConfig(process.cwd(), true).combinedEnv,
 };
-describe('given openai client', () => {
+describe('given openai assistant', () => {
   const stackCreationAssistantID =
     process.env.OPENAI_API_STACK_CREATION_ASSISTANT_ID || '';
 
@@ -36,17 +40,17 @@ describe('given openai client', () => {
       `lastError: ${run.last_error?.message}, code: ${run.last_error?.code}`,
     ).toBe('completed');
 
-    const { messages } = await openai.getMessages(thread.id);
+    const { messages } = await openai.getTextMessages(thread.id);
     const lastMessage = messages[0];
     expect(lastMessage.role).toBe('assistant');
-    expect(lastMessage.content).not.toBe('');
-    console.log(lastMessage.content);
+    expect(lastMessage.text).not.toBe('');
+    console.log(lastMessage.text);
 
     await openai.deleteMessage(thread.id, message.id);
     await openai.deleteThread(thread.id);
   }, 10000);
 
-  it.skip('when stack creation through assistant and run stream, then answer is ok', async () => {
+  it('when stack creation through assistant and run stream with cancel, then answer is ok', async () => {
     const openai = Container.get(OpenAIAssistant);
     const assistant = await openai.getAssistant(stackCreationAssistantID);
     expect(assistant.id).not.toBe('');
@@ -55,28 +59,75 @@ describe('given openai client', () => {
     const message = await openai.createMessage(thread.id, '안녕하세요');
     expect(message.id).not.toBe('');
 
-    const stream = openai.runStream(thread.id, assistant.id);
-    const answer = await new Promise((resolve) => {
-      const answers: string[] = [];
-      stream.on('textCreated', () => {
-        console.log('text created');
-      });
-      stream.on('textDelta', ({ value }) => {
-        console.log(value);
-        if (value !== undefined && value !== '') {
-          answers.push(value);
-        }
-      });
-      stream.on('textDone', () => {
-        const answer = answers.join('');
-        resolve(answer);
-      });
-    });
+    const stream = await openai.runStream(thread.id, assistant.id);
+    const answers: string[] = [];
+    let num = 0;
+    for await (const { event, data } of stream) {
+      switch (event) {
+        case 'thread.message.created':
+          console.log('text created');
+          break;
+        case 'thread.message.delta':
+          const content = data.delta.content;
+          expect(content).toBeDefined();
+
+          for (const block of content!) {
+            if (block.type !== 'text') {
+              continue;
+            }
+
+            const { text } = block as TextDeltaBlock;
+            console.log('text: ', text?.value);
+            answers.push(text?.value ?? '');
+          }
+          num += 1;
+          if (num == 2) {
+            await stream.return();
+          }
+          break;
+        case 'thread.message.completed':
+          console.log('text done');
+          break;
+        case 'error':
+          console.error(data);
+          break;
+      }
+    }
+    const answer = answers.join('');
 
     expect(answer).not.toBe('');
-    console.log(answer);
 
     await openai.deleteMessage(thread.id, message.id);
     await openai.deleteThread(thread.id);
   }, 10000);
+});
+
+describe('given openai completion', () => {
+  afterEach(() => {
+    Container.reset();
+  });
+
+  it.skip('when chat completion, then ok', async () => {
+    const com = Container.get(OpenAICompletions);
+
+    const { choices } = await com.chat([
+      {
+        role: 'system',
+        text: 'You are a helpful assistant.',
+      },
+      {
+        role: 'user',
+        text: 'hello.',
+      },
+    ]);
+
+    const content = choices[0].message?.content ?? '';
+    expect(content).not.toBe('');
+
+    expect(
+      content.toLowerCase().includes('hello') ||
+        content.toLowerCase().includes('hi'),
+      `content: ${content}`,
+    ).toBeTruthy();
+  });
 });

@@ -11,11 +11,14 @@ export class ThreadStore {
     tx: Prisma.TransactionClient,
     authorId: number,
     openaiThreadId: string,
+    shapleProjectId: number,
   ) {
     return tx.thread.create({
       data: {
         authorId,
         openaiThreadId,
+        shapleProjectId,
+        shapleStackId: null,
       },
     });
   }
