@@ -2,9 +2,11 @@ import { loadEnvConfig } from '@next/env';
 import { Container } from 'typedi';
 import { createOpenAI, OpenAIAssistant } from '@/server/common/openai.service';
 
-const { combinedEnv: appEnv } = loadEnvConfig(process.cwd(), true);
-process.env = { ...process.env, ...appEnv };
-describe('openai', () => {
+process.env = {
+  ...process.env,
+  ...loadEnvConfig(process.cwd(), true).combinedEnv,
+};
+describe('given openai client', () => {
   const stackCreationAssistantID =
     process.env.OPENAI_API_STACK_CREATION_ASSISTANT_ID || '';
 
@@ -12,14 +14,14 @@ describe('openai', () => {
     Container.reset();
   });
 
-  it('getAssistant', async () => {
+  it('when stack creation, then ok', async () => {
     const openai = Container.get(OpenAIAssistant);
     const resp = await openai.getAssistant(stackCreationAssistantID);
 
     expect(resp.id).toBe(stackCreationAssistantID);
   });
 
-  it.skip('runs', async () => {
+  it.skip('when stack creation though assistant, then response is ok', async () => {
     const openai = Container.get(OpenAIAssistant);
     const assistant = await openai.getAssistant(stackCreationAssistantID);
     expect(assistant.id).not.toBe('');
@@ -44,7 +46,7 @@ describe('openai', () => {
     await openai.deleteThread(thread.id);
   }, 10000);
 
-  it.skip('run stream', async () => {
+  it.skip('when stack creation through assistant and run stream, then answer is ok', async () => {
     const openai = Container.get(OpenAIAssistant);
     const assistant = await openai.getAssistant(stackCreationAssistantID);
     expect(assistant.id).not.toBe('');
@@ -77,37 +79,4 @@ describe('openai', () => {
     await openai.deleteMessage(thread.id, message.id);
     await openai.deleteThread(thread.id);
   }, 10000);
-});
-
-describe('openai api', () => {
-  const openai = createOpenAI();
-
-  it('assistant run simple', async () => {
-    const assistantId =
-      process.env.OPENAI_API_STACK_CREATION_ASSISTANT_ID || '';
-    expect(assistantId).not.toBe('');
-    const thread = await openai.beta.threads.create();
-    const message = await openai.beta.threads.messages.create(thread.id, {
-      role: 'user',
-      content: '안녕하세요.',
-    });
-
-    let run = await openai.beta.threads.runs.create(thread.id, {
-      assistant_id: assistantId,
-    });
-
-    while (run.status != 'completed' && run.status != 'failed') {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      run = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-    }
-
-    if (run.status == 'failed') {
-      console.log('last error: ', run.last_error);
-    }
-
-    expect(run.status).toBe('completed');
-
-    await openai.beta.threads.messages.del(thread.id, message.id);
-    await openai.beta.threads.del(thread.id);
-  });
 });
