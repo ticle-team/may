@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import Link from "next/link";
-import { LogoIcon } from "@/app/_components/Icons";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from 'next/link';
+import { LogoIcon } from '@/app/_components/Icons';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // TODO : will be replaced with the actual redirect URL
-const DISABLED_CALLBACK_URLS = ["/resetpassword"];
+const DISABLED_CALLBACK_URLS = ['/resetpassword'];
 // TODO : will be replaced with the actual redirect URL
-const DEFAULT_REDIRECT_URL = "/organization";
+const DEFAULT_REDIRECT_URL = '/organization';
 export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,7 +26,7 @@ export default function Page() {
     if (typeof location !== 'undefined') {
       router.push(callbackUrl);
     }
-  }
+  };
 
   return (
     <>
@@ -43,7 +43,10 @@ export default function Page() {
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
           <div className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium leading-6 text-gray-900"
+              >
                 Email address
               </label>
               <div className="mt-2">
@@ -59,11 +62,17 @@ export default function Page() {
 
             <div>
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium leading-6 text-gray-900"
+                >
                   Password
                 </label>
                 <div className="text-sm">
-                  <Link href="#" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                  <Link
+                    href="#"
+                    className="font-semibold text-indigo-600 hover:text-indigo-500"
+                  >
                     Forgot password?
                   </Link>
                 </div>
@@ -91,12 +100,15 @@ export default function Page() {
 
           <p className="mt-10 text-center text-sm text-gray-500">
             Not a member?{' '}
-            <Link href="#" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+            <Link
+              href="#"
+              className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+            >
               Sign up now!
             </Link>
           </p>
         </div>
       </div>
     </>
-  )
+  );
 }

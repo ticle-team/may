@@ -4,14 +4,14 @@ import { WebSocketServer } from 'ws';
 
 const wss = new WebSocketServer({
   host: '0.0.0.0',
-  port: parseInt(process.env.PORT || "3001"),
+  port: parseInt(process.env.PORT || '3001'),
 });
 const handler = applyWSSHandler({
   wss,
   router: appRouter,
   onError: (opts) => {
     console.error('Error', opts.error);
-  }
+  },
 });
 
 wss.on('connection', (ws) => {

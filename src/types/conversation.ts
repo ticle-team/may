@@ -1,13 +1,15 @@
-import {z} from "zod";
+import { z } from 'zod';
 
-export const conversationHistory = z.array(z.object({
-  role: z.union([
-    z.literal("user"),
-    z.literal("system"),
-    z.literal("assistant"),
-  ]),
-  text: z.string(),
-}));
+export const conversationHistory = z.array(
+  z.object({
+    role: z.union([
+      z.literal('user'),
+      z.literal('system'),
+      z.literal('assistant'),
+    ]),
+    text: z.string(),
+  }),
+);
 
 export type ConversationHistory = z.infer<typeof conversationHistory>;
 
@@ -17,7 +19,7 @@ export type ConversationChunk = {
 };
 
 export type ConversationOutput = {
-  type: "begin" | "continue" | "end";
+  type: 'begin' | 'continue' | 'end';
   chunk?: ConversationChunk;
 };
 
@@ -30,26 +32,30 @@ export const recommendFunctionsSummary = z.object({
   functions: z.array(z.string()),
 });
 
-export type RecommendFunctionsSummary = z.infer<typeof recommendFunctionsSummary>;
+export type RecommendFunctionsSummary = z.infer<
+  typeof recommendFunctionsSummary
+>;
 
 export type RecommendServicesOutputSummary = {
-  type: "summary";
+  type: 'summary';
 } & RecommendFunctionsSummary;
 
-export type RecommendServicesOutput = RecommendServicesOutputSummary | {
-  type: "detail";
-  seqNum: number;
-  chunk: string;
-} | {
-  type: "end";
-};
+export type RecommendServicesOutput =
+  | RecommendServicesOutputSummary
+  | {
+      type: 'detail';
+      seqNum: number;
+      chunk: string;
+    }
+  | {
+      type: 'end';
+    };
 
 export const openRoomOutput = z.object({
   roomId: z.number(),
 });
 
 export type OpenRoomOutput = z.infer<typeof openRoomOutput>;
-
 
 export const turn = z.object({
   userInput: z.string(),
