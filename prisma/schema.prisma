@@ -22,7 +22,7 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at")
   deletedAt BigInt   @default(0) @map("deleted_at")
   ownerId   String   @map("owner_id")
-  Thread    Thread[]
+  threads   Thread[]
 
   @@unique([deletedAt, ownerId])
   @@map("users")
@@ -37,7 +37,7 @@ model Thread {
   authorId       Int      @map("author_id")
   author         User     @relation(fields: [authorId], references: [id])
   openaiThreadId String   @map("openai_thread_id")
-  Stack          Stack[]
+  stacks         Stack[]
 
   @@map("threads")
   @@schema("may")
@@ -47,7 +47,7 @@ model Stack {
   id       Int         @id @default(autoincrement()) @map("id")
   threadId Int         @map("thread_id")
   thread   Thread      @relation(fields: [threadId], references: [id])
-  stackId  Int         @map("stack_id")
+  stackId  Int         @unique @map("stack_id")
   stack    ShapleStack @relation(fields: [stackId], references: [id])
 
   @@map("stacks")
@@ -55,8 +55,8 @@ model Stack {
 }
 
 model ShapleStack {
-  id    Int     @id @default(autoincrement()) @map("id")
-  Stack Stack[]
+  id    Int    @id @default(autoincrement()) @map("id")
+  stack Stack?
 
   @@map("stacks")
   @@schema("shaple_builder")
