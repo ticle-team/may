@@ -1,20 +1,28 @@
-import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import {
+  FetchCreateContextFnOptions,
+  fetchRequestHandler,
+} from '@trpc/server/adapters/fetch';
 import { appRouter } from '@/server/routers';
-import { shapleClient } from '@/app/_services/shapleClient';
+import { cookies } from 'next/headers';
+import { createNextContext } from '@/server/context';
 
 const handler = async (req: Request) => {
+  const cookieStore = cookies();
   return await fetchRequestHandler({
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: () => ({ shaple: shapleClient }),
-    onError({ error, type, path, input, ctx, req }) {
-      if (error.code === 'INTERNAL_SERVER_ERROR') {
-        console.log(`unexpected error occurred on RPC [${path}]`, {
-          cause: error.cause?.message,
+    createContext: async (opts: FetchCreateContextFnOptions) =>
+      await createNextContext(cookieStore, opts),
+    onError: (opts: any) => {
+      if (opts.error.code === 'INTERNAL_SERVER_ERROR') {
+        console.log(`unexpected error occurred on RPC [${opts.path}]`, {
+          cause: opts.error.cause?.message,
         });
       } else {
-        console.log(`exception caught on RPC [${path}]`, { code: error.code });
+        console.log(`exception caught on RPC [${opts.path}]`, {
+          code: opts.error.code,
+        });
       }
     },
   });
