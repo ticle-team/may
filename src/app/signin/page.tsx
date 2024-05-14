@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { LogoIcon } from '@/app/_components/Icons';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import LoadingSpinner from '@/app/_components/LoadingSpinner';
 import { shapleClient } from '@/app/_services/shapleClient';
 import useToast from '@/app/_hooks/useToast';
@@ -14,13 +14,16 @@ const DISABLED_CALLBACK_URLS = ['/resetpassword'];
 // TODO : will be replaced with the actual redirect URL
 const DEFAULT_REDIRECT_URL = '/projects';
 
-export default function Page() {
+const SignInButton = ({
+  email,
+  password,
+  showErrorToast,
+}: {
+  email: string;
+  password: string;
+  showErrorToast: (title: string, message: string) => void;
+}) => {
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { renderToastContents, showErrorToast, showSuccessToast } = useToast();
-  const [openSignUpModal, setOpenSignUpModal] = useState(false);
-
   const searchParams = useSearchParams();
   let callbackUrl = searchParams?.get('callbackUrl') || DEFAULT_REDIRECT_URL;
 
@@ -48,6 +51,23 @@ export default function Page() {
       setLoading(false);
     }
   };
+
+  return (
+    <button
+      className="h-11 flex w-full justify-center items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      disabled={loading || email === '' || password === ''}
+      onClick={handleLogin}
+    >
+      {loading ? <LoadingSpinner /> : 'Sign in'}
+    </button>
+  );
+};
+
+export default function Page() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { renderToastContents, showErrorToast, showSuccessToast } = useToast();
+  const [openSignUpModal, setOpenSignUpModal] = useState(false);
 
   return (
     <>
@@ -116,15 +136,13 @@ export default function Page() {
               </div>
             </div>
 
-            <div>
-              <button
-                className="h-11 flex w-full justify-center items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                disabled={loading || email === '' || password === ''}
-                onClick={handleLogin}
-              >
-                {loading ? <LoadingSpinner /> : 'Sign in'}
-              </button>
-            </div>
+            <Suspense>
+              <SignInButton
+                email={email}
+                password={password}
+                showErrorToast={showErrorToast}
+              />
+            </Suspense>
           </div>
 
           <p className="mt-10 text-center text-sm text-gray-500">

@@ -1,17 +1,17 @@
-import * as trpcNext from '@trpc/server/adapters/next';
 import { ShapleClient, createClient } from '@shaple/shaple';
 import { TRPCError } from '@trpc/server';
-import { Container } from 'typedi';
-import { ThreadService } from '@/server/domain/thread/thread.service';
-import { AssistantService } from '@/server/domain/assistant/assistant.service';
+import { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
 
 export async function createContext({
   req,
   res,
-}: trpcNext.CreateNextContextOptions) {
+}: CreateNextContextOptions | CreateWSSContextFnOptions): Promise<{
+  shaple: ShapleClient;
+}> {
   const shapleClient = createClient(
     process.env.NEXT_PUBLIC_SHAPLE_URL!,
-    process.env.NEXT_PUBLIC_SHAPLE_API_KEY!,
+    process.env.NEXT_PUBLIC_SHAPLE_ANON_KEY!,
   );
 
   if (req.headers.authorization) {
@@ -30,8 +30,6 @@ export async function createContext({
 
   return {
     shaple: shapleClient,
-    threadService: Container.get(ThreadService),
-    assistantService: Container.get(AssistantService),
   };
 }
 export type Context = Awaited<ReturnType<typeof createContext>>;

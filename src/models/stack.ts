@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { thread } from '@/models/thread';
-import { vapi } from '@/models/vapi';
+import { vapiRelease } from '@/models/vapi';
 
 export const stack = z.object({
   id: z.number(),
@@ -13,7 +13,7 @@ export const stack = z.object({
   auth: z.record(z.string(), z.any()),
   storage: z.record(z.string(), z.any()),
   postgrest: z.record(z.string(), z.any()),
-  vapis: z.array(vapi),
+  vapis: z.array(vapiRelease),
 });
 
 export const instance = z.object({
