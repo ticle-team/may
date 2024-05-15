@@ -1,13 +1,13 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
-import { Context, createContext } from '@/server/context';
+import { Context } from '@/server/context';
 import { ShapleClient } from '@shaple/shaple';
 
 /**
  * Initialization of tRPC backend
  * Should be done only once per backend!
  */
-const t = initTRPC.context<typeof createContext>().create({
+const t = initTRPC.context<Context>().create({
   transformer: superjson,
 });
 

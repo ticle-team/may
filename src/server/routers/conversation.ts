@@ -5,7 +5,7 @@ import { RecommendServicesOutput, Room, room } from '@/types';
 import assert from 'assert';
 import { RecommendFunctionsRequest } from '@/proto/shaple/RecommendFunctionsRequest';
 import { RecommendFunctionsResponse } from '@/proto/shaple/RecommendFunctionsResponse';
-import { getSBAI } from '@/server/services/third_party';
+import { getSBAI } from '@/server/domain/third_party';
 import { OpenRoomRequest } from '@/proto/shaple/OpenRoomRequest';
 import { OpenRoomResponse } from '@/proto/shaple/OpenRoomResponse';
 import { GetRoomResponse } from '@/proto/shaple/GetRoomResponse';

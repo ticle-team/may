@@ -1726,6 +1726,21 @@
   resolved "https://registry.yarnpkg.com/@rushstack/eslint-patch/-/eslint-patch-1.7.2.tgz#2d4260033e199b3032a08b41348ac10de21c47e9"
   integrity sha512-RbhOOTCNoCrbfkRyoXODZp75MlpiHMgbE5MEBZAnnnLyQNgrigEj4p0lzsMDyc1zVsJDLrivB58tgg3emX0eEA==
 
+"@shaple/auth-helpers-nextjs@^0.0.7":
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/@shaple/auth-helpers-nextjs/-/auth-helpers-nextjs-0.0.7.tgz#abd55d32259f3ee4e743b5f95a39c73eeb5e1890"
+  integrity sha512-uo6ZP0fl5vXHBP44NnadfJMXYwi+KPzIXS2mfraUu4nXSbderlwKpIjzTYf0VpPDlGj+25NUJXGcbiDjfcMy7w==
+  dependencies:
+    set-cookie-parser "^2.6.0"
+
+"@shaple/auth-helpers-shared@^0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@shaple/auth-helpers-shared/-/auth-helpers-shared-0.0.10.tgz#e1a4413ebc097df7026ed2ad95d3fad419d55b30"
+  integrity sha512-r2XHQ3FLgYlAG+UyHOgH3OMFiW5BeQyS7Otw2oSpseLy8teP7GNkpquZ1b3G+qdVXzEHEahiUU7cMAO4KypClw==
+  dependencies:
+    cookie "^0.6.0"
+    jose "^4.15.4"
+
 "@shaple/shaple@^0.2.2":
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/@shaple/shaple/-/shaple-0.2.2.tgz#2a7aed2404fce7fb56dc9abe24bd2089cf122e61"
@@ -2967,6 +2982,11 @@ convert-source-map@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/convert-source-map/-/convert-source-map-2.0.0.tgz#4b560f649fc4e918dd0ab75cf4961e8bc882d82a"
   integrity sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==
+
+cookie@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/cookie/-/cookie-0.6.0.tgz#2798b04b071b0ecbff0dbb62a505a8efa4e19051"
+  integrity sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==
 
 copy-anything@^3.0.2:
   version "3.0.5"
@@ -5015,6 +5035,11 @@ jiti@^1.19.1:
   version "1.21.0"
   resolved "https://registry.yarnpkg.com/jiti/-/jiti-1.21.0.tgz#7c97f8fe045724e136a397f7340475244156105d"
   integrity sha512-gFqAIbuKyyso/3G2qhiO2OM6shY6EPP/R0+mkDbyspxKazh8BXDC5FiFsUjlczgdNz/vfra0da2y+aHrusLG/Q==
+
+jose@^4.15.4:
+  version "4.15.5"
+  resolved "https://registry.yarnpkg.com/jose/-/jose-4.15.5.tgz#6475d0f467ecd3c630a1b5dadd2735a7288df706"
+  integrity sha512-jc7BFxgKPKi94uOvEmzlSWFFe2+vASyXaKUpdQKatWAESU2MWjDfFf0fdfc83CDKcA5QecabZeNLyfhe3yKNkg==
 
 "js-tokens@^3.0.0 || ^4.0.0", js-tokens@^4.0.0:
   version "4.0.0"
@@ -7084,6 +7109,11 @@ serialize-error@^8.1.0:
   integrity sha512-3NnuWfM6vBYoy5gZFvHiYsVbafvI9vZv/+jlIigFn4oP4zjNPK3LhcY0xSCgeb1a5L8jO71Mit9LlNoi2UfDDQ==
   dependencies:
     type-fest "^0.20.2"
+
+set-cookie-parser@^2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/set-cookie-parser/-/set-cookie-parser-2.6.0.tgz#131921e50f62ff1a66a461d7d62d7b21d5d15a51"
+  integrity sha512-RVnVQxTXuerk653XfuliOxBP81Sf0+qfQE73LIYKcyMYHG94AuH0kgrQpRDuTZnSmjpysHmzxJXKNfa6PjFhyQ==
 
 set-function-length@^1.2.1:
   version "1.2.1"

@@ -7,15 +7,14 @@ import {
   MessageContent,
   TextContentBlock,
 } from 'openai/resources/beta/threads';
-import { TRPCError } from '@trpc/server';
-import { ShapleClient } from '@shaple/shaple';
 import { observable } from '@trpc/server/observable';
+import { AssistantService } from '@/server/domain/assistant/assistant.service';
 
 export default router({
   create: authedProcedure
     .output(thread)
-    .mutation(async ({ ctx: { session, shaple, threadService } }) => {
-      const thread = await threadService.create(session.user.id);
+    .mutation(async ({ ctx: { session, shaple } }) => {
+      const thread = await Container.get(ThreadService).create(session.user.id);
 
       return {
         id: thread.id,
@@ -34,8 +33,9 @@ export default router({
           after: z.string().nullish(),
         }),
       )
-      .query(async ({ ctx: { threadService }, input: { threadId } }) => {
-        const { messages, after } = await threadService.getMessages(threadId);
+      .query(async ({ input: { threadId } }) => {
+        const { messages, after } =
+          await Container.get(ThreadService).getMessages(threadId);
 
         const contents = messages.map(({ role, content }) => {
           const text = content
@@ -57,33 +57,29 @@ export default router({
           message: z.string(),
         }),
       )
-      .subscription(
-        async ({
-          ctx: { threadService, assistantService },
-          input: { threadId, message },
-        }) => {
-          await threadService.addUserMessage(threadId, message);
-          const stream = await assistantService.createStack(threadId);
+      .subscription(async ({ input: { threadId, message } }) => {
+        await Container.get(ThreadService).addUserMessage(threadId, message);
+        const stream =
+          await Container.get(AssistantService).createStack(threadId);
 
-          return observable((emit) => {
-            const onText = (text: string) => {
-              emit.next({ type: 'text', text });
-            };
-            const onDone = () => {
-              emit.next({ type: 'done' });
-              emit.complete();
-            };
+        return observable((emit) => {
+          const onText = (text: string) => {
+            emit.next({ type: 'text', text });
+          };
+          const onDone = () => {
+            emit.next({ type: 'done' });
+            emit.complete();
+          };
 
-            stream.on('text', onText);
-            stream.on('done', onDone);
+          stream.on('text', onText);
+          stream.on('done', onDone);
 
-            return () => {
-              stream.off('text', onText);
-              stream.off('done', onDone);
-              stream.close();
-            };
-          });
-        },
-      ),
+          return () => {
+            stream.off('text', onText);
+            stream.off('done', onDone);
+            stream.close();
+          };
+        });
+      }),
   }),
 });

@@ -34,6 +34,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@shaple/auth-helpers-nextjs": "^0.0.7",
+    "@shaple/auth-helpers-shared": "^0.0.10",
+    "@shaple/shaple": "^0.2.2",
     "@grpc/grpc-js": "^1.10.1",
     "@grpc/proto-loader": "^0.7.10",
     "@headlessui/react": "^1.7.18",

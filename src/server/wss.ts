@@ -1,6 +1,11 @@
 import { appRouter } from './routers';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
+import { createWSSContext } from '@/server/context';
+import { loadEnvConfig } from '@next/env';
+
+const projectDir = process.cwd();
+process.env = { ...loadEnvConfig(projectDir).combinedEnv, ...process.env };
 
 const wss = new WebSocketServer({
   host: '0.0.0.0',
@@ -9,7 +14,8 @@ const wss = new WebSocketServer({
 const handler = applyWSSHandler({
   wss,
   router: appRouter,
-  onError: (opts) => {
+  createContext: createWSSContext,
+  onError: (opts: any) => {
     console.error('Error', opts.error);
   },
 });

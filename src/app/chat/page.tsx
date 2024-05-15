@@ -1,15 +1,13 @@
 'use client';
 
 import ChatBubble from '@/app/_components/ChatBubble';
-import Notification, {
-  NotificationProps,
-} from '@/app/_components/Notification';
 import { PaperAirplaneIcon, PlusIcon } from '@heroicons/react/20/solid';
 import { trpc } from '@/app/_trpc/client';
 import { useEffect, useRef, useState } from 'react';
 import { RecommendFunctionsSummary } from '@/types';
 import Badge from '@/app/_components/Badge';
 import LoadingSpinner from '@/app/_components/LoadingSpinner';
+import useToast from '@/app/_hooks/useToast';
 
 const STORAGE_KEY_ROOM_ID = 'shaple-builder-web.room-id';
 
@@ -20,12 +18,7 @@ export default function Page() {
   const [userInput, setUserInput] = useState('');
   const questionRef = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState('');
-  const [noti, setNoti] = useState<NotificationProps>({
-    open: false,
-    message: '',
-    title: '',
-    type: 'success',
-  });
+  const { renderToastContents, showErrorToast } = useToast();
   const [initialized, setInitialized] = useState(false);
   const [roomId, setRoomId] = useState(0);
 
@@ -38,12 +31,7 @@ export default function Page() {
       setRoomId(roomId);
     },
     onError: (err) => {
-      setNoti({
-        open: true,
-        message: err.message,
-        title: 'failed to open room',
-        type: 'error',
-      });
+      showErrorToast('failed to open room', err.message);
     },
   });
 
@@ -78,12 +66,7 @@ export default function Page() {
         });
       },
       onError: (err) => {
-        setNoti({
-          open: true,
-          message: err.message,
-          title: 'Websocket Error',
-          type: 'error',
-        });
+        showErrorToast('Websocket Error', err.message);
       },
       onStarted: () => {
         console.log('onStarted');
@@ -125,12 +108,7 @@ export default function Page() {
 
   return (
     <>
-      <Notification
-        open={noti.open}
-        message={noti.message}
-        title={noti.title}
-        type={noti.type}
-      />
+      {renderToastContents()}
       <div className="flex flex-col w-full h-full justify-center">
         <header className="flex flex-row h-16 w-full bg-gray-100 dark:bg-gray-800 px-8">
           <h1 className="flex flex-row items-center text-2xl font-bold text-gray-800 dark:text-gray-200">

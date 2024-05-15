@@ -2,16 +2,29 @@
 
 import Link from 'next/link';
 import { LogoIcon } from '@/app/_components/Icons';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import LoadingSpinner from '@/app/_components/LoadingSpinner';
+import { shapleClient } from '@/app/_services/shapleClient';
+import useToast from '@/app/_hooks/useToast';
+import SignUpModal from '@/app/signin/SignUpModal';
 
 // TODO : will be replaced with the actual redirect URL
 const DISABLED_CALLBACK_URLS = ['/resetpassword'];
 // TODO : will be replaced with the actual redirect URL
-const DEFAULT_REDIRECT_URL = '/organization';
-export default function Page() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+const DEFAULT_REDIRECT_URL = '/projects';
 
+const SignInButton = ({
+  email,
+  password,
+  showErrorToast,
+}: {
+  email: string;
+  password: string;
+  showErrorToast: (title: string, message: string) => void;
+}) => {
+  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
   let callbackUrl = searchParams?.get('callbackUrl') || DEFAULT_REDIRECT_URL;
 
   if (typeof location !== 'undefined') {
@@ -21,16 +34,45 @@ export default function Page() {
     }
   }
 
-  const handleLogin = () => {
-    // TODO : Implement login logic
-    if (typeof location !== 'undefined') {
-      router.push(callbackUrl);
+  const handleLogin = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await shapleClient.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (res.error) {
+        showErrorToast('Failed to login', 'Invalid email or password');
+      } else if (typeof location !== 'undefined') location.replace(callbackUrl);
+    } catch (e) {
+      showErrorToast('Failed to login', String(e));
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
+    <button
+      className="h-11 flex w-full justify-center items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      disabled={loading || email === '' || password === ''}
+      onClick={handleLogin}
+    >
+      {loading ? <LoadingSpinner /> : 'Sign in'}
+    </button>
+  );
+};
+
+export default function Page() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { renderToastContents, showErrorToast, showSuccessToast } = useToast();
+  const [openSignUpModal, setOpenSignUpModal] = useState(false);
+
+  return (
     <>
-      <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
+      {renderToastContents()}
+      <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 w-full">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <div className="flex shrink-0 justify-center">
             <LogoIcon />
@@ -55,6 +97,9 @@ export default function Page() {
                   name="email"
                   type="email"
                   autoComplete="email"
+                  value={email}
+                  placeholder="Email address"
+                  onChange={(e) => setEmail(e.target.value)}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
               </div>
@@ -83,32 +128,40 @@ export default function Page() {
                   name="password"
                   type="password"
                   autoComplete="current-password"
+                  value={password}
+                  placeholder={'Password'}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
               </div>
             </div>
 
-            <div>
-              <button
-                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                onClick={handleLogin}
-              >
-                Sign in
-              </button>
-            </div>
+            <Suspense>
+              <SignInButton
+                email={email}
+                password={password}
+                showErrorToast={showErrorToast}
+              />
+            </Suspense>
           </div>
 
           <p className="mt-10 text-center text-sm text-gray-500">
             Not a member?{' '}
-            <Link
-              href="#"
+            <button
+              onClick={() => setOpenSignUpModal(true)}
               className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
             >
               Sign up now!
-            </Link>
+            </button>
           </p>
         </div>
       </div>
+      <SignUpModal
+        open={openSignUpModal}
+        setOpen={setOpenSignUpModal}
+        showErrorToast={showErrorToast}
+        showSuccessToast={showSuccessToast}
+      />
     </>
   );
 }
