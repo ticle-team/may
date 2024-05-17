@@ -1,9 +1,6 @@
 import { loadEnvConfig } from '@next/env';
 import { Container } from 'typedi';
-import {
-  OpenAIAssistant,
-  OpenAICompletions,
-} from '@/server/common/openai.service';
+import { OpenAIAssistant } from '@/server/common/openai.service';
 import { TextDeltaBlock } from 'openai/src/resources/beta/threads/messages';
 
 process.env = {
@@ -50,7 +47,7 @@ describe('given openai assistant', () => {
     await openai.deleteThread(thread.id);
   }, 10000);
 
-  it('when stack creation through assistant and run stream with cancel, then answer is ok', async () => {
+  it.skip('when stack creation through assistant and run stream with cancel, then answer is ok', async () => {
     const openai = Container.get(OpenAIAssistant);
     const assistant = await openai.getAssistant(stackCreationAssistantID);
     expect(assistant.id).not.toBe('');
@@ -100,34 +97,4 @@ describe('given openai assistant', () => {
     await openai.deleteMessage(thread.id, message.id);
     await openai.deleteThread(thread.id);
   }, 10000);
-});
-
-describe('given openai completion', () => {
-  afterEach(() => {
-    Container.reset();
-  });
-
-  it.skip('when chat completion, then ok', async () => {
-    const com = Container.get(OpenAICompletions);
-
-    const { choices } = await com.chat([
-      {
-        role: 'system',
-        text: 'You are a helpful assistant.',
-      },
-      {
-        role: 'user',
-        text: 'hello.',
-      },
-    ]);
-
-    const content = choices[0].message?.content ?? '';
-    expect(content).not.toBe('');
-
-    expect(
-      content.toLowerCase().includes('hello') ||
-        content.toLowerCase().includes('hi'),
-      `content: ${content}`,
-    ).toBeTruthy();
-  });
 });

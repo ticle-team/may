@@ -1,9 +1,6 @@
 import { Container } from 'typedi';
-import { loadEnvConfig } from '@next/env';
 import { ThreadService } from '@/server/domain/thread/thread.service';
 import { PrismaService } from '@/server/common/prisma.service';
-import { User } from '@prisma/client';
-import { AssistantService } from '@/server/domain/assistant/assistant.service';
 import {
   createOpenAIAssistantMock,
   OpenAIAssistantMock,
@@ -11,13 +8,11 @@ import {
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { Thread, ThreadDeleted } from 'openai/resources/beta';
 import { Message } from 'openai/resources/beta/threads';
+import { resetSchema } from '@/migrate';
+import { ThreadStore } from '@/server/domain/thread/thread.store';
+import { UserStore } from '../../user/user.store';
 
-describe('thread', () => {
-  process.env = {
-    ...process.env,
-    ...loadEnvConfig(process.cwd(), true).combinedEnv,
-  };
-
+describe('given ThreadService with real ThreadStore', () => {
   const ownerId = '123123';
   let mockOpenAI: OpenAIAssistantMock;
   beforeEach(async () => {
@@ -70,5 +65,29 @@ describe('thread', () => {
     expect(mockOpenAI.createThread).toHaveBeenCalledTimes(1);
     expect(mockOpenAI.createMessage).toHaveBeenCalledTimes(1);
     expect(mockOpenAI.deleteThread).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('given ThreadStore', () => {
+  beforeEach(async () => {
+    await resetSchema();
+  });
+
+  afterEach(() => {
+    Container.reset();
+  });
+
+  it('when creating thread, then ok', async () => {
+    const threadStore = Container.get(ThreadStore);
+    const prisma = Container.get(PrismaService);
+    const userStore = Container.get(UserStore);
+    const user = await userStore.getUser(prisma, '123123');
+    const thread = await threadStore.createThread(
+      prisma,
+      user.id,
+      'openai-thread-id',
+      1,
+    );
+    expect(thread.id).toBeGreaterThan(0);
   });
 });

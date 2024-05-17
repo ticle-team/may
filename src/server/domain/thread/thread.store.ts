@@ -18,7 +18,6 @@ export class ThreadStore {
         authorId,
         openaiThreadId,
         shapleProjectId,
-        shapleStackId: null,
       },
     });
   }

@@ -140,5 +140,6 @@ export type RegisterVapisOutput = {
   name: string;
   version: string;
   deployStatus: 'ok' | 'fail' | 'skip';
-  message: string;
+  message?: string;
+  releaseId: number;
 };
