@@ -15,12 +15,18 @@ export class OpenAIAssistant {
     return this.openai.beta.assistants.retrieve(assistantId);
   }
 
-  createThread() {
-    return this.openai.beta.threads.create();
+  async createThread() {
+    const { id } = await this.openai.beta.threads.create();
+    return {
+      id,
+    };
   }
 
-  deleteThread(id: string) {
-    return this.openai.beta.threads.del(id);
+  async deleteThread(id: string) {
+    const { deleted } = await this.openai.beta.threads.del(id);
+    return {
+      deleted,
+    };
   }
 
   async createMessage(threadId: string, message: string) {

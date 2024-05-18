@@ -34,7 +34,7 @@
     "test:rollout": "run-s test:setup:stoacloud:build test:setup:stoacloud:rollout",
     "test:teardown": "run-s test:teardown:kind",
     "test:teardown:kind": "cd stoacloud && make teardown-test",
-    "test": "jest",
+    "test": "jest -i",
     "format:prisma": "prisma format",
     "format:prettier": "prettier --write src",
     "format": "run-s format:*",

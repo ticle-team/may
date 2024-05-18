@@ -1,18 +1,14 @@
 import { Service } from 'typedi';
-import { CompletionService } from '@/server/domain/completion/completion.service';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { PrismaService } from '@/server/common/prisma.service';
-import { StackStore } from '@/server/domain/stack/stack.store';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 
 @Service()
 export class StackService {
   constructor(
-    private readonly completionService: CompletionService,
     private readonly stoacloudService: StoaCloudService,
     private readonly prisma: PrismaService,
-    private readonly stackStore: StackStore,
     private readonly openaiAssistant: OpenAIAssistant,
     private readonly threadStore: ThreadStore,
   ) {}
@@ -25,26 +21,30 @@ export class StackService {
     projectId: number,
   ) {
     const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
-    const { messages } = await this.openaiAssistant.getTextMessages(
-      openaiThreadId,
-      {
-        limit: 20,
-      },
-    );
-    const readmeText = await this.completionService.createReadmeForStack(
-      messages,
-      args,
-    );
+
     const { name, description, dependencies } = JSON.parse(args);
-    const { id } = await this.stoacloudService.createStack(
-      '',
+    const { id: stackId } = await this.stoacloudService.createStack(
+      'http://localhost:3000', // TODO: change real site url
       projectId,
       name,
       description,
     );
 
+    for (const { id: vapiId } of dependencies) {
+      await this.stoacloudService.installVapi(stackId, {
+        vapiId,
+      });
+    }
+
     return this.prisma.$transaction(async (tx) => {
-      await this.stackStore.createStack(tx, threadId, id);
+      await tx.thread.update({
+        where: {
+          id: threadId,
+        },
+        data: {
+          shapleStackId: stackId,
+        },
+      });
       return this.openaiAssistant.submitToolOutputsStream(
         openaiThreadId,
         runId,

@@ -3,7 +3,7 @@ import { StoaCloudService } from '@/server/common/stoacloud.service';
 import * as uuid from 'uuid';
 import { createClient, User } from '@shaple/shaple';
 import delay from 'delay';
-import { createUser, deleteUser, shaple } from '@/server/__tests__/users.stub';
+import { createUser, deleteUser, shaple } from '@/server/domain/user/user.stub';
 import { resetSchema } from '@/migrate';
 import { PrismaService } from '@/server/common/prisma.service';
 import { readFileSync } from 'fs';
@@ -158,10 +158,12 @@ describe('given stoacloud service', () => {
         waitTimeout: '30s',
         tenantId: 'test-tenant',
       });
-      await delay(500);
+      await delay(750);
 
-      const { domain, adminApiKey } = await scs.getStack(stackId);
+      const { domain, adminApiKey, storageEnabled } =
+        await scs.getStack(stackId);
       expect(adminApiKey).toBeDefined();
+      expect(storageEnabled).toBe(true);
 
       const shaple = createClient(`http://${domain}`, adminApiKey!);
       {
@@ -212,38 +214,33 @@ describe('given stoacloud service', () => {
       it('when register vapi, then it is OK', async () => {
         const prisma = Container.get(PrismaService);
 
-        let jwt: string | undefined = undefined;
+        const {
+          data: { session },
+          error,
+        } = await shaple.auth.getSession();
+        expect(error).toBeNull();
+        expect(session).not.toBeNull();
+
+        const jwt = session?.access_token;
+        expect(jwt).toBeDefined();
+
+        let outputs;
         try {
-          const {
-            data: { session },
-            error,
-          } = await shaple.auth.getSession();
-          expect(error).toBeNull();
-          expect(session).not.toBeNull();
+          outputs = await scs.registerVapis(session!.access_token, null, {
+            projectId: projectId,
+            gitBranch: 'main',
+            gitRepo: 'paust-team/shaple-testvapis',
+          });
 
-          jwt = session?.access_token;
-          expect(jwt).toBeDefined();
-
-          let outputs;
-          try {
-            outputs = await scs.registerVapis(session!.access_token, null, {
-              projectId: projectId,
-              gitBranch: 'main',
-              gitRepo: 'paust-team/shaple-testvapis',
-            });
-
-            expect(outputs).toHaveLength(2);
-            const output = outputs[0];
-            expect(output.deployStatus).toBe('ok');
-          } finally {
-            if (outputs) {
-              for (const output of outputs) {
-                await scs.deleteVapiRelease(jwt!, output.releaseId);
-              }
+          expect(outputs).toHaveLength(2);
+          const output = outputs[0];
+          expect(output.deployStatus).toBe('ok');
+        } finally {
+          if (outputs) {
+            for (const output of outputs) {
+              await scs.deleteVapiRelease(jwt!, output.releaseId);
             }
           }
-        } finally {
-          await prisma.shapleUser.deleteMany({}).catch(() => {});
         }
       });
     });

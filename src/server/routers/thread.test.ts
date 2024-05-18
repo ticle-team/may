@@ -7,8 +7,9 @@ import { createCaller } from '@/server';
 import delay from 'delay';
 import { StackCreationEvent } from '@/models/assistant';
 import { createClient } from '@shaple/shaple';
+import { resetSchema } from '@/migrate';
 
-describe('given trpc insjected with mock objects', () => {
+describe('given thread trpc with mock objects', () => {
   const threadService = createThreadServiceMock();
   const assistantService = createAssistantServiceMock();
 
@@ -19,6 +20,8 @@ describe('given trpc insjected with mock objects', () => {
 
   let caller: ReturnType<typeof createCaller>;
   beforeEach(async () => {
+    await resetSchema();
+
     Container.set(ThreadService, threadService);
     Container.set(AssistantService, assistantService);
 
@@ -37,7 +40,6 @@ describe('given trpc insjected with mock objects', () => {
 
     caller = createCaller({
       user,
-      githubToken: null,
     });
   });
 
