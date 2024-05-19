@@ -1,7 +1,5 @@
 import { Service } from 'typedi';
-import { PrismaService } from '@/server/common/prisma.service';
-import { Prisma, PrismaClient, User } from '@prisma/client';
-import { undefined } from 'zod';
+import { Prisma } from '@prisma/client';
 
 @Service()
 export class UserStore {
@@ -9,6 +7,13 @@ export class UserStore {
     const user = await tx.user.findFirst({
       where: {
         ownerId: ownerId,
+      },
+      include: {
+        memberships: {
+          include: {
+            organization: true,
+          },
+        },
       },
     });
 
@@ -19,6 +24,13 @@ export class UserStore {
     return tx.user.create({
       data: {
         ownerId: ownerId,
+      },
+      include: {
+        memberships: {
+          include: {
+            organization: true,
+          },
+        },
       },
     });
   }
