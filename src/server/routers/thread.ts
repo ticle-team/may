@@ -41,7 +41,7 @@ export default router({
           after,
         };
       }),
-    addForCreationStack: authedProcedure
+    addForStackCreation: authedProcedure
       .input(
         z.object({
           projectId: z.number(),
