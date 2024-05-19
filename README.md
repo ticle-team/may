@@ -15,3 +15,7 @@
 - Use conventional commits for commit messages.
 - Before commit your code, run `yarn format` to format your code.
 - And, must be passed all tests before pushing your code.
+
+### Database migration
+- Use 'src/migrate.ts' to migrate your database schema.
+- When you write a new migration file, you should not edit the old migration file which is written by others.
