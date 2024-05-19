@@ -8,6 +8,9 @@ const appEnv = {
 };
 
 export async function resetSchema() {
+  if (appEnv.NODE_ENV == 'production') {
+    throw new Error('resetSchema is not allowed in production');
+  }
   await dropAllTables();
   await migrate();
 }
@@ -73,13 +76,17 @@ export async function migrate() {
 }
 
 export async function dropAllTables() {
+  if (appEnv.NODE_ENV == 'production') {
+    throw new Error('dropAllTables is not allowed in production');
+  }
+
   const pool = new pg.Pool({
     connectionString: appEnv.DATABASE_URL ?? '',
   });
 
   try {
     await pool.query('DROP SCHEMA IF EXISTS may CASCADE');
-    await pool.query('CREATE SCHEMA IF NOT EXISTS public');
+    await pool.query('CREATE SCHEMA IF NOT EXISTS may');
   } finally {
     await pool.end();
   }
