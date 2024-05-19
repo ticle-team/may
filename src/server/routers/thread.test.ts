@@ -8,6 +8,7 @@ import delay from 'delay';
 import { StackCreationEvent } from '@/models/assistant';
 import { createClient } from '@shaple/shaple';
 import { resetSchema } from '@/migrate';
+import { createUser, deleteUser } from '@/server/domain/user/user.stub';
 
 describe('given thread trpc with mock objects', () => {
   const threadService = createThreadServiceMock();
@@ -19,24 +20,14 @@ describe('given thread trpc with mock objects', () => {
   );
 
   let caller: ReturnType<typeof createCaller>;
+  let user;
   beforeEach(async () => {
     await resetSchema();
 
     Container.set(ThreadService, threadService);
     Container.set(AssistantService, assistantService);
 
-    await shaple.auth.signUp({
-      email: 'dennis@paust.io',
-      password: '123123',
-    });
-    const {
-      data: { user },
-      error,
-    } = await shaple.auth.signInWithPassword({
-      email: 'dennis@paust.io',
-      password: '123123',
-    });
-    expect(error).toBeNull();
+    const user = await createUser();
 
     caller = createCaller({
       user,
@@ -45,7 +36,7 @@ describe('given thread trpc with mock objects', () => {
 
   afterEach(async () => {
     Container.reset();
-    await shaple.auth.signOut();
+    await deleteUser(user!);
     jest.clearAllMocks();
   });
 
