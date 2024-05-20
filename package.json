@@ -37,7 +37,7 @@
     "local:rollout": "run-s local:setup:stoacloud:build local:setup:stoacloud:*:rollout",
     "local:teardown": "run-s local:teardown:kind",
     "local:teardown:kind": "cd stoacloud && make teardown-test",
-    "test": "jest -i",
+    "test": "run-s generate:prisma && jest -i",
     "format:prisma": "prisma format",
     "format:prettier": "prettier --write src",
     "format": "run-s format:*",

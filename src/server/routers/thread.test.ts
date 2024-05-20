@@ -8,7 +8,10 @@ import delay from 'delay';
 import { StackCreationEvent } from '@/models/assistant';
 import { createClient } from '@shaple/shaple';
 import { resetSchema } from '@/migrate';
-import { createUser, deleteUser } from '@/server/domain/user/user.stub';
+import {
+  createUser,
+  deleteUser,
+} from '@/server/domain/user/__mocks__/user.stub';
 
 describe('given thread trpc with mock objects', () => {
   const threadService = createThreadServiceMock();
@@ -27,7 +30,7 @@ describe('given thread trpc with mock objects', () => {
     Container.set(ThreadService, threadService);
     Container.set(AssistantService, assistantService);
 
-    const user = await createUser();
+    user = await createUser();
 
     caller = createCaller({
       user,
@@ -62,7 +65,7 @@ describe('given thread trpc with mock objects', () => {
       },
     );
 
-    const outputs = await caller.thread.messages.addForCreationStack({
+    const outputs = await caller.thread.messages.addForStackCreation({
       projectId: projectId,
       threadId: threadId,
       message: 'hello',
