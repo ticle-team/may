@@ -3,7 +3,11 @@ import { StoaCloudService } from '@/server/common/stoacloud.service';
 import * as uuid from 'uuid';
 import { createClient, User } from '@shaple/shaple';
 import delay from 'delay';
-import { createUser, deleteUser, shaple } from '@/server/domain/user/user.stub';
+import {
+  createUser,
+  deleteUser,
+  shaple,
+} from '@/server/domain/user/__mocks__/user.stub';
 import { resetSchema } from '@/migrate';
 import { PrismaService } from '@/server/common/prisma.service';
 import { readFileSync } from 'fs';
