@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shaple-builder
+  namespace: default
+  labels:
+    app: shaple-builder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shaple-builder
+  template:
+    metadata:
+      labels:
+        app: shaple-builder
+    spec:
+      nodeSelector:
+        type: default
+      containers:
+        - name: main
+          image: stoacloud/stoacloud:latest
+          imagePullPolicy: IfNotPresent
+          command: ['sh', '-e', '-c']
+          args:
+            - |
+              # this statements are for the repair-file-permissions command notified by oci warning.
+              ## begin
+              cp .oci/oci_api_key_orig.pem .oci/oci_api_key.pem
+              chown 1000 .oci/oci_api_key.pem
+              chmod 600 .oci/oci_api_key.pem
+              cp .oci/config_orig .oci/config
+              chown 1000 .oci/config
+              chmod 600 .oci/config
+              oci setup repair-file-permissions --file /shaple/.oci/config
+              ## end
+
+              bin/shaplebuilder serve \
+                --stack.skipHealthCheck true \
+                --k8s.kubeconfig kube/config.yaml \
+                --k8s.context "kind-kind" \
+                --db.name shaple \
+                --s3.accessKey $S3_ACCESS_KEY \
+                --s3.secretKey $S3_SECRET_KEY \
+                --db.host postgres.default.svc.cluster.local \
+                --server.includeDebug true \
+                --storage.url http://storage-shaple.default.svc.cluster.local:5000 \
+                --auth.url http://gotrue-shaple.default.svc.cluster.local:9999
+          ports:
+            - containerPort: 8080
+          env:
+            - name: LOG_LEVEL
+              value: 'DEBUG'
+            - name: HOME
+              value: /shaple
+            - name: GIN_MODE
+              value: release
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: shaple-builder
+                  key: s3_access_key
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: shaple-builder
+                  key: s3_secret_key
+          volumeMounts:
+            - mountPath: /shaple/kube/config.yaml
+              name: kubeconfig
+              readOnly: true
+              subPath: kube_config.yaml
+            - mountPath: /shaple/.oci/config_orig
+              name: config
+              readOnly: true
+              subPath: oci_config
+            - mountPath: /shaple/.oci/oci_api_key_orig.pem
+              name: secret
+              readOnly: true
+              subPath: oci_api_key.pem
+          resources:
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          startupProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+      imagePullSecrets:
+        - name: ocirsecret
+      volumes:
+        - name: config
+          configMap:
+            name: shaple-builder-config
+            items:
+              - key: oci_config
+                path: oci_config
+        - name: kubeconfig
+          configMap:
+            name: shaple-builder-kubeconfig
+            items:
+              - key: kube_config.yaml
+                path: kube_config.yaml
+        - name: secret
+          secret:
+            secretName: shaple-builder
+            items:
+              - key: oci_api_key.pem
+                path: oci_api_key.pem

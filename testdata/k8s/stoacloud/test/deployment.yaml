@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: shaple-builder
+  name: shaple-builder-test
   namespace: default
   labels:
-    app: shaple-builder
+    app: shaple-builder-test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: shaple-builder
+      app: shaple-builder-test
   template:
     metadata:
       labels:
-        app: shaple-builder
+        app: shaple-builder-test
     spec:
       nodeSelector:
         type: default
@@ -58,12 +58,12 @@ spec:
             - name: S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: shaple-builder
+                  name: shaple-builder-test
                   key: s3_access_key
             - name: S3_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: shaple-builder
+                  name: shaple-builder-test
                   key: s3_secret_key
           volumeMounts:
             - mountPath: /shaple/kube/config.yaml
@@ -104,19 +104,19 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: shaple-builder-config
+            name: shaple-builder-test-config
             items:
               - key: oci_config
                 path: oci_config
         - name: kubeconfig
           configMap:
-            name: shaple-builder-kubeconfig
+            name: shaple-builder-test-kubeconfig
             items:
               - key: kube_config.yaml
                 path: kube_config.yaml
         - name: secret
           secret:
-            secretName: shaple-builder
+            secretName: shaple-builder-test
             items:
               - key: oci_api_key.pem
                 path: oci_api_key.pem

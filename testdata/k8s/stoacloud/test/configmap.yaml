@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shaple-builder-test-config
+  namespace: default
+  labels:
+    app: shaple-builder-test
+data:
+  oci_config: |
+    [DEFAULT]
+    user=ocid1.user.oc1..aaaaaaaanqjytzprdeqscb2gqp727mp3t6r3mowo5dvguq4dwyq6ld7v5b4q
+    fingerprint=f8:fa:93:fd:7c:26:66:6a:8b:70:a5:ef:9e:7f:83:6d
+    key_file=/shaple/.oci/oci_api_key.pem
+    tenancy=ocid1.tenancy.oc1..aaaaaaaaox5ri2mpyzddiqblgwunxlexegpvcihvfywrskbpebxthiwoeqdq
+    region=ap-seoul-1
