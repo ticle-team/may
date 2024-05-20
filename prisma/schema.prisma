@@ -21,43 +21,51 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
   deletedAt BigInt   @default(0) @map("deleted_at")
-  ownerId   String   @map("owner_id")
+  ownerId   String   @unique @map("owner_id")
   threads   Thread[]
 
-  @@unique([deletedAt, ownerId])
   @@map("users")
   @@schema("may")
 }
 
 model Thread {
-  id             Int      @id @default(autoincrement()) @map("id")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  deletedAt      BigInt   @default(0) @map("deleted_at")
-  authorId       Int      @map("author_id")
-  author         User     @relation(fields: [authorId], references: [id])
-  openaiThreadId String   @map("openai_thread_id")
-  stacks         Stack[]
+  id             Int          @id @default(autoincrement()) @map("id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  deletedAt      BigInt       @default(0) @map("deleted_at")
+  authorId       Int          @map("author_id")
+  author         User         @relation(fields: [authorId], references: [id])
+  openaiThreadId String       @map("openai_thread_id")
+  shapleStackId  BigInt?      @unique @map("shaple_stack_id")
+  shapleStack    ShapleStack? @relation(fields: [shapleStackId], references: [id])
 
   @@map("threads")
   @@schema("may")
 }
 
-model Stack {
-  id       Int         @id @default(autoincrement()) @map("id")
-  threadId Int         @map("thread_id")
-  thread   Thread      @relation(fields: [threadId], references: [id])
-  stackId  Int         @unique @map("stack_id")
-  stack    ShapleStack @relation(fields: [stackId], references: [id])
+model ShapleStack {
+  id     BigInt  @id @default(autoincrement()) @map("id")
+  thread Thread?
 
   @@map("stacks")
-  @@schema("may")
+  @@schema("shaple_builder")
 }
 
-model ShapleStack {
-  id    Int    @id @default(autoincrement()) @map("id")
-  stack Stack?
+model ShapleProject {
+  id BigInt @id @default(autoincrement()) @map("id")
 
-  @@map("stacks")
+  @@map("projects")
+  @@schema("shaple_builder")
+}
+
+model ShapleUser {
+  id               BigInt   @id @default(autoincrement()) @map("id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  deletedAt        BigInt   @default(0) @map("deleted_at")
+  gitPrivateKeyPem Bytes    @map("git_private_key_pem")
+  ownerId          String   @unique @map("owner_id")
+
+  @@map("users")
   @@schema("shaple_builder")
 }

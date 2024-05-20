@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: shaple-builder
+  name: shaple-builder-test
   namespace: default
   labels:
-    app: shaple-builder
+    app: shaple-builder-test
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: shaple-builder
+      app: shaple-builder-test
   template:
     metadata:
       labels:
-        app: shaple-builder
+        app: shaple-builder-test
     spec:
       nodeSelector:
         type: default
@@ -36,11 +36,14 @@ spec:
               ## end
 
               bin/shaplebuilder serve \
+                --stack.skipHealthCheck true \
                 --k8s.kubeconfig kube/config.yaml \
+                --k8s.context "kind-kind" \
                 --db.name test \
                 --s3.accessKey $S3_ACCESS_KEY \
                 --s3.secretKey $S3_SECRET_KEY \
                 --db.host postgres.default.svc.cluster.local \
+                --server.includeDebug true \
                 --storage.url http://storage-test.default.svc.cluster.local:5000 \
                 --auth.url http://gotrue-test.default.svc.cluster.local:9999
           ports:
@@ -55,16 +58,16 @@ spec:
             - name: S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: shaple-builder
+                  name: shaple-builder-test
                   key: s3_access_key
             - name: S3_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: shaple-builder
+                  name: shaple-builder-test
                   key: s3_secret_key
           volumeMounts:
             - mountPath: /shaple/kube/config.yaml
-              name: config
+              name: kubeconfig
               readOnly: true
               subPath: kube_config.yaml
             - mountPath: /shaple/.oci/config_orig
@@ -101,15 +104,19 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: shaple-builder-config
+            name: shaple-builder-test-config
+            items:
+              - key: oci_config
+                path: oci_config
+        - name: kubeconfig
+          configMap:
+            name: shaple-builder-test-kubeconfig
             items:
               - key: kube_config.yaml
                 path: kube_config.yaml
-              - key: oci_config
-                path: oci_config
         - name: secret
           secret:
-            secretName: shaple-builder
+            secretName: shaple-builder-test
             items:
               - key: oci_api_key.pem
                 path: oci_api_key.pem

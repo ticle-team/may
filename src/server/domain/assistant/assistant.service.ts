@@ -1,60 +1,13 @@
 import { Service } from 'typedi';
 import { OpenAIAssistant } from '@/server/common/openai.service';
-import EventEmitter from 'node:events';
-import { Text, TextDelta } from 'openai/resources/beta/threads/messages';
-import { AssistantStream } from 'openai/lib/AssistantStream';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
+import { getLogger } from '@/logger';
+import { StackService } from '@/server/domain/stack/stack.service';
+import { TextDeltaBlock } from 'openai/src/resources/beta/threads/messages';
+import { TRPCError } from '@trpc/server';
+import { StackCreationEvent } from '@/models/assistant';
 
-export interface StackCreationEvents {
-  text: [string];
-  done: [];
-}
-
-export class StackCreationStream extends EventEmitter<StackCreationEvents> {
-  private closed = false;
-
-  public constructor(private stream: AssistantStream) {
-    super();
-    this.registerHandlers();
-  }
-
-  private registerHandlers() {
-    this.stream
-      .on('textCreated', this.handleTextCreated)
-      .on('textDelta', this.handleTextDelta)
-      .on('textDone', this.handleTextDone);
-  }
-
-  close() {
-    if (this.closed) {
-      return;
-    }
-
-    this.stream.off('textCreated', this.handleTextCreated);
-    this.stream.off('textDelta', this.handleTextDelta);
-    this.stream.off('textDone', this.handleTextDone);
-    this.closed = true;
-  }
-
-  private handleTextCreated({ value }: Text) {
-    if (value == '') {
-      return;
-    }
-    this.emit('text', value);
-  }
-
-  private handleTextDelta({ value }: TextDelta) {
-    if (!value || value == '') {
-      return;
-    }
-    this.emit('text', value);
-  }
-
-  private handleTextDone() {
-    this.close();
-    this.emit('done');
-  }
-}
+const logger = getLogger('AssistantService');
 
 @Service()
 export class AssistantService {
@@ -64,14 +17,82 @@ export class AssistantService {
   constructor(
     private readonly openaiAssistant: OpenAIAssistant,
     private readonly threadStore: ThreadStore,
+    private readonly stackService: StackService,
   ) {}
 
-  async createStack(threadId: number) {
+  async *runForCreationStack(threadId: number, projectId: number) {
     const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
-    const stream = this.openaiAssistant.runStream(
+    const assistantStream = this.openaiAssistant.runStream(
       openaiThreadId,
       this.stackCreationAssistantId,
     );
-    return new StackCreationStream(stream);
+    const self = this;
+
+    async function* handleStream(
+      stream: typeof assistantStream,
+    ): AsyncGenerator<StackCreationEvent, void> {
+      try {
+        for await (const { event, data } of stream) {
+          switch (event) {
+            case 'thread.message.delta':
+              const { role, content } = data.delta;
+              if (role != 'assistant') {
+                continue;
+              }
+
+              const text = content
+                ?.filter((t) => t.type == 'text')
+                .map((t) => (t as TextDeltaBlock).text?.value ?? '')
+                .filter((t) => t != '')
+                .join('');
+
+              yield { event: 'text', text: text ?? '' };
+              break;
+            case 'thread.message.completed':
+              yield { event: 'done' };
+              break;
+            case 'thread.run.requires_action':
+              const { id: runId, required_action } = data;
+              for (const {
+                id: toolCallId,
+                type,
+                function: { arguments: funcArguments, name: funcName },
+              } of required_action?.submit_tool_outputs?.tool_calls ?? []) {
+                if (type != 'function') {
+                  continue;
+                }
+
+                switch (funcName) {
+                  case 'deploy_stack':
+                    const stream =
+                      await self.stackService.createStackByToolCall(
+                        toolCallId,
+                        runId,
+                        threadId,
+                        funcArguments,
+                        projectId,
+                      );
+                    yield { event: 'deploy' };
+                    yield* handleStream(stream);
+                    break;
+                }
+              }
+              break;
+            case 'error':
+              yield {
+                event: 'error',
+                error: new TRPCError({
+                  code: 'INTERNAL_SERVER_ERROR',
+                  message: data.message ?? 'Error while processing event',
+                }),
+              };
+          }
+        }
+      } finally {
+        await stream.return();
+      }
+    }
+
+    yield* handleStream(assistantStream);
   }
 }

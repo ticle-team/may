@@ -5,8 +5,7 @@ function createPrismaClient() {
   const nodeEnv = process.env.NODE_ENV || 'development';
 
   const prisma = new PrismaClient({
-    log:
-      nodeEnv == 'production' ? ['error', 'warn'] : ['query', 'error', 'warn'],
+    log: ['error', 'warn'],
   });
 
   prisma.$use(async (params, next) => {

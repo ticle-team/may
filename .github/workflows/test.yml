@@ -1,0 +1,23 @@
+name: Test
+run-name: ${{ github.actor }} is testing MAY🚀
+on: [pull_request, push]
+jobs:
+  Run-Unit-Tests:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Setup node.js
+        uses: actions/setup-node@v4
+      - name: Setup kind cluster
+        run: |
+          yarn local:setup
+      - name: Run tests
+        run: |
+          yarn test
+      - name: Tear down kind cluster
+        if: success() || failure()
+        run: |
+          year local:teardown

@@ -8,8 +8,6 @@ import { PrismaService } from '@/server/common/prisma.service';
 
 const logger = getLogger('ThreadService');
 
-new PrismaService().$transaction;
-
 @Service()
 export class ThreadService {
   constructor(
@@ -49,8 +47,22 @@ export class ThreadService {
     });
   }
 
-  async getMessages(threadId: number) {
+  async getTextMessages(
+    threadId: number,
+    options?: {
+      before?: string;
+      limit?: number;
+    },
+  ) {
     const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
-    return this.openaiAssistant.getMessages(openaiThreadId);
+    const { messages, after } = await this.openaiAssistant.getTextMessages(
+      openaiThreadId,
+      options,
+    );
+
+    return {
+      messages,
+      after,
+    };
   }
 }
