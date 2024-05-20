@@ -7,6 +7,8 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
+        with:
+          submodules: true
       - name: Setup node.js
         uses: actions/setup-node@v4
       - name: Setup kind cluster
