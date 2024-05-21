@@ -5,7 +5,6 @@ import { AssistantService } from '@/server/domain/assistant/assistant.service';
 import { createAssistantServiceMock } from '@/server/domain/assistant/__mocks__/assistant.service';
 import { createCaller } from '@/server';
 import delay from 'delay';
-import { StackCreationEvent } from '@/models/assistant';
 import { createClient } from '@shaple/shaple';
 import { resetSchema } from '@/migrate';
 import {
@@ -66,41 +65,24 @@ describe('given thread trpc with mock objects', () => {
     );
 
     const outputs = await caller.thread.messages.addForStackCreation({
-      projectId: projectId,
       threadId: threadId,
       message: 'hello',
     });
 
     let completed = false;
     const answers = [] as string[];
-    const subscription = outputs.subscribe({
-      next(data: StackCreationEvent) {
-        switch (data.event) {
-          case 'text':
-            answers.push(data.text);
-            break;
-          case 'done':
-            completed = true;
-            break;
-          default:
-            fail(`unexpected event: ${data.event}`);
-        }
-      },
-      error(err) {
-        throw err;
-      },
-      complete() {
-        completed = true;
-      },
-    });
-
-    for (let i = 0; i < 5; i++) {
-      await delay(1000);
-      if (completed) {
-        break;
+    for await (const ev of outputs) {
+      switch (ev.event) {
+        case 'text':
+          answers.push(ev.text);
+          break;
+        case 'done':
+          completed = true;
+          break;
       }
     }
-    subscription.unsubscribe();
+
+    outputs.return();
 
     expect(completed).toBe(true);
     expect(answers).toEqual(['h', 'e', 'l', 'l', 'o']);

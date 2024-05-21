@@ -97,4 +97,63 @@ describe('given openai assistant', () => {
     await openai.deleteMessage(thread.id, message.id);
     await openai.deleteThread(thread.id);
   }, 10000);
+
+  it('when thread cancel when creating message, then ok', async () => {
+    const openai = Container.get(OpenAIAssistant);
+    const assistant = await openai.getAssistant(stackCreationAssistantID);
+    expect(assistant.id).not.toBe('');
+    const thread = await openai.createThread();
+    expect(thread.id).not.toBe('');
+    const message = await openai.createMessage(
+      thread.id,
+      'SNS 서비스를 만들어주고 기획서를 최대한 자세하게 작성해줘.',
+    );
+    expect(message.id).not.toBe('');
+
+    const stream = await openai.runStream(thread.id, assistant.id);
+    const answers: string[] = [];
+    let cancelled = false;
+    let num = 0;
+    for await (const { event, data } of stream) {
+      switch (event) {
+        case 'thread.message.created':
+          console.log('text created');
+          break;
+        case 'thread.message.delta':
+          const content = data.delta.content;
+          expect(content).toBeDefined();
+
+          for (const block of content!) {
+            if (block.type !== 'text') {
+              continue;
+            }
+
+            const { text } = block as TextDeltaBlock;
+            console.log('text: ', text?.value);
+            answers.push(text?.value ?? '');
+          }
+          num += 1;
+          if (num == 2) {
+            await openai.cancel(thread.id);
+          }
+          break;
+        case 'thread.message.completed':
+          console.log('text done');
+          break;
+        case 'error':
+          console.error(data);
+          break;
+        case 'thread.run.cancelled':
+          cancelled = true;
+          break;
+      }
+    }
+    const answer = answers.join('');
+
+    expect(answer).not.toBe('');
+    expect(cancelled).toBe(true);
+
+    await openai.deleteMessage(thread.id, message.id);
+    await openai.deleteThread(thread.id);
+  });
 });

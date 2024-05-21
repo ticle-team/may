@@ -57,6 +57,7 @@ export class OpenAIAssistant {
     const resp = await this.openai.beta.threads.messages.list(threadId, {
       before: options?.before,
       limit: options?.limit,
+      order: 'desc',
     });
 
     let messages = [];
@@ -93,6 +94,27 @@ export class OpenAIAssistant {
     return this.openai.beta.threads.runs.createAndPoll(threadId, {
       assistant_id: assistantId,
     });
+  }
+
+  async cancel(threadId: string) {
+    const { data } = await this.openai.beta.threads.runs.list(threadId, {
+      order: 'desc',
+    });
+    if (data.length == 0) {
+      return;
+    }
+
+    for (const { id, status } of data) {
+      if (
+        status != 'in_progress' &&
+        status != 'requires_action' &&
+        status != 'queued'
+      ) {
+        continue;
+      }
+
+      return this.openai.beta.threads.runs.cancel(threadId, id).catch(() => {});
+    }
   }
 
   async *submitToolOutputsStream(

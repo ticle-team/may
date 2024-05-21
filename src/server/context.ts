@@ -21,33 +21,15 @@ export async function createNextContext(
     },
   );
 
+  const {
+    data: { session },
+    error,
+  } = await shapleClient.auth.getSession();
+
   let user = null;
-  const authHeader = opts.req.headers.get('Authorization');
-  if (authHeader != null) {
-    const [tokenType, jwt] = authHeader.split(' ');
-    if (tokenType !== 'Bearer') {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'Invalid authorization type',
-      });
-    }
-
-    const {
-      data: { user: shapleUser },
-      error,
-    } = await shapleClient.auth.getUser(jwt);
-
-    if (!error) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'Invalid access token',
-      });
-    }
-
-    if (shapleUser) {
-      user = shapleUser;
-      user.user_metadata.jwt = jwt;
-    }
+  if (!error && session) {
+    user = session.user;
+    user.user_metadata.jwt = session.access_token;
   }
 
   const githubTokenHeader = opts.req.headers.get('X-Github-Token');

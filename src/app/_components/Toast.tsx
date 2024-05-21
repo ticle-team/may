@@ -55,9 +55,19 @@ export default function Toast({
                     />
                   </div>
                   <div className="ml-3 w-0 flex-1 pt-0.5">
-                    <p className="text-sm font-medium text-gray-900">{title}</p>
+                    {title !== '' && (
+                      <p className="text-sm font-medium text-gray-900">
+                        {title}
+                      </p>
+                    )}
                     {message !== '' && (
-                      <p className="mt-1 text-sm text-gray-500">{message}</p>
+                      <p
+                        className={classNames('text-sm text-gray-500', {
+                          'mt-1': title !== '',
+                        })}
+                      >
+                        {message}
+                      </p>
                     )}
                   </div>
                   <div className="ml-4 flex flex-shrink-0">

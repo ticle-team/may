@@ -1,65 +1,97 @@
 import { authedProcedure, router } from '@/server/trpc';
 import { ThreadService } from '@/server/domain/thread/thread.service';
 import { Container } from 'typedi';
-import { message, thread } from '@/models/thread';
+import { thread } from '@/models/thread';
 import { z } from 'zod';
 import { AssistantService } from '@/server/domain/assistant/assistant.service';
-import { createObservableFromAsyncGenerator } from '@/util/sse';
+import { getLogger } from '@/logger';
+import { chatMessage } from '@/models/ai';
+
+const logger = getLogger('server.routers.thread');
 
 export default router({
-  create: authedProcedure.output(thread).mutation(async ({ ctx: { user } }) => {
-    const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(user.id);
-
-    return {
-      id: thread.id,
-    };
-  }),
+  create: authedProcedure
+    .input(z.object({ projectId: z.bigint() }))
+    .output(thread)
+    .mutation(async ({ ctx: { user }, input: { projectId } }) => {
+      const threadService = Container.get(ThreadService);
+      return threadService.create(user.id, projectId);
+    }),
   messages: router({
     list: authedProcedure
       .input(
         z.object({
           threadId: z.number(),
-          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(10),
+          cursor: z.string().nullish(),
         }),
       )
       .output(
         z.object({
-          messages: z.array(message),
-          after: z.string().optional(),
+          messages: z.array(chatMessage),
+          nextCursor: z.string().nullish(),
         }),
       )
-      .query(async ({ input: { threadId, before } }) => {
+      .query(async ({ input: { threadId, cursor, limit } }) => {
         const threadService = Container.get(ThreadService);
         const { messages, after } = await threadService.getTextMessages(
           threadId,
-          { before },
+          { before: cursor ?? undefined, limit },
         );
 
         return {
           messages,
-          after,
+          nextCursor: after,
         };
       }),
-    addForStackCreation: authedProcedure
+    add: authedProcedure
       .input(
         z.object({
-          projectId: z.number(),
           threadId: z.number(),
           message: z.string(),
         }),
       )
-      .subscription(async ({ input: { projectId, threadId, message } }) => {
+      .output(z.void())
+      .mutation(async ({ input: { threadId, message } }) => {
         const threadService = Container.get(ThreadService);
-        const assistantService = Container.get(AssistantService);
 
         await threadService.addUserMessage(threadId, message);
-        const source = assistantService.runForCreationStack(
-          threadId,
-          projectId,
-        );
-
-        return createObservableFromAsyncGenerator(source);
       }),
   }),
+  runForStackCreation: authedProcedure
+    .input(
+      z.object({
+        threadId: z.number(),
+      }),
+    )
+    .query(async function* ({ input: { threadId } }) {
+      const assistantService = Container.get(AssistantService);
+
+      yield* assistantService.runForCreationStack(threadId);
+    }),
+  get: authedProcedure
+    .input(
+      z.object({
+        threadId: z.number(),
+      }),
+    )
+    .output(thread)
+    .query(async ({ input: { threadId } }) => {
+      const threadService = Container.get(ThreadService);
+      const thread = await threadService.get(threadId);
+      return {
+        id: thread.id,
+        shapleProjectId: thread.shapleProjectId,
+      };
+    }),
+  cancel: authedProcedure
+    .input(
+      z.object({
+        threadId: z.number(),
+      }),
+    )
+    .mutation(async ({ input: { threadId } }) => {
+      const threadService = Container.get(ThreadService);
+      await threadService.cancel(threadId);
+    }),
 });

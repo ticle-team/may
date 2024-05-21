@@ -18,7 +18,7 @@ export class StackService {
     runId: string,
     threadId: number,
     args: string,
-    projectId: number,
+    projectId: bigint,
   ) {
     const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
 

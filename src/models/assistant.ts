@@ -18,8 +18,13 @@ export type StackCreationEventDeploy = {
   event: 'deploy';
 };
 
+export type StackCreationEventCreated = {
+  event: 'created';
+};
+
 export type StackCreationEvent =
   | StackCreationEventText
   | StackCreationEventDone
   | StackCreationEventError
-  | StackCreationEventDeploy;
+  | StackCreationEventDeploy
+  | StackCreationEventCreated;

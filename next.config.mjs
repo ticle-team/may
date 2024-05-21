@@ -1,3 +1,4 @@
+import('reflect-metadata');
 /**
  * @type {import('next').NextConfig}
  */

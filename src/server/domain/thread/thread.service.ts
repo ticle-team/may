@@ -19,12 +19,23 @@ export class ThreadService {
 
   async create(
     ownerId: string, // this is a string, gotrue user id
+    projectId: bigint,
   ) {
     return this.prisma.$transaction(async (tx) => {
       const user = await this.userStore.getUser(tx, ownerId);
       const thread = await this.openaiAssistant.createThread();
-      return await this.threadStore.createThread(tx, user.id, thread.id);
+      return await this.threadStore.createThread(
+        tx,
+        user.id,
+        thread.id,
+        projectId,
+      );
     });
+  }
+
+  async cancel(threadId: number) {
+    const thread = await this.threadStore.findThreadById(threadId);
+    await this.openaiAssistant.cancel(thread.openaiThreadId);
   }
 
   async addUserMessage(threadId: number, message: string) {
@@ -64,5 +75,9 @@ export class ThreadService {
       messages,
       after,
     };
+  }
+
+  async get(threadId: number) {
+    return this.threadStore.findThreadById(threadId);
   }
 }
