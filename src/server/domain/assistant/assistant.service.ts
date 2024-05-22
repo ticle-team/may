@@ -27,8 +27,9 @@ export class AssistantService {
       openaiThreadId,
       this.stackCreationAssistantId,
     );
-    const self = this;
+    yield { event: 'start' };
 
+    const self = this;
     async function* handleStream(
       stream: typeof assistantStream,
     ): AsyncGenerator<StackCreationEvent, void> {
@@ -74,16 +75,16 @@ export class AssistantService {
 
                 switch (funcName) {
                   case 'deploy_stack':
-                    const stream =
-                      await self.stackService.createStackByToolCall(
+                    yield { event: 'text', text: '\n' };
+                    yield* handleStream(
+                      self.stackService.createStackByToolCall(
                         toolCallId,
                         runId,
                         threadId,
                         funcArguments,
                         shapleProjectId,
-                      );
-                    yield { event: 'deploy' };
-                    yield* handleStream(stream);
+                      ),
+                    );
                     break;
                 }
               }

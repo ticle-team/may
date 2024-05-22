@@ -10,27 +10,38 @@ import { TRPCError } from '@trpc/server';
 import { skipToken } from '@tanstack/react-query';
 import { ChatMessage, ChatRole } from '@/models/ai';
 import _ from 'lodash';
+import delay from 'delay';
 
 type PageState = 'initializing' | 'generating' | 'idle';
 
 function UserMessageForm({
-  disabled,
+  answering,
   onSubmit,
+  onStopAnswering,
 }: {
-  disabled: boolean;
+  answering: boolean;
   onSubmit: (message: string) => Promise<void>;
+  onStopAnswering: () => Promise<void>;
 }) {
   const [userMessage, setUserMessage] = useState('');
+  const userInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!answering) {
+      userInputRef.current?.focus();
+    }
+  }, [answering]);
+
   return (
     <form
       className="flex flex-col w-full"
       onSubmit={(e) => {
-        if (disabled || userMessage == '') {
+        if (answering || userMessage == '') {
           return;
         }
 
         e.preventDefault();
-        onSubmit(userMessage).then(() => {
+        onSubmit(userMessage).finally(() => {
           setUserMessage('');
         });
       }}
@@ -42,15 +53,28 @@ function UserMessageForm({
           placeholder="Type a message"
           value={userMessage}
           onChange={(e) => setUserMessage(e.target.value)}
-          disabled={disabled}
+          disabled={answering}
+          ref={userInputRef}
         />
-        {!disabled && (
+        {!answering ? (
           <button
             className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer disabled:cursor-not-allowed"
             type="submit"
-            disabled={disabled}
           >
             <PaperAirplaneIcon
+              className="h-5 w-5 text-secondary-400 hover:text-secondary-300 active:text-secondary-500 disabled:text-secondary-400"
+              aria-hidden="true"
+            />
+          </button>
+        ) : (
+          <button
+            className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer disabled:cursor-not-allowed"
+            type="button"
+            onClick={() => {
+              onStopAnswering();
+            }}
+          >
+            <StopCircleIcon
               className="h-5 w-5 text-secondary-400 hover:text-secondary-300 active:text-secondary-500 disabled:text-secondary-400"
               aria-hidden="true"
             />
@@ -64,9 +88,11 @@ function UserMessageForm({
 function Conversation({
   history: threadMessages,
   assistantText,
+  answering = false,
 }: {
   history: ChatMessage[];
   assistantText: string;
+  answering: boolean;
 }) {
   const chatRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -97,7 +123,7 @@ function Conversation({
           <br key={`chat-bubble-blank-${i}`} />
         </>
       ))}
-      {assistantText != '' && (
+      {answering && (
         <ChatBubble
           name="Assistant"
           message={assistantText}
@@ -118,22 +144,26 @@ export default function Page() {
 
   const { renderToastContents, showErrorToast, hideToast } = useToast();
 
-  const [cancelled, setCancelled] = useState(false);
-  const [userMessage, setUserMessage] = useState('');
-  const [assistantTextPieces, setAssistantTextPieces] = useState<
-    (string | null)[]
-  >([]);
+  const [Initialized, setInitialized] = useState(false);
+  const [answer, setAnswer] = useState('');
+  const [answering, setAnswering] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
-  const listMessages = trpc.thread.messages.list.useInfiniteQuery(
-    { threadId, limit: 50 },
-    {
-      getNextPageParam: (lastPage) => lastPage.nextCursor,
-    },
-  );
-  if (listMessages.error) {
-    showErrorToast('', listMessages.error.message);
+  const getAllMessages = trpc.thread.messages.list.useQuery({
+    threadId,
+    limit: 100,
+  });
+  if (getAllMessages.error) {
+    showErrorToast('', getAllMessages.error.message);
     hideToast(1500);
   }
+  useEffect(() => {
+    if (!getAllMessages.data) {
+      return;
+    }
+
+    setChatMessages(getAllMessages.data.messages);
+  }, [getAllMessages.data]);
 
   const getThread = trpc.thread.get.useQuery({
     threadId,
@@ -144,7 +174,7 @@ export default function Page() {
   }
 
   const run = trpc.thread.runForStackCreation.useQuery(
-    userMessage != ''
+    answering
       ? {
           threadId,
         }
@@ -155,6 +185,36 @@ export default function Page() {
     hideToast(1500);
   }
 
+  useEffect(() => {
+    if (!run.data) return;
+
+    let interrupt = false;
+    (async () => {
+      try {
+        interrupt = false;
+        for await (const t of run.data) {
+          if (interrupt) {
+            break;
+          }
+          switch (t.event) {
+            case 'text':
+              setAnswer((val) => {
+                return val + t.text;
+              });
+              break;
+          }
+        }
+      } finally {
+        setAnswer('');
+        setAnswering(false);
+      }
+    })();
+
+    return () => {
+      interrupt = true;
+    };
+  }, [run.data]);
+
   const cancelThread = trpc.thread.cancel.useMutation();
 
   const addUserMessage = trpc.thread.messages.add.useMutation();
@@ -164,66 +224,10 @@ export default function Page() {
   }
 
   useEffect(() => {
-    (async () => {
-      try {
-        await cancelThread.mutateAsync({ threadId });
-      } finally {
-        setCancelled(true);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (assistantTextPieces.length == 0) {
-      return;
-    }
-
-    if (assistantTextPieces[assistantTextPieces.length - 1] != null) {
-      return;
-    }
-
-    listMessages.refetch({
-      throwOnError: true,
+    cancelThread.mutateAsync({ threadId }).finally(() => {
+      setInitialized(true);
     });
-
-    setUserMessage('');
-    setAssistantTextPieces([]);
-  }, [assistantTextPieces]);
-
-  useEffect(() => {
-    if (!run.data) return;
-
-    let interrupt = false;
-    (async () => {
-      interrupt = false;
-      try {
-        for await (const t of run.data) {
-          if (interrupt) {
-            break;
-          }
-          switch (t.event) {
-            case 'created':
-              await listMessages.refetch();
-              break;
-            case 'text':
-              setAssistantTextPieces((val) => {
-                return [...val, t.text];
-              });
-              break;
-            default:
-              console.log('Not supported event', t);
-              break;
-          }
-        }
-      } finally {
-        setAssistantTextPieces((val) => [...val, null]);
-      }
-    })();
-
-    return () => {
-      interrupt = true;
-    };
-  }, [run.data]);
+  }, []);
 
   const handleSubmitUserMessage = async (message: string) => {
     if (message === '') {
@@ -234,32 +238,39 @@ export default function Page() {
       threadId,
       message,
     });
-    setUserMessage(message);
+    setAnswering(true);
+  };
+
+  const handleStopAnswering = async () => {
+    await cancelThread.mutateAsync({ threadId });
+    setAnswering(false);
   };
 
   return (
     <>
       {renderToastContents()}
       <br />
-      {cancelled && getThread.isSuccess ? (
+      {Initialized && getThread.isSuccess ? (
         <main className="flex flex-col w-11/12 h-full">
-          <div className="flex flex-row w-full h-5/6">
-            <Suspense fallback={<p>Generating...</p>}>
+          <Suspense fallback={<p>Generating...</p>}>
+            <div className="flex flex-row w-full h-5/6">
               <Conversation
-                history={[...(listMessages.data?.pages ?? [])]
+                history={[...(getAllMessages.data?.pages ?? [])]
                   .flatMap((page) => page.messages ?? [])
                   .reverse()}
-                assistantText={assistantTextPieces.join('')}
+                assistantText={answer}
+                answering={answering}
               />
-            </Suspense>
-          </div>
-          <br />
-          <div className="flex flex-row w-full">
-            <UserMessageForm
-              disabled={run.isFetching || run.isLoading}
-              onSubmit={handleSubmitUserMessage}
-            />
-          </div>
+            </div>
+            <br />
+            <div className="flex flex-row w-full">
+              <UserMessageForm
+                answering={answering}
+                onSubmit={handleSubmitUserMessage}
+                onStopAnswering={handleStopAnswering}
+              />
+            </div>
+          </Suspense>
         </main>
       ) : (
         <p>Loading...</p>

@@ -41,7 +41,7 @@ export class StoaCloudService {
         if (req.data) {
           if (req.headers.get('Content-Type') === 'application/json') {
             req.data = JSON.stringify(camelToSnake(req.data), (k, v) =>
-              typeof v === 'bigint' ? Number(v) : v,
+              typeof v == 'bigint' ? Number(v) : v,
             );
           }
         }
@@ -105,7 +105,7 @@ export class StoaCloudService {
   ) {
     const { data: stack } = await this.axios.post<Stack>('/v1/stacks', {
       siteUrl,
-      projectId: projectId,
+      projectId: Number(projectId),
       name,
       description,
     });
