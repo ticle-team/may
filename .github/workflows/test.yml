@@ -20,4 +20,4 @@ jobs:
       - name: Tear down kind cluster
         if: success() || failure()
         run: |
-          year local:teardown
+          yarn local:teardown
