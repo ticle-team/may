@@ -11,6 +11,7 @@ import { skipToken } from '@tanstack/react-query';
 import { ChatMessage, ChatRole } from '@/models/ai';
 import _ from 'lodash';
 import delay from 'delay';
+import { StackCreationEventText } from '@/models/assistant';
 
 type PageState = 'initializing' | 'generating' | 'idle';
 
@@ -87,11 +88,9 @@ function UserMessageForm({
 
 function Conversation({
   history: threadMessages,
-  assistantText,
   answering = false,
 }: {
   history: ChatMessage[];
-  assistantText: string;
   answering: boolean;
 }) {
   const chatRef = useRef<HTMLDivElement>(null);
@@ -101,51 +100,39 @@ function Conversation({
     }
 
     chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [threadMessages, assistantText]);
-
-  let history = threadMessages;
-  if (assistantText != '' && history.length > 0) {
-    history = history.slice(0, history.length - 1);
-  }
+  }, [threadMessages]);
 
   return (
-    <div className="flex flex-col w-full overflow-y-auto" ref={chatRef}>
-      {history.map(({ role, text }, i) => (
-        <>
-          <ChatBubble
-            key={`chat-bubble-${i}`}
-            name={role == 'user' ? 'You' : 'Assistant'}
-            message={text}
-            markdown={role == 'assistant'}
-            self={role == 'user'}
-            color="secondary"
-          />
-          <br key={`chat-bubble-blank-${i}`} />
-        </>
-      ))}
-      {answering && (
+    <div className="flex flex-col w-full overflow-y-auto gap-4" ref={chatRef}>
+      {threadMessages.map(({ role, text }, i) => (
         <ChatBubble
-          name="Assistant"
-          message={assistantText}
-          markdown={true}
-          self={false}
+          key={`chat-bubble-${i}`}
+          name={role == 'user' ? 'You' : 'Assistant'}
+          message={text}
+          markdown={role == 'assistant'}
+          self={role == 'user'}
           color="secondary"
         />
+      ))}
+
+      {answering && (
+        <div className="flex flex-row w-full items-center">
+          <p>Answering...</p>
+        </div>
       )}
     </div>
   );
 }
 
 export default function Page() {
-  const { thread_id: threadIdStr } = useParams<{
-    thread_id: string;
+  const { id: threadIdStr } = useParams<{
+    id: string;
   }>();
   const threadId = parseInt(threadIdStr);
 
   const { renderToastContents, showErrorToast, hideToast } = useToast();
 
   const [Initialized, setInitialized] = useState(false);
-  const [answer, setAnswer] = useState('');
   const [answering, setAnswering] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
@@ -162,7 +149,7 @@ export default function Page() {
       return;
     }
 
-    setChatMessages(getAllMessages.data.messages);
+    setChatMessages([...getAllMessages.data.messages].reverse());
   }, [getAllMessages.data]);
 
   const getThread = trpc.thread.get.useQuery({
@@ -197,15 +184,44 @@ export default function Page() {
             break;
           }
           switch (t.event) {
-            case 'text':
-              setAnswer((val) => {
-                return val + t.text;
+            case 'created':
+              setChatMessages((messages) => {
+                return [
+                  ...messages,
+                  {
+                    role: 'assistant',
+                    text: '',
+                  },
+                ];
               });
               break;
+            case 'text':
+              const { text } = t as StackCreationEventText;
+              setChatMessages((messages) => {
+                const lastMessage = messages[messages.length - 1];
+
+                if (lastMessage.role !== 'assistant') {
+                  throw new Error(
+                    'Invalid conversation: expected last message to be from assistant',
+                  );
+                }
+
+                return [
+                  ...messages.slice(0, messages.length - 1),
+                  {
+                    role: 'assistant',
+                    text: lastMessage.text + text,
+                  },
+                ];
+              });
+              break;
+            default:
+              console.log('Unknown event: ', t);
           }
         }
+      } catch (e) {
+        console.log('error: ', e);
       } finally {
-        setAnswer('');
         setAnswering(false);
       }
     })();
@@ -217,7 +233,19 @@ export default function Page() {
 
   const cancelThread = trpc.thread.cancel.useMutation();
 
-  const addUserMessage = trpc.thread.messages.add.useMutation();
+  const addUserMessage = trpc.thread.messages.add.useMutation({
+    onMutate: ({ message }) => {
+      setChatMessages((messages) => {
+        return [
+          ...messages,
+          {
+            role: 'user',
+            text: message,
+          },
+        ];
+      });
+    },
+  });
   if (addUserMessage.error) {
     showErrorToast('', addUserMessage.error.message);
     hideToast(1500);
@@ -254,13 +282,7 @@ export default function Page() {
         <main className="flex flex-col w-11/12 h-full">
           <Suspense fallback={<p>Generating...</p>}>
             <div className="flex flex-row w-full h-5/6">
-              <Conversation
-                history={[...(getAllMessages.data?.pages ?? [])]
-                  .flatMap((page) => page.messages ?? [])
-                  .reverse()}
-                assistantText={answer}
-                answering={answering}
-              />
+              <Conversation history={chatMessages} answering={answering} />
             </div>
             <br />
             <div className="flex flex-row w-full">

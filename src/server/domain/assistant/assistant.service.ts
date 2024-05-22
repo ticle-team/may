@@ -75,8 +75,7 @@ export class AssistantService {
 
                 switch (funcName) {
                   case 'deploy_stack':
-                    yield { event: 'text', text: '\n' };
-                    yield* handleStream(
+                    const generator = handleStream(
                       self.stackService.createStackByToolCall(
                         toolCallId,
                         runId,
@@ -85,6 +84,8 @@ export class AssistantService {
                         shapleProjectId,
                       ),
                     );
+                    yield { event: 'deploy' };
+                    yield* generator;
                     break;
                 }
               }

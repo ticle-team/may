@@ -21,9 +21,6 @@ function ChatBubble({
   color = 'primary',
 }: ChatBubbleProps) {
   const Icon = self ? UserIcon : GlobeAltIcon;
-  if (!self) {
-    message = message == '' ? '...' : message;
-  }
 
   return (
     <div

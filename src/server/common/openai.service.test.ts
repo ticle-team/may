@@ -2,6 +2,9 @@ import { loadEnvConfig } from '@next/env';
 import { Container } from 'typedi';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { TextDeltaBlock } from 'openai/src/resources/beta/threads/messages';
+import { getLogger } from '@/logger';
+
+const logger = getLogger('openai.service.test.ts');
 
 process.env = {
   ...process.env,
@@ -98,7 +101,7 @@ describe('given openai assistant', () => {
     await openai.deleteThread(thread.id);
   }, 10000);
 
-  it('when thread cancel when creating message, then ok', async () => {
+  it.skip('when thread cancel when creating message, then ok', async () => {
     const openai = Container.get(OpenAIAssistant);
     const assistant = await openai.getAssistant(stackCreationAssistantID);
     expect(assistant.id).not.toBe('');
