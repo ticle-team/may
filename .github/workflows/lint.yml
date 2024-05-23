@@ -2,15 +2,19 @@ name: Test
 run-name: ${{ github.actor }} is testing MAY🚀
 on: [pull_request, push]
 jobs:
-  Run-Unit-Tests:
+  Lint:
     runs-on: [self-hosted, Linux]
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
           submodules: true
+          token: ${{ secrets.ACCESS_TOKEN }}
       - name: Setup node.js
         uses: actions/setup-node@v4
+      - name: Install
+        run: |
+          yarn install
       - name: Lint
         run: |
           yarn lint
