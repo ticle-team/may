@@ -84,8 +84,8 @@ model ShapleStack {
 }
 
 model ShapleProject {
-  id     BigInt   @id @default(autoincrement()) @map("id")
-  Thread Thread[]
+  id      BigInt   @id @default(autoincrement()) @map("id")
+  threads Thread[]
 
   @@map("projects")
   @@schema("shaple_builder")
