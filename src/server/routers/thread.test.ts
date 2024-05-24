@@ -11,6 +11,7 @@ import {
   createUser,
   deleteUser,
 } from '@/server/domain/user/__mocks__/user.stub';
+import { StoaCloudService } from '@/server/common/stoacloud.service';
 
 describe('given thread trpc with mock objects', () => {
   const threadService = createThreadServiceMock();
@@ -25,6 +26,7 @@ describe('given thread trpc with mock objects', () => {
   let user;
   beforeEach(async () => {
     await resetSchema();
+    await Container.get(StoaCloudService).resetSchema();
 
     Container.set(ThreadService, threadService);
     Container.set(AssistantService, assistantService);
@@ -45,9 +47,6 @@ describe('given thread trpc with mock objects', () => {
   it('when calling thread as a subscription, should return messages streaming', async () => {
     const threadId = 2;
     const projectId = 1;
-    threadService.addUserMessage.mockResolvedValueOnce({
-      id: '12',
-    });
     assistantService.runForCreationStack.mockImplementationOnce(
       async function* () {
         yield { event: 'text', text: 'h' };
@@ -64,9 +63,8 @@ describe('given thread trpc with mock objects', () => {
       },
     );
 
-    const outputs = await caller.thread.messages.addForStackCreation({
+    const outputs = await caller.thread.runForStackCreation({
       threadId: threadId,
-      message: 'hello',
     });
 
     let completed = false;
@@ -87,13 +85,6 @@ describe('given thread trpc with mock objects', () => {
     expect(completed).toBe(true);
     expect(answers).toEqual(['h', 'e', 'l', 'l', 'o']);
 
-    expect(assistantService.runForCreationStack).toHaveBeenCalledWith(
-      threadId,
-      projectId,
-    );
-    expect(threadService.addUserMessage).toHaveBeenCalledWith(
-      threadId,
-      'hello',
-    );
+    expect(assistantService.runForCreationStack).toHaveBeenCalledWith(threadId);
   });
 });
