@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 
 type Props = React.PropsWithChildren<{
-  color?: 'primary';
+  color?: 'primary' | 'secondary';
   size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl';
   onClick?: () => void | Promise<void>;
 }>;
@@ -16,6 +16,8 @@ export default function Button({
     'flex focus:outline-none focus:ring-2 focus:ring-opacity-50': true,
     'text-white bg-primary-700 hover:bg-primary-600 focus:ring-primary-500':
       color === 'primary',
+    'text-gray-900 bg-white hover:bg-gray-50 focus:ring-primary-500 ring-1 ring-inset ring-gray-300':
+      color === 'secondary',
     'font-semibold text-xs py-1 px-2 rounded': size === 'xs',
     'font-semibold text-sm py-1 px-2 rounded': size === 'sm',
     'font-semibold text-sm py-1.5 px-2.5 rounded-md': size === 'base',
