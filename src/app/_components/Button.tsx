@@ -1,23 +1,31 @@
-import classnames from 'classnames';
+import classNames from 'classnames';
 
-export const Button = ({
+type Props = React.PropsWithChildren<{
+  color?: 'primary';
+  size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl';
+  onClick?: () => void | Promise<void>;
+}>;
+
+export default function Button({
   children,
   onClick,
   color = 'primary',
-}: React.PropsWithChildren<{
-  color: string;
-  onClick?: () => void | Promise<void>;
-}>) => (
-  <button
-    onClick={onClick}
-    className={classnames(
-      'flex font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-opacity-50',
-      {
-        'text-white bg-primary-700 hover:bg-primary-600 focus:ring-primary-500':
-          color === 'primary',
-      },
-    )}
-  >
-    {children}
-  </button>
-);
+  size = 'lg',
+}: Props) {
+  const buttonClass = classNames({
+    'flex focus:outline-none focus:ring-2 focus:ring-opacity-50': true,
+    'text-white bg-primary-700 hover:bg-primary-600 focus:ring-primary-500':
+      color === 'primary',
+    'font-semibold text-xs py-1 px-2 rounded': size === 'xs',
+    'font-semibold text-sm py-1 px-2 rounded': size === 'sm',
+    'font-semibold text-sm py-1.5 px-2.5 rounded-md': size === 'base',
+    'font-semibold text-sm py-2 px-3 rounded-md': size === 'lg',
+    'font-semibold text-sm py-2.5 px-3.5 rounded-md': size === 'xl',
+  });
+
+  return (
+    <button onClick={onClick} className={buttonClass}>
+      {children}
+    </button>
+  );
+}
