@@ -20,3 +20,7 @@
 1. `yarn local:setup`: Run the test setup script. this script contains `kind` configuration with stoacloud. And, this command setups stoacloud dev and test.
 2. `yarn dev`: Run the server in development mode
 3. `yarn local:teardown`: Run this command if you want to remove `kind` cluster.
+
+### Database migration
+- Use `yarn migrate:dev` to migrate your database schema for dev.
+- When you write a new migration file, you should not edit the old migration file which is written by others.
