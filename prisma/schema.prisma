@@ -16,13 +16,43 @@ datasource db {
   schemas  = ["may", "shaple_builder"]
 }
 
+model Organization {
+  id        Int          @id @default(autoincrement()) @map("id")
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  deletedAt BigInt       @default(0) @map("deleted_at")
+  name      String       @unique @map("name")
+  ownerId   Int
+  owner     User         @relation("Owner", fields: [ownerId], references: [id])
+  members   Membership[]
+
+  @@map("organizations")
+  @@schema("may")
+}
+
+model Membership {
+  id             Int          @id @default(autoincrement())
+  userId         Int          @map("user_id")
+  organizationId Int          @map("organization_id")
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@map("memberships")
+  @@schema("may")
+}
+
 model User {
-  id        Int      @id @default(autoincrement()) @map("id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  deletedAt BigInt   @default(0) @map("deleted_at")
-  ownerId   String   @unique @map("owner_id")
-  threads   Thread[]
+  id                 Int            @id @default(autoincrement()) @map("id")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+  deletedAt          BigInt         @default(0) @map("deleted_at")
+  ownerId            String         @unique @map("owner_id")
+  nickname           String?        @map("nickname")
+  description        String?        @map("description")
+  threads            Thread[]
+  ownedOrganizations Organization[] @relation("Owner")
+  memberships        Membership[]
 
   @@map("users")
   @@schema("may")
