@@ -1,5 +1,5 @@
-name: Test
-run-name: ${{ github.actor }} is testing MAY🚀
+name: CI
+run-name: ${{ github.actor }} is linting MAY
 on: [pull_request, push]
 jobs:
   Lint:
@@ -8,10 +8,14 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
-          submodules: true
-          token: ${{ secrets.ACCESS_TOKEN }}
-      - name: Setup node.js
+          submodules: false
+      - name: Setup node
         uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Setup yarn
+        run: |
+          npm install -g yarn
       - name: Install
         run: |
           yarn install
