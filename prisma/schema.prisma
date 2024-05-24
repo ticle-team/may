@@ -59,17 +59,17 @@ model User {
 }
 
 model Thread {
-  id              Int           @id @default(autoincrement()) @map("id")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
-  deletedAt       BigInt        @default(0) @map("deleted_at")
-  authorId        Int           @map("author_id")
-  author          User          @relation(fields: [authorId], references: [id])
-  openaiThreadId  String        @map("openai_thread_id")
-  shapleStackId   BigInt?       @unique @map("shaple_stack_id")
-  shapleStack     ShapleStack?  @relation(fields: [shapleStackId], references: [id])
-  shapleProjectId BigInt        @unique @map("shaple_project_id")
-  shapleProject   ShapleProject @relation(fields: [shapleProjectId], references: [id])
+  id              Int            @id @default(autoincrement()) @map("id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  deletedAt       BigInt         @default(0) @map("deleted_at")
+  authorId        Int            @map("author_id")
+  author          User           @relation(fields: [authorId], references: [id])
+  openaiThreadId  String         @map("openai_thread_id")
+  shapleStackId   BigInt?        @unique @map("shaple_stack_id")
+  shapleStack     ShapleStack?   @relation(fields: [shapleStackId], references: [id])
+  shapleProjectId BigInt?        @map("shaple_project_id")
+  shapleProject   ShapleProject? @relation(fields: [shapleProjectId], references: [id])
 
   @@map("threads")
   @@schema("may")
@@ -84,8 +84,8 @@ model ShapleStack {
 }
 
 model ShapleProject {
-  id     BigInt  @id @default(autoincrement()) @map("id")
-  Thread Thread?
+  id     BigInt   @id @default(autoincrement()) @map("id")
+  Thread Thread[]
 
   @@map("projects")
   @@schema("shaple_builder")
