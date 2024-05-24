@@ -3,6 +3,7 @@ import { OpenAI } from 'openai';
 import { AzureKeyCredential, OpenAIClient } from '@azure/openai';
 import { ChatMessage } from '@/models/ai';
 import { TextContentBlock } from 'openai/resources/beta/threads';
+import { TRPCError } from '@trpc/server';
 
 @Service()
 export class OpenAIAssistant {
@@ -16,10 +17,17 @@ export class OpenAIAssistant {
   }
 
   async createThread() {
-    const { id } = await this.openai.beta.threads.create();
-    return {
-      id,
-    };
+    try {
+      const { id } = await this.openai.beta.threads.create();
+      return {
+        id,
+      };
+    } catch (e) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to create openai thread',
+      });
+    }
   }
 
   async deleteThread(id: string) {
