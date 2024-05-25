@@ -19,7 +19,7 @@ export class ThreadService {
 
   async create(
     ownerId: string, // this is a string, gotrue user id
-    projectId: bigint,
+    projectId: number,
   ) {
     return this.prisma.$transaction(async (tx) => {
       const user = await this.userStore.getUser(tx, ownerId);

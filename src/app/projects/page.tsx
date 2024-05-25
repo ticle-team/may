@@ -21,7 +21,7 @@ export default function Page() {
         color="primary"
         onClick={async () => {
           const { id: threadId } = await createThread.mutateAsync({
-            projectId: BigInt(1),
+            projectId: 1,
           });
           router.push(`/threads/${threadId}`);
         }}

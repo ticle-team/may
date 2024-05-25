@@ -21,7 +21,7 @@ export class StackService {
     runId: string,
     threadId: number,
     args: string,
-    projectId: bigint,
+    projectId: number,
   ) {
     logger.debug('call createStackByToolCall', { args });
     const { openaiThreadId } = await this.threadStore.findThreadById(threadId);

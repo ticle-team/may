@@ -1,8 +1,8 @@
+import { setTimeout } from 'timers/promises';
 import { Container } from 'typedi';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import * as uuid from 'uuid';
 import { createClient, User } from '@shaple/shaple';
-import delay from 'delay';
 import {
   createUser,
   deleteUser,
@@ -103,7 +103,7 @@ describe('given stoacloud service', () => {
           emailEnabled: true,
         },
       });
-      await delay(500);
+      await setTimeout(500);
 
       stack = await scs.getStack(stackId);
       expect(stack.auth).toBeTruthy();
@@ -162,7 +162,7 @@ describe('given stoacloud service', () => {
         waitTimeout: '30s',
         tenantId: 'test-tenant',
       });
-      await delay(750);
+      await setTimeout(1000);
 
       const { domain, adminApiKey, storageEnabled } =
         await scs.getStack(stackId);

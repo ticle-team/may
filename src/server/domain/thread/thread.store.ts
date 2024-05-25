@@ -11,7 +11,7 @@ export class ThreadStore {
     tx: Prisma.TransactionClient,
     authorId: number,
     openaiThreadId: string,
-    shapleProjectId: bigint,
+    shapleProjectId: number,
   ) {
     return tx.thread.create({
       data: {

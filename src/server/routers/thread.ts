@@ -11,7 +11,7 @@ const logger = getLogger('server.routers.thread');
 
 export default router({
   create: authedProcedure
-    .input(z.object({ projectId: z.bigint() }))
+    .input(z.object({ projectId: z.number() }))
     .output(thread)
     .mutation(async ({ ctx: { user }, input: { projectId } }) => {
       const threadService = Container.get(ThreadService);
