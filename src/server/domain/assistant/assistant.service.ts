@@ -20,33 +20,44 @@ export class AssistantService {
     private readonly stackService: StackService,
   ) {}
 
-  async *runForCreationStack(threadId: number, projectId: number) {
-    const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
+  async *runForCreationStack(threadId: number) {
+    const { openaiThreadId, shapleProjectId } =
+      await this.threadStore.findThreadById(threadId);
     const assistantStream = this.openaiAssistant.runStream(
       openaiThreadId,
       this.stackCreationAssistantId,
     );
-    const self = this;
+    yield { event: 'start' };
 
+    const self = this;
     async function* handleStream(
       stream: typeof assistantStream,
     ): AsyncGenerator<StackCreationEvent, void> {
       try {
         for await (const { event, data } of stream) {
           switch (event) {
+            case 'thread.message.created':
+              yield { event: 'created' };
+              break;
             case 'thread.message.delta':
-              const { role, content } = data.delta;
-              if (role != 'assistant') {
+              const { content } = data.delta;
+              if (!content) {
+                continue;
+              }
+              const textPieces = [] as string[];
+              for (const block of content) {
+                if (block.type != 'text') {
+                  continue;
+                }
+
+                textPieces.push((block as TextDeltaBlock).text?.value ?? '');
+              }
+              const text = textPieces.join('');
+              if (text == '') {
                 continue;
               }
 
-              const text = content
-                ?.filter((t) => t.type == 'text')
-                .map((t) => (t as TextDeltaBlock).text?.value ?? '')
-                .filter((t) => t != '')
-                .join('');
-
-              yield { event: 'text', text: text ?? '' };
+              yield { event: 'text', text: text };
               break;
             case 'thread.message.completed':
               yield { event: 'done' };
@@ -64,16 +75,17 @@ export class AssistantService {
 
                 switch (funcName) {
                   case 'deploy_stack':
-                    const stream =
-                      await self.stackService.createStackByToolCall(
+                    const generator = handleStream(
+                      self.stackService.createStackByToolCall(
                         toolCallId,
                         runId,
                         threadId,
                         funcArguments,
-                        projectId,
-                      );
+                        shapleProjectId,
+                      ),
+                    );
                     yield { event: 'deploy' };
-                    yield* handleStream(stream);
+                    yield* generator;
                     break;
                 }
               }

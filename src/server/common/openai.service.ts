@@ -3,6 +3,7 @@ import { OpenAI } from 'openai';
 import { AzureKeyCredential, OpenAIClient } from '@azure/openai';
 import { ChatMessage } from '@/models/ai';
 import { TextContentBlock } from 'openai/resources/beta/threads';
+import { TRPCError } from '@trpc/server';
 
 @Service()
 export class OpenAIAssistant {
@@ -16,10 +17,17 @@ export class OpenAIAssistant {
   }
 
   async createThread() {
-    const { id } = await this.openai.beta.threads.create();
-    return {
-      id,
-    };
+    try {
+      const { id } = await this.openai.beta.threads.create();
+      return {
+        id,
+      };
+    } catch (e) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to create openai thread',
+      });
+    }
   }
 
   async deleteThread(id: string) {
@@ -57,6 +65,7 @@ export class OpenAIAssistant {
     const resp = await this.openai.beta.threads.messages.list(threadId, {
       before: options?.before,
       limit: options?.limit,
+      order: 'desc',
     });
 
     let messages = [];
@@ -93,6 +102,27 @@ export class OpenAIAssistant {
     return this.openai.beta.threads.runs.createAndPoll(threadId, {
       assistant_id: assistantId,
     });
+  }
+
+  async cancel(threadId: string) {
+    const { data } = await this.openai.beta.threads.runs.list(threadId, {
+      order: 'desc',
+    });
+    if (data.length == 0) {
+      return;
+    }
+
+    for (const { id, status } of data) {
+      if (
+        status != 'in_progress' &&
+        status != 'requires_action' &&
+        status != 'queued'
+      ) {
+        continue;
+      }
+
+      return this.openai.beta.threads.runs.cancel(threadId, id).catch(() => {});
+    }
   }
 
   async *submitToolOutputsStream(

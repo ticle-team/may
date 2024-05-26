@@ -8,6 +8,9 @@ import { Context } from '@/server/context';
  */
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
+  experimental: {
+    iterablesAndDeferreds: true,
+  },
 });
 
 /**
@@ -15,15 +18,17 @@ const t = initTRPC.context<Context>().create({
  * that can be used throughout the router
  */
 export const { createCallerFactory, router, procedure: baseProcedure } = t;
-export const authedProcedure = baseProcedure.use(({ ctx: { user }, next }) => {
-  if (!user) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'Requires authentication',
-    });
-  }
+export const authedProcedure = baseProcedure.use(
+  async ({ ctx: { user }, next }) => {
+    if (!user) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Requires authentication',
+      });
+    }
 
-  return next({
-    ctx: { user: user! },
-  });
-});
+    return next({
+      ctx: { user: user! },
+    });
+  },
+);

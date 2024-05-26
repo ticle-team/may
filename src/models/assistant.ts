@@ -1,5 +1,9 @@
 import { TRPCError } from '@trpc/server';
 
+export type StackCreationEventStart = {
+  event: 'start';
+};
+
 export type StackCreationEventText = {
   event: 'text';
   text: string;
@@ -18,8 +22,14 @@ export type StackCreationEventDeploy = {
   event: 'deploy';
 };
 
+export type StackCreationEventCreated = {
+  event: 'created';
+};
+
 export type StackCreationEvent =
   | StackCreationEventText
   | StackCreationEventDone
   | StackCreationEventError
-  | StackCreationEventDeploy;
+  | StackCreationEventDeploy
+  | StackCreationEventCreated
+  | StackCreationEventStart;

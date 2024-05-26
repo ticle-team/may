@@ -1,10 +1,10 @@
-import {
-  FetchCreateContextFnOptions,
-  fetchRequestHandler,
-} from '@trpc/server/adapters/fetch';
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from '@/server/routers';
 import { cookies } from 'next/headers';
 import { createNextContext } from '@/server/context';
+import { getLogger } from '@/logger';
+
+const logger = getLogger('app.api.trpc.route');
 
 const handler = async (req: Request) => {
   const cookieStore = cookies();
@@ -12,16 +12,15 @@ const handler = async (req: Request) => {
     endpoint: '/api/trpc',
     req,
     router: appRouter,
-    createContext: async (opts: FetchCreateContextFnOptions) =>
-      await createNextContext(cookieStore, opts),
-    onError: (opts: any) => {
-      if (opts.error.code === 'INTERNAL_SERVER_ERROR') {
-        console.log(`unexpected error occurred on RPC [${opts.path}]`, {
-          cause: opts.error.cause?.message,
+    createContext: async (opts) => await createNextContext(cookieStore, opts),
+    onError: ({ error, path }) => {
+      if (error.code === 'INTERNAL_SERVER_ERROR') {
+        logger.error(`unexpected error occurred on RPC [${path}]`, {
+          error,
         });
       } else {
-        console.log(`exception caught on RPC [${opts.path}]`, {
-          code: opts.error.code,
+        logger.error(`exception caught on RPC [${path}]`, {
+          error,
         });
       }
     },

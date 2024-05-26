@@ -1,4 +1,4 @@
-name: Test
+name: CI
 run-name: ${{ github.actor }} is testing MAY🚀
 on: [pull_request, push]
 jobs:
@@ -8,11 +8,21 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
         with:
-          submodules: true
-      - name: Setup node.js
+          submodules: recursive
+          token: ${{ secrets.PAUST_GITHUB_TOKEN }}
+      - name: Setup node
         uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Setup yarn
+        run: |
+          npm install -g yarn
+      - name: Install
+        run: |
+          yarn install
       - name: Setup kind cluster
         run: |
+          export PATH=/home/paust/go/bin/:$PATH
           yarn local:setup
       - name: Run tests
         run: |
@@ -20,4 +30,5 @@ jobs:
       - name: Tear down kind cluster
         if: success() || failure()
         run: |
-          year local:teardown
+          export PATH=/home/paust/go/bin/:$PATH
+          yarn local:teardown

@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "sourceMap": true,
+    "inlineSources": true,
+    "sourceRoot": "./src/",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -34,5 +37,5 @@
     ".next.dev/types/**/*.ts"
   ],
   "exclude": ["node_modules", "stoacloud"],
-  "files": ["node_modules/jest-expect-message/types/index.d.ts"]
+  "files": ["node_modules/jest-expect-message/types/index.d.ts"],
 }

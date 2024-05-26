@@ -1,0 +1,24 @@
+name: CI
+run-name: ${{ github.actor }} is linting MAY
+on: [pull_request, push]
+jobs:
+  Lint:
+    runs-on: [self-hosted, Linux]
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Setup yarn
+        run: |
+          npm install -g yarn
+      - name: Install
+        run: |
+          yarn install
+      - name: Lint
+        run: |
+          yarn lint

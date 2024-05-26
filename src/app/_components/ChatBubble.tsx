@@ -9,6 +9,7 @@ type ChatBubbleProps = {
   time?: string;
   message: string;
   markdown: boolean;
+  color: 'primary' | 'secondary';
 };
 
 function ChatBubble({
@@ -17,6 +18,7 @@ function ChatBubble({
   time,
   message,
   markdown = false,
+  color = 'primary',
 }: ChatBubbleProps) {
   const Icon = self ? UserIcon : GlobeAltIcon;
 
@@ -27,27 +29,23 @@ function ChatBubble({
         'flex-row-reverse items-end': self,
       })}
     >
-      <Icon className="w-8 h-8 rounded-full" />
+      <Icon className="flex flex-col w-8 h-8 rounded-full" />
       <div
         className={classNames(
-          'flex flex-col w-full leading-1.5 p-4 border-gray-200 bg-gray-100 dark:bg-gray-700',
+          `flex flex-col leading-1.5 p-4 border-${color}-200 bg-${color}-700 w-fit max-w-full`,
           {
             'rounded-e-xl rounded-es-xl': !self,
             'rounded-s-xl rounded-se-xl': self,
           },
         )}
       >
-        <div className="flex items-center space-x-2 rtl:space-x-reverse">
-          <span className="text-sm font-semibold text-gray-900 dark:text-white">
-            {name}
-          </span>
+        <div className="flex flex-row items-center space-x-2 rtl:space-x-reverse">
+          <span className="text-sm font-semibold text-white">{name}</span>
           {time && (
-            <time className="text-sm font-normal text-gray-500 dark:text-gray-400">
-              {time}
-            </time>
+            <time className="text-sm font-normal text-gray-400">{time}</time>
           )}
         </div>
-        <div className="prose prose-invert">
+        <div className="prose prose-invert prose-sm w-fit max-w-full">
           {markdown ? (
             <Markdown remarkPlugins={[[remarkGfm, { singleTilde: false }]]}>
               {message}

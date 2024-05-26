@@ -37,6 +37,7 @@ export class StoaCloudService {
   constructor() {
     this.axios.interceptors.request.use(
       (req) => {
+        logger.info('call stoacloud API', { req });
         if (req.data) {
           if (req.headers.get('Content-Type') === 'application/json') {
             req.data = JSON.stringify(camelToSnake(req.data));
@@ -102,7 +103,7 @@ export class StoaCloudService {
   ) {
     const { data: stack } = await this.axios.post<Stack>('/v1/stacks', {
       siteUrl,
-      projectId,
+      projectId: projectId,
       name,
       description,
     });
@@ -146,11 +147,11 @@ export class StoaCloudService {
   }
 
   async installVapi(stackId: number, input: InstallVapiInput) {
-    await this.axios.post(`/v1/stacks/${stackId}/v1/vapis`, input);
+    await this.axios.post(`/v1/stacks/${stackId}/vapis`, input);
   }
 
   async uninstallVapi(stackId: number, vapiId: number) {
-    await this.axios.delete(`/v1/stacks/${stackId}/v1/vapis/${vapiId}`);
+    await this.axios.delete(`/v1/stacks/${stackId}/vapis/${vapiId}`);
   }
 
   async getVapiRelease(id: number) {

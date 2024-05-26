@@ -33,8 +33,14 @@ describe('given ThreadService with real ThreadStore', () => {
     mockOpenAI.deleteThread.mockResolvedValue({
       deleted: true,
     });
+
+    const prisma = Container.get(PrismaService);
+    const project = await prisma.shapleProject.create({
+      data: {},
+    });
+
     const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(ownerId);
+    const thread = await threadService.create(ownerId, project.id);
     expect(thread.openaiThreadId).toBe(openaiThreadId);
     await threadService.delete(thread.id);
 
@@ -51,8 +57,13 @@ describe('given ThreadService with real ThreadStore', () => {
       deleted: true,
     });
 
+    const prisma = Container.get(PrismaService);
+    const project = await prisma.shapleProject.create({
+      data: {},
+    });
+
     const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(ownerId);
+    const thread = await threadService.create(ownerId, project.id);
     expect(thread.openaiThreadId).toBe(openaiThreadId);
     await threadService.addUserMessage(thread.id, '안녕하세요');
 
