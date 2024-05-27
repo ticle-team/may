@@ -13,18 +13,25 @@ import {
 import StackList from './StackList';
 import Modal from '@/app/_components/Modal';
 import CreateProjectModal from '@/app/projects/CreateProjectModal';
+import DialogModal from '@/app/_components/Dialog';
 
 export default function Page() {
   const [selectedTab, setSelectedTab] = React.useState('전체');
+  const utils = trpc.useUtils();
   // TODO : orgID must be changed.
-  const { data: { projects, after } = {}, isLoading } =
-    trpc.org.projects.list.useQuery({ orgId: 1, limit: 10 });
+  const {
+    data: { projects, after } = {},
+    isLoading,
+    error,
+  } = trpc.org.projects.list.useQuery({ orgId: 1, limit: 10 });
   const [projectList, setProjectList] = React.useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = React.useState<number | null>(
     null,
   );
   const [showCreateProjectDialog, setShowCreateProjectDialog] =
     useState<boolean>(false);
+  const [showAlert, setShowAlert] = useState<boolean>(false);
+  const [alertMessage, setAlertMessage] = useState<string>('');
 
   const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
 
@@ -39,15 +46,37 @@ export default function Page() {
     // TODO: Implement on project created
   };
 
-  useEffect(() => {
-    if (isLoading) return;
+  const handleClickTab = async (tabName: string) => {
+    if (selectedTab === tabName) return;
+    setSelectedTab(tabName);
 
+    await utils.org.projects.list.invalidate();
+  };
+
+  const filterProjects = () => {
     // TODO: Implement filtering projects feature
     setProjectList(projects ?? []);
-  }, [isLoading, selectedTab]);
+  };
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (error) {
+      setShowAlert(true);
+      setAlertMessage('프로젝트 목록을 불러오는 중 오류가 발생했습니다.');
+      return;
+    }
+    filterProjects();
+  }, [isLoading]);
 
   return (
     <>
+      <DialogModal
+        open={showAlert}
+        setOpen={setShowAlert}
+        description={alertMessage}
+        confirmText="확인"
+        type={'alert'}
+      />
       <Modal
         open={showCreateProjectDialog}
         setOpen={setShowCreateProjectDialog}
@@ -75,7 +104,7 @@ export default function Page() {
                   )}
                   aria-current={selectedTab == tab.name ? 'page' : undefined}
                   onClick={() => {
-                    setSelectedTab(tab.name);
+                    handleClickTab(tab.name);
                   }}
                 >
                   {tab.name}
