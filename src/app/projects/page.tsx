@@ -41,7 +41,7 @@ export default function Page() {
 
   useEffect(() => {
     if (isLoading) return;
-    
+
     // TODO: Implement filtering projects feature
     setProjectList(projects ?? []);
   }, [isLoading, selectedTab]);
@@ -63,7 +63,7 @@ export default function Page() {
       <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center">
         <div className="w-full flex flex-col">
           <div className="w-full flex justify-between border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <div className="-mb-px flex space-x-8" aria-label="Tabs">
               {tabs.map((tab) => (
                 <button
                   key={tab.name}
@@ -81,7 +81,7 @@ export default function Page() {
                   {tab.name}
                 </button>
               ))}
-            </nav>
+            </div>
             <div className="flex items-center">
               <Button
                 color="primary"
@@ -92,10 +92,10 @@ export default function Page() {
             </div>
           </div>
           <div>
-            <ul role="list">
+            <div role="list">
               {projectList.map((project) => (
                 <div key={`project-${project.id}`}>
-                  <li
+                  <div
                     className="relative flex justify-between gap-x-6 px-4 py-5 border-y border-gray-100 hover:bg-gray-50 sm:px-6 lg:px-8"
                     onClick={() => {
                       handleClickProject(project.id);
@@ -111,13 +111,13 @@ export default function Page() {
                       <StarIcon className="h-5 w-5 text-primary-500" />
                       <ClipboardDocumentIcon className="h-5 w-5 text-primary-500" />
                     </div>
-                  </li>
+                  </div>
                   {project.id === selectedProject && (
                     <StackList rows={project.stacks} />
                   )}
                 </div>
               ))}
-            </ul>
+            </div>
           </div>
         </div>
       </div>

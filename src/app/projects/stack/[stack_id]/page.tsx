@@ -35,7 +35,7 @@ export default function Page() {
           </div>
           <div className="w-full flex flex-col">
             <div className="w-full flex">
-              <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+              <div className="-mb-px flex space-x-8" aria-label="Tabs">
                 {tabs.map((tab) => (
                   <button
                     key={tab.name}
@@ -53,7 +53,7 @@ export default function Page() {
                     {tab.name}
                   </button>
                 ))}
-              </nav>
+              </div>
             </div>
             {selectedTab === 'Info' && <StackInfo stack={stack!} />}
             {selectedTab === 'Structure' && <StackStructure stack={stack!} />}
