@@ -1,6 +1,6 @@
 import { authedProcedure, baseProcedure, router } from '../trpc';
 import { z } from 'zod';
-import { project } from '@/models/project';
+import { projectMeta } from '@/models/project';
 import { stack } from '@/models/stack';
 
 export default router({
@@ -12,7 +12,7 @@ export default router({
         orgId: z.number(),
       }),
     )
-    .output(project)
+    .output(projectMeta)
     .mutation(async () => {
       return {
         id: 0,
@@ -35,7 +35,7 @@ export default router({
         projectId: z.number(),
       }),
     )
-    .output(project)
+    .output(projectMeta)
     .query(async () => {
       return {
         id: 0,

@@ -1,15 +1,13 @@
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/app/_trpc/client';
+import { Stack } from '@/models/stack';
 import Badge from '@/app/_components/Badge';
 
 type Props = {
-  projectId: number;
+  rows: Stack[];
 };
 
-const StackList = ({ projectId }: Props) => {
-  const { data: { stacks, after } = {} } = trpc.project.stacks.list.useQuery({
-    projectId: projectId,
-  });
+const StackList = ({ rows }: Props) => {
   const router = useRouter();
 
   const handleCreateStack = () => {
@@ -28,7 +26,7 @@ const StackList = ({ projectId }: Props) => {
       >
         <div className="font-normal text-sm text-primary-500">Create Stack</div>
       </li>
-      {stacks?.map((stack) => (
+      {rows.map((stack) => (
         <li
           key={`stack-${stack.id}`}
           className="relative flex justify-between gap-x-6 px-4 py-5 ml-20 border-t border-gray-100 hover:bg-gray-50 sm:px-6 lg:px-8  hover:cursor-pointer"

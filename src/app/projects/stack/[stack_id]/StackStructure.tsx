@@ -27,7 +27,7 @@ export default function StackStructure({ stack }: Props) {
             <span className="font-semibold text-base">Base API</span>
           </div>
 
-          {stack!.authEnabled && (
+          {stack.authEnabled && (
             <div className="flex ml-5 justify-between">
               <span className="font-normal text-sm">Auth API</span>
               <div className="flex gap-x-3">
@@ -36,7 +36,7 @@ export default function StackStructure({ stack }: Props) {
               </div>
             </div>
           )}
-          {stack!.postgrestEnabled && (
+          {stack.postgrestEnabled && (
             <div className="flex ml-5 justify-between">
               <span className="font-normal text-sm">Database API</span>
               <div className="flex gap-x-3">
@@ -45,7 +45,7 @@ export default function StackStructure({ stack }: Props) {
               </div>
             </div>
           )}
-          {stack!.storageEnabled && (
+          {stack.storageEnabled && (
             <div className="flex ml-5 justify-between">
               <span className="font-normal text-sm">Storage API</span>
               <div className="flex gap-x-3">
@@ -59,7 +59,7 @@ export default function StackStructure({ stack }: Props) {
           <div className="flex mb-2">
             <span className="font-semibold text-base">Vertical API</span>
           </div>
-          {stack!.vapis.map((vapi) => (
+          {stack.vapis.map((vapi) => (
             <div className="ml-5 hover:cursor-pointer">
               <span>{vapi.pkg?.name}</span>
             </div>

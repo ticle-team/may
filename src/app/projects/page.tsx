@@ -18,7 +18,7 @@ export default function Page() {
   const [selectedTab, setSelectedTab] = React.useState('전체');
   // TODO : orgID must be changed.
   const { data: { projects, after } = {}, isLoading } =
-    trpc.org.projects.list.useQuery({ orgId: 1 });
+    trpc.org.projects.list.useQuery({ orgId: 1, limit: 10 });
   const [projectList, setProjectList] = React.useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = React.useState<number | null>(
     null,
@@ -40,8 +40,10 @@ export default function Page() {
   };
 
   useEffect(() => {
+    if (isLoading) return;
+    
     // TODO: Implement filtering projects feature
-    if (!isLoading) setProjectList(projects ?? []);
+    setProjectList(projects ?? []);
   }, [isLoading, selectedTab]);
 
   return (
@@ -111,7 +113,7 @@ export default function Page() {
                     </div>
                   </li>
                   {project.id === selectedProject && (
-                    <StackList projectId={project.id} />
+                    <StackList rows={project.stacks} />
                   )}
                 </div>
               ))}
