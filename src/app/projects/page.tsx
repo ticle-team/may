@@ -16,7 +16,7 @@ import CreateProjectModal from '@/app/projects/CreateProjectModal';
 import useToast from '@/app/_hooks/useToast';
 
 export default function Page() {
-  const [selectedTab, setSelectedTab] = React.useState('전체');
+  const [selectedTab, setSelectedTab] = useState('전체');
   const utils = trpc.useUtils();
   // TODO : orgID must be changed.
   const {
@@ -24,8 +24,8 @@ export default function Page() {
     isLoading,
     error,
   } = trpc.org.projects.list.useQuery({ orgId: 1, limit: 10 });
-  const [projectList, setProjectList] = React.useState<Project[]>([]);
-  const [selectedProject, setSelectedProject] = React.useState<number | null>(
+  const [projectList, setProjectList] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null,
   );
   const [showCreateProjectDialog, setShowCreateProjectDialog] =
@@ -35,10 +35,10 @@ export default function Page() {
   const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
 
   const handleClickProject = (projectId: number) => {
-    if (selectedProject === projectId) {
-      return setSelectedProject(null);
+    if (selectedProjectId === projectId) {
+      return setSelectedProjectId(null);
     }
-    setSelectedProject(projectId);
+    setSelectedProjectId(projectId);
   };
 
   const onProjectCreated = () => {
@@ -133,7 +133,7 @@ export default function Page() {
                       <ClipboardDocumentIcon className="h-5 w-5 text-primary-500" />
                     </div>
                   </div>
-                  {project.id === selectedProject && (
+                  {project.id === selectedProjectId && (
                     <StackList rows={project.stacks} />
                   )}
                 </div>
