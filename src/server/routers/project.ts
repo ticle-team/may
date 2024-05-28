@@ -18,6 +18,8 @@ export default router({
         id: 0,
         name: '',
         description: '',
+        created_at: '',
+        stacks: [],
       };
     }),
   delete: authedProcedure
@@ -41,6 +43,8 @@ export default router({
         id: 0,
         name: '',
         description: '',
+        created_at: '',
+        stacks: [],
       };
     }),
   stacks: router({

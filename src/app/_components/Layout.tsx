@@ -14,12 +14,12 @@ type PageProps = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   const pages: Map<string, PageProps> = new Map([
     [
-      '/organization',
+      '/organizations',
       { hideSideMenu: false, hideHeader: false, hideChatBar: true },
     ],
     ['/stage', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
     [
-      '/project',
+      '/projects',
       { hideSideMenu: false, hideHeader: false, hideChatBar: false },
     ],
     ['/planet', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
