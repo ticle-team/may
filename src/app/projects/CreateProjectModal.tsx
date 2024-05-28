@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Button from '@/app/_components/Button';
-import DialogModal from '@/app/_components/Dialog';
+import useToast from '@/app/_hooks/useToast';
 
 type Props = {
   onCreated: () => void;
@@ -10,8 +10,7 @@ type Props = {
 const CreateProjectModal = ({ onCreated, onCancel }: Props) => {
   const [projectName, setProjectName] = useState<string>('');
   const [projectDescription, setProjectDescription] = useState<string>('');
-  const [showError, setShowError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const { renderToastContents, showErrorToast } = useToast();
 
   const handleCreateProject = async () => {
     // TODO: Implement create project feature
@@ -54,12 +53,7 @@ const CreateProjectModal = ({ onCreated, onCancel }: Props) => {
           Create
         </Button>
       </div>
-      <DialogModal
-        open={showError}
-        setOpen={setShowError}
-        description={errorMessage}
-        type={'alert'}
-      />
+      {renderToastContents()}
     </div>
   );
 };

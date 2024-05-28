@@ -13,7 +13,7 @@ import {
 import StackList from './StackList';
 import Modal from '@/app/_components/Modal';
 import CreateProjectModal from '@/app/projects/CreateProjectModal';
-import DialogModal from '@/app/_components/Dialog';
+import useToast from '@/app/_hooks/useToast';
 
 export default function Page() {
   const [selectedTab, setSelectedTab] = React.useState('전체');
@@ -30,8 +30,7 @@ export default function Page() {
   );
   const [showCreateProjectDialog, setShowCreateProjectDialog] =
     useState<boolean>(false);
-  const [showAlert, setShowAlert] = useState<boolean>(false);
-  const [alertMessage, setAlertMessage] = useState<string>('');
+  const { renderToastContents, showErrorToast } = useToast();
 
   const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
 
@@ -61,8 +60,7 @@ export default function Page() {
   useEffect(() => {
     if (isLoading) return;
     if (error) {
-      setShowAlert(true);
-      setAlertMessage('프로젝트 목록을 불러오는 중 오류가 발생했습니다.');
+      showErrorToast('프로젝트 목록을 불러오는 중 오류가 발생했습니다.');
       return;
     }
     filterProjects();
@@ -70,13 +68,7 @@ export default function Page() {
 
   return (
     <>
-      <DialogModal
-        open={showAlert}
-        setOpen={setShowAlert}
-        description={alertMessage}
-        confirmText="확인"
-        type={'alert'}
-      />
+      {renderToastContents()}
       <Modal
         open={showCreateProjectDialog}
         setOpen={setShowCreateProjectDialog}

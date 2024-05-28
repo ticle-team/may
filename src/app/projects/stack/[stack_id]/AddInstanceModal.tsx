@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Button from '@/app/_components/Button';
-import DialogModal from '@/app/_components/Dialog';
+import useToast from '@/app/_hooks/useToast';
 import Dropdown from '@/app/_components/Dropdown';
 
 // TODO: Change the instance zone items
@@ -20,8 +20,7 @@ type Props = {
 const AddInstanceModal = ({ onAdded, onCancel }: Props) => {
   const [instanceZone, setInstanceZone] = useState<string | null>(null);
   const [instanceName, setInstanceName] = useState<string>('');
-  const [showError, setShowError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const { renderToastContents, showErrorToast } = useToast();
 
   const handleAddInstance = async () => {
     // TODO: Implement add instance feature
@@ -60,12 +59,7 @@ const AddInstanceModal = ({ onAdded, onCancel }: Props) => {
           Add
         </Button>
       </div>
-      <DialogModal
-        open={showError}
-        setOpen={setShowError}
-        description={errorMessage}
-        type={'alert'}
-      />
+      {renderToastContents()}
     </div>
   );
 };

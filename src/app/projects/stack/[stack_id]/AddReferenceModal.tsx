@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import Button from '@/app/_components/Button';
-import DialogModal from '@/app/_components/Dialog';
+import useToast from '@/app/_hooks/useToast';
 
 type Props = {
   onAdded: () => void;
@@ -10,8 +10,7 @@ type Props = {
 const AddReferenceModal = ({ onAdded, onCancel }: Props) => {
   const [referenceURL, setReferenceURL] = useState<string>('');
   const [referenceTitle, setReferenceTitle] = useState<string>('');
-  const [showError, setShowError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
+  const { renderToastContents, showErrorToast } = useToast();
 
   const handleAddReference = async () => {
     // TODO: Implement add reference feature
@@ -50,12 +49,7 @@ const AddReferenceModal = ({ onAdded, onCancel }: Props) => {
           Add
         </Button>
       </div>
-      <DialogModal
-        open={showError}
-        setOpen={setShowError}
-        description={errorMessage}
-        type={'alert'}
-      />
+      {renderToastContents()}
     </div>
   );
 };
