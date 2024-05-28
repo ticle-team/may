@@ -1,7 +1,7 @@
 import { Service } from 'typedi';
 import { Axios, AxiosError, isAxiosError } from 'axios';
 import { Stack } from '@/models/stack';
-import { ProjectMeta } from '@/models/project';
+import { Project } from '@/models/project';
 import { TRPCError } from '@trpc/server';
 import {
   InstallAuthInput,
@@ -77,7 +77,7 @@ export class StoaCloudService {
   }
 
   async createProject(name: string, description: string) {
-    const { data: project } = await this.axios.post<ProjectMeta>('/v1/projects', {
+    const { data: project } = await this.axios.post<Project>('/v1/projects', {
       name,
       description,
     });
@@ -90,7 +90,7 @@ export class StoaCloudService {
   }
 
   async getProject(projectId: number) {
-    const { data } = await this.axios.get<ProjectMeta>(`/v1/projects/${projectId}`);
+    const { data } = await this.axios.get<Project>(`/v1/projects/${projectId}`);
 
     return data;
   }

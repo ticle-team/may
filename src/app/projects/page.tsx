@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { trpc } from '@/app/_trpc/client';
-import { Project } from '@/models/project';
 import Button from '@/app/_components/Button';
 import classNames from 'classnames';
 import {
@@ -19,12 +18,9 @@ export default function Page() {
   const [selectedTab, setSelectedTab] = useState('전체');
   const utils = trpc.useUtils();
   // TODO : orgID must be changed.
-  const {
-    data: { projects, after } = {},
-    isLoading,
-    error,
-  } = trpc.org.projects.list.useQuery({ orgId: 1, limit: 10 });
-  const [projectList, setProjectList] = useState<Project[]>([]);
+  const { data: { projects, after } = {}, error } =
+    trpc.org.projects.list.useQuery({ orgId: 1, limit: 10 });
+
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null,
   );
@@ -52,19 +48,10 @@ export default function Page() {
     await utils.org.projects.list.invalidate();
   };
 
-  const filterProjects = () => {
-    // TODO: Implement filtering projects feature
-    setProjectList(projects ?? []);
-  };
-
   useEffect(() => {
-    if (isLoading) return;
-    if (error) {
+    if (error)
       showErrorToast('프로젝트 목록을 불러오는 중 오류가 발생했습니다.');
-      return;
-    }
-    filterProjects();
-  }, [isLoading]);
+  }, [error]);
 
   return (
     <>
@@ -114,7 +101,7 @@ export default function Page() {
           </div>
           <div>
             <div role="list">
-              {projectList.map((project) => (
+              {projects?.map((project) => (
                 <div key={`project-${project.id}`}>
                   <div
                     className="relative flex justify-between gap-x-6 px-4 py-5 border-y border-gray-100 hover:bg-gray-50 sm:px-6 lg:px-8"

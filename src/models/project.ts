@@ -1,14 +1,6 @@
 import { z } from 'zod';
 import { stack } from '@/models/stack';
 
-export const projectMeta = z.object({
-  id: z.number(),
-  name: z.string(),
-  description: z.string(),
-});
-
-export type ProjectMeta = z.infer<typeof projectMeta>;
-
 export const project = z.object({
   id: z.number(),
   name: z.string(),
