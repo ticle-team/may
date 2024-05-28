@@ -59,8 +59,8 @@ export default function StackStructure({ stack }: Props) {
           <div className="flex mb-2">
             <span className="font-semibold text-base">Vertical API</span>
           </div>
-          {stack.vapis.map((vapi) => (
-            <div className="ml-5 hover:cursor-pointer">
+          {stack.vapis.map((vapi, index) => (
+            <div className="ml-5 hover:cursor-pointer" key={`vapi-${index}`}>
               <span>{vapi.pkg?.name}</span>
             </div>
           ))}
