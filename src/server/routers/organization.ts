@@ -1,8 +1,11 @@
 import { router, authedProcedure, baseProcedure } from '../trpc';
 import { z } from 'zod';
-import { organization } from '@/models/organization';
+import { getProjectsSchema, organization } from '@/models/organization';
 import { project } from '@/models/project';
+import Container from 'typedi';
+import { OrganizationService } from '@/server/domain/organization/organization.service';
 
+const organizationService = Container.get(OrganizationService);
 export default router({
   create: authedProcedure
     .input(
@@ -21,24 +24,14 @@ export default router({
     }),
   projects: router({
     list: baseProcedure
-      .input(
-        z.object({
-          orgId: z.number(),
-          limit: z.number(),
-        }),
-      )
+      .input(getProjectsSchema)
       .output(
         z.object({
           projects: z.array(project),
           after: z.number().nullish(),
         }),
       )
-      .query(async () => {
-        return {
-          projects: [],
-          after: null,
-        };
-      }),
+      .query(({ input }) => organizationService.getProjects(input)),
   }),
   delete: authedProcedure
     .input(

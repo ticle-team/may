@@ -7,6 +7,7 @@ export function createStoaCloudServiceMock(): StoacloudServiceMock {
     createProject: jest.fn(),
     deleteProject: jest.fn(),
     getProject: jest.fn(),
+    getProjects: jest.fn(),
     createStack: jest.fn(),
     deleteStack: jest.fn(),
     getStack: jest.fn(),

@@ -6,8 +6,8 @@ export const project = z.object({
   name: z.string(),
   description: z.string(),
   stacks: z.array(stack),
-  created_at: z.string(),
-  updated_at: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
 });
 
 export type Project = z.infer<typeof project>;

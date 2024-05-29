@@ -143,3 +143,9 @@ export type RegisterVapisOutput = {
   message?: string;
   releaseId: number;
 };
+
+export type getProjectsInput = {
+  name?: string;
+  page?: number;
+  perPage?: number;
+};
