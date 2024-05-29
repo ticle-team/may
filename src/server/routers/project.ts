@@ -1,52 +1,28 @@
 import { authedProcedure, baseProcedure, router } from '../trpc';
 import { z } from 'zod';
-import { project } from '@/models/project';
+import {
+  createProjectSchema,
+  deleteProjectSchema,
+  getProjectSchema,
+  project,
+} from '@/models/project';
 import { stack } from '@/models/stack';
+import Container from 'typedi';
+import { ProjectService } from '@/server/domain/project/project.service';
 
+const projectService = Container.get(ProjectService);
 export default router({
   create: authedProcedure
-    .input(
-      z.object({
-        name: z.string(),
-        description: z.string(),
-        orgId: z.number(),
-      }),
-    )
+    .input(createProjectSchema)
     .output(project)
-    .mutation(async () => {
-      return {
-        id: 0,
-        name: '',
-        description: '',
-        created_at: '',
-        stacks: [],
-      };
-    }),
+    .mutation(({ input }) => projectService.createProject(input)),
   delete: authedProcedure
-    .input(
-      z.object({
-        projectId: z.number(),
-      }),
-    )
-    .mutation(async () => {
-      return;
-    }),
+    .input(deleteProjectSchema)
+    .mutation(({ input }) => projectService.deleteProject(input.projectId)),
   get: baseProcedure
-    .input(
-      z.object({
-        projectId: z.number(),
-      }),
-    )
+    .input(getProjectSchema)
     .output(project)
-    .query(async () => {
-      return {
-        id: 0,
-        name: '',
-        description: '',
-        created_at: '',
-        stacks: [],
-      };
-    }),
+    .query(({ input }) => projectService.getProject(input.projectId)),
   stacks: router({
     list: baseProcedure
       .input(

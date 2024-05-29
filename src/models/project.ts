@@ -11,3 +11,23 @@ export const project = z.object({
 });
 
 export type Project = z.infer<typeof project>;
+
+export const createProjectSchema = z.object({
+  orgId: z.number(),
+  name: z.string(),
+  description: z.string(),
+});
+
+export type CreateProjectRequest = z.infer<typeof createProjectSchema>;
+
+export const deleteProjectSchema = z.object({
+  projectId: z.number(),
+});
+
+export type DeleteProjectRequest = z.infer<typeof deleteProjectSchema>;
+
+export const getProjectSchema = z.object({
+  projectId: z.number(),
+});
+
+export type GetProjectRequest = z.infer<typeof getProjectSchema>;
