@@ -1,23 +1,46 @@
 import { useState } from 'react';
 import Button from '@/app/_components/Button';
 import useToast from '@/app/_hooks/useToast';
+import { trpc } from '@/app/_trpc/client';
+import { Project } from '@/models/project';
+import { TRPCClientErrorLike } from '@trpc/client';
 
 type Props = {
-  onCreated: () => void;
+  organizationId: number;
+  onCreated: (project: Project) => void;
   onCancel: () => void;
+  handleProjectCreateError: (error: TRPCClientErrorLike<any>) => void;
 };
 
-const CreateProjectModal = ({ onCreated, onCancel }: Props) => {
+const CreateProjectModal = ({
+  organizationId,
+  onCreated,
+  onCancel,
+  handleProjectCreateError,
+}: Props) => {
   const [projectName, setProjectName] = useState<string>('');
   const [projectDescription, setProjectDescription] = useState<string>('');
-  const { renderToastContents, showErrorToast } = useToast();
+
+  const createProjectMutation = trpc.project.create.useMutation({
+    onSuccess: (data) => {
+      return data;
+    },
+    onError: (error) => {
+      console.error(error);
+      handleProjectCreateError(error);
+    },
+  });
 
   const handleCreateProject = async () => {
     // TODO: Implement create project feature
-    // TODO: Implement the create thread feature after the project is created
-    // const { id: threadId } = await createThread.mutateAsync({
-    //   projectId: BigInt(1),
-    // });
+    const createResult = await createProjectMutation.mutateAsync({
+      orgId: organizationId,
+      name: projectName,
+      description: projectDescription,
+    });
+    if (!createResult) return;
+
+    onCreated(createResult);
   };
 
   return (
@@ -53,7 +76,6 @@ const CreateProjectModal = ({ onCreated, onCancel }: Props) => {
           Create
         </Button>
       </div>
-      {renderToastContents()}
     </div>
   );
 };

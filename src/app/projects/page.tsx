@@ -4,41 +4,32 @@ import React, { useEffect, useState } from 'react';
 import { trpc } from '@/app/_trpc/client';
 import Button from '@/app/_components/Button';
 import classNames from 'classnames';
-import {
-  ClipboardDocumentIcon,
-  StarIcon,
-  UserIcon,
-} from '@heroicons/react/20/solid';
-import StackList from './StackList';
 import Modal from '@/app/_components/Modal';
 import CreateProjectModal from '@/app/projects/CreateProjectModal';
 import useToast from '@/app/_hooks/useToast';
+import { Project } from '@/models/project';
+import ProjectList from '@/app/projects/ProjectList';
+import { TRPCClientErrorLike } from '@trpc/client';
 
 export default function Page() {
   const [selectedTab, setSelectedTab] = useState('전체');
   const utils = trpc.useUtils();
   // TODO : orgID must be changed.
   const { data: { projects, after } = {}, error } =
-    trpc.org.projects.list.useQuery({ orgId: 1, limit: 10 });
-
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
-    null,
-  );
+    trpc.org.projects.list.useQuery({
+      orgId: 1,
+      page: 1,
+      perPage: 10,
+    });
   const [showCreateProjectDialog, setShowCreateProjectDialog] =
     useState<boolean>(false);
   const { renderToastContents, showErrorToast } = useToast();
 
   const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
 
-  const handleClickProject = (projectId: number) => {
-    if (selectedProjectId === projectId) {
-      return setSelectedProjectId(null);
-    }
-    setSelectedProjectId(projectId);
-  };
-
-  const onProjectCreated = () => {
-    // TODO: Implement on project created
+  const onProjectCreated = (result: Project) => {
+    projects?.push(result);
+    setShowCreateProjectDialog(false);
   };
 
   const handleClickTab = async (tabName: string) => {
@@ -46,6 +37,14 @@ export default function Page() {
     setSelectedTab(tabName);
 
     await utils.org.projects.list.invalidate();
+  };
+
+  const handleProjectCreateError = (error: TRPCClientErrorLike<any>) => {
+    showErrorToast('프로젝트 생성 중 오류가 발생했습니다.');
+  };
+
+  const handleThreadCreateError = (error: TRPCClientErrorLike<any>) => {
+    showErrorToast('스택 생성 중 오류가 발생했습니다.');
   };
 
   useEffect(() => {
@@ -61,10 +60,13 @@ export default function Page() {
         setOpen={setShowCreateProjectDialog}
         contents={
           <CreateProjectModal
+            // TODO : orgID must be changed.
+            organizationId={1}
             onCancel={() => {
               setShowCreateProjectDialog(false);
             }}
             onCreated={onProjectCreated}
+            handleProjectCreateError={handleProjectCreateError}
           />
         }
       />
@@ -99,34 +101,10 @@ export default function Page() {
               </Button>
             </div>
           </div>
-          <div>
-            <div role="list">
-              {projects?.map((project) => (
-                <div key={`project-${project.id}`}>
-                  <div
-                    className="relative flex justify-between gap-x-6 px-4 py-5 border-y border-gray-100 hover:bg-gray-50 sm:px-6 lg:px-8"
-                    onClick={() => {
-                      handleClickProject(project.id);
-                    }}
-                  >
-                    <div className="flex min-w-0 items-center">
-                      <p className="text-sm font-semibold leading-6 text-gray-900">
-                        {project.name}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-x-4">
-                      <UserIcon className="h-5 w-5 text-gray-400" />
-                      <StarIcon className="h-5 w-5 text-primary-500" />
-                      <ClipboardDocumentIcon className="h-5 w-5 text-primary-500" />
-                    </div>
-                  </div>
-                  {project.id === selectedProjectId && (
-                    <StackList rows={project.stacks} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <ProjectList
+            rows={projects ?? []}
+            handleThreadCreateError={handleThreadCreateError}
+          />
         </div>
       </div>
     </>
