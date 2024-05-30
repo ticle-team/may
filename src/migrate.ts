@@ -12,10 +12,14 @@ export async function resetSchema() {
     throw new Error('resetSchema is not allowed in production');
   }
   await dropAllTables();
-  await migrate();
+  await migrate({});
 }
 
-export async function migrate() {
+export async function migrate({ migrationHome = './prisma/migrations' }) {
+  if (migrationHome === '') {
+    throw new Error('migrationHome cannot be empty');
+  }
+
   const pool = new pg.Pool({
     connectionString: appEnv.DATABASE_URL ?? '',
   });
@@ -32,7 +36,7 @@ export async function migrate() {
                                                        ORDER BY version DESC
                                                        LIMIT 1`);
     const lastVersion = res.rows.length > 0 ? res.rows[0].version : 0;
-    const migrationDirs = await readdir('./prisma/migrations');
+    const migrationDirs = await readdir(migrationHome);
     const migrations = migrationDirs
       .map((migrationDir) => {
         const [version, name] = migrationDir.split('_');
@@ -50,11 +54,11 @@ export async function migrate() {
 
     for (const { filepath, version, name } of migrations) {
       const client = await pool.connect();
-      const migrationFile = await readFile(filepath, {
-        encoding: 'utf-8',
-      });
 
       try {
+        const migrationFile = await readFile(filepath, {
+          encoding: 'utf-8',
+        });
         await client.query('BEGIN');
         await client.query(migrationFile);
         await client.query(
