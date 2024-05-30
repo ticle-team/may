@@ -40,8 +40,8 @@ describe('given OrganizationService', () => {
         name: mockData.name,
         description: mockData.description,
         stacks: [],
-        created_at: '',
-        updated_at: '',
+        createdAt: '2024-05-30T12:38:55.605056Z',
+        updatedAt: '2024-05-31T12:38:55.605056Z',
       },
     ];
     mockStoaCloudService.getProjects.mockResolvedValue(createdProjects);
@@ -52,7 +52,8 @@ describe('given OrganizationService', () => {
       page: 1,
       perPage: 10,
     };
-    const result = await organizationService.getProjects(getProjectsRequest);
+    const { projects: result } =
+      await organizationService.getProjects(getProjectsRequest);
 
     // then
     expect(result).not.toBeNull();
@@ -60,5 +61,7 @@ describe('given OrganizationService', () => {
     expect(result[0].id).toEqual(createdProjects[0].id);
     expect(result[0].name).toEqual(createdProjects[0].name);
     expect(result[0].description).toEqual(createdProjects[0].description);
+    expect(result[0].createdAt).toEqual(createdProjects[0].createdAt);
+    expect(result[0].updatedAt).toEqual(createdProjects[0].updatedAt);
   });
 });

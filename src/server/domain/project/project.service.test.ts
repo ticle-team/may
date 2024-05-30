@@ -39,8 +39,8 @@ describe('given ProjectService', () => {
       name: mockData.name,
       description: mockData.description,
       stacks: [],
-      created_at: '',
-      updated_at: '',
+      createdAt: '2024-05-30T12:38:55.605056Z',
+      updatedAt: '2024-05-31T12:38:55.605056Z',
     };
     mockStoaCloudService.createProject.mockResolvedValue(createdProject);
 
@@ -55,8 +55,10 @@ describe('given ProjectService', () => {
     // then
     expect(result).not.toBeNull();
     expect(result.id).toEqual(createdProject.id);
-    expect(result.name).toEqual(mockData.name);
-    expect(result.description).toEqual(mockData.description);
+    expect(result.name).toEqual(createdProject.name);
+    expect(result.description).toEqual(createdProject.description);
+    expect(result.createdAt).toEqual(createdProject.createdAt);
+    expect(result.updatedAt).toEqual(createdProject.updatedAt);
   });
 
   it('should retrieve and return a project', async () => {
@@ -66,8 +68,8 @@ describe('given ProjectService', () => {
       name: mockData.name,
       description: mockData.description,
       stacks: [],
-      created_at: '',
-      updated_at: '',
+      createdAt: '2024-05-30T12:38:55.605056Z',
+      updatedAt: '2024-05-31T12:38:55.605056Z',
     };
     mockStoaCloudService.getProject.mockResolvedValue(selectedProject);
 
@@ -79,6 +81,8 @@ describe('given ProjectService', () => {
     expect(result.id).toEqual(selectedProject.id);
     expect(result.name).toEqual(selectedProject.name);
     expect(result.description).toEqual(selectedProject.description);
+    expect(result.createdAt).toEqual(selectedProject.createdAt);
+    expect(result.updatedAt).toEqual(selectedProject.updatedAt);
   });
 
   it('should delete a project', async () => {
@@ -88,8 +92,8 @@ describe('given ProjectService', () => {
       name: mockData.name,
       description: mockData.description,
       stacks: [],
-      created_at: '',
-      updated_at: '',
+      createdAt: '2024-05-30T12:38:55.605056Z',
+      updatedAt: '2024-05-31T12:38:55.605056Z',
     };
     mockStoaCloudService.getProject.mockResolvedValue(selectedProject);
     const retrieveResult = await projectService.getProject(selectedProject.id);
