@@ -13,6 +13,9 @@ export class OrganizationService {
       page: request.page,
       perPage: request.perPage,
     });
-    return projects;
+    return {
+      projects: projects,
+      after: null,
+    };
   }
 }
