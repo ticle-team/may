@@ -7,18 +7,26 @@ import classNames from 'classnames';
 import Modal from '@/app/_components/Modal';
 import CreateProjectModal from '@/app/projects/CreateProjectModal';
 import useToast from '@/app/_hooks/useToast';
-import { Project } from '@/models/project';
-import ProjectList from '@/app/projects/ProjectList';
-import { TRPCClientErrorLike } from '@trpc/client';
+import DialogModal from '@/app/_components/Dialog';
+import { useRouter } from 'next/navigation';
+import StackItem from '@/app/projects/StackItem';
+import ProjectItem from '@/app/projects/ProjectItem';
 
 export default function Page() {
   const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
   // TODO : orgID must be changed.
   const organizationId = 1;
   const [selectedTab, setSelectedTab] = useState('전체');
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
+    null,
+  );
   const { renderToastContents, showErrorToast } = useToast();
   const utils = trpc.useUtils();
+  const router = useRouter();
+
   const [showCreateProjectDialog, setShowCreateProjectDialog] =
+    useState<boolean>(false);
+  const [showCreateStackDialog, setShowCreateStackDialog] =
     useState<boolean>(false);
 
   const { data: { projects, after } = {}, error } =
@@ -38,8 +46,17 @@ export default function Page() {
     },
   });
 
+  const createThreadMutation = trpc.thread.create.useMutation({
+    onSuccess: (data) => {
+      return data;
+    },
+    onError: (error) => {
+      console.error(error);
+      showErrorToast('스택 생성 중 오류가 발생했습니다.');
+    },
+  });
+
   const handleCreateProject = async (name: string, description: string) => {
-    // TODO: Implement create project feature
     const createResult = await createProjectMutation.mutateAsync({
       orgId: organizationId,
       name: name,
@@ -58,8 +75,25 @@ export default function Page() {
     await utils.org.projects.list.invalidate();
   };
 
-  const handleThreadCreateError = (error: TRPCClientErrorLike<any>) => {
-    showErrorToast('스택 생성 중 오류가 발생했습니다.');
+  const handleClickProject = (projectId: number) => {
+    if (selectedProjectId === projectId) {
+      return setSelectedProjectId(null);
+    }
+    setSelectedProjectId(projectId);
+  };
+
+  const handleCreateStack = async () => {
+    if (!selectedProjectId) return;
+
+    const { id: threadId } = await createThreadMutation.mutateAsync({
+      projectId: selectedProjectId,
+    });
+
+    router.push(`/threads/${threadId}`);
+  };
+
+  const handleStackClick = (stackId: number) => {
+    router.push(`/projects/stack/${stackId}`);
   };
 
   useEffect(() => {
@@ -82,6 +116,17 @@ export default function Page() {
             onCreate={handleCreateProject}
           />
         }
+      />
+      <DialogModal
+        open={showCreateStackDialog}
+        setOpen={() => {
+          setShowCreateStackDialog(false);
+        }}
+        title="스택을 생성하시겠습니까?"
+        type="confirm"
+        confirmText="Create"
+        onConfirm={handleCreateStack}
+        cancelText="Cancel"
       />
       <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center">
         <div className="w-full flex flex-col">
@@ -114,10 +159,35 @@ export default function Page() {
               </Button>
             </div>
           </div>
-          <ProjectList
-            rows={projects ?? []}
-            handleThreadCreateError={handleThreadCreateError}
-          />
+          <div role="list">
+            {projects?.map((project) => (
+              <div key={`project-${project.id}`}>
+                <ProjectItem
+                  project={project}
+                  handleClickProject={handleClickProject}
+                />
+                {project.id === selectedProjectId && (
+                  <div role="list">
+                    <div
+                      className="relative flex justify-center gap-x-6 px-4 py-2 ml-20 hover:bg-gray-50 sm:px-6 lg:px-8 hover:cursor-pointer"
+                      onClick={() => setShowCreateStackDialog(true)}
+                    >
+                      <div className="font-normal text-sm text-primary-500">
+                        Create Stack
+                      </div>
+                    </div>
+                    {project?.stacks?.map((stack) => (
+                      <StackItem
+                        key={`stack-${stack.id}`}
+                        stack={stack}
+                        handleStackClick={handleStackClick}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </>
