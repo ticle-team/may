@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Service } from 'typedi';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { CreateProjectRequest } from '@/models/project';

@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-
 import { createCallerFactory } from '@/server/trpc';
 import { appRouter } from '@/server/routers';
 
