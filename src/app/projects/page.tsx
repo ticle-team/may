@@ -28,6 +28,7 @@ export default function Page() {
     useState<boolean>(false);
   const [showCreateStackDialog, setShowCreateStackDialog] =
     useState<boolean>(false);
+  const [loading, setLoading] = useState(false);
 
   const { data: { projects, after } = {}, error } =
     trpc.org.projects.list.useQuery({
@@ -36,36 +37,44 @@ export default function Page() {
       perPage: 10,
     });
 
-  const createProjectMutation = trpc.project.create.useMutation({
-    onSuccess: (data) => {
-      return data;
-    },
-    onError: (error) => {
-      console.error(error);
-      showErrorToast('프로젝트 생성 중 오류가 발생했습니다.');
-    },
-  });
-
-  const createThreadMutation = trpc.thread.create.useMutation({
-    onSuccess: (data) => {
-      return data;
-    },
-    onError: (error) => {
-      console.error(error);
-      showErrorToast('스택 생성 중 오류가 발생했습니다.');
-    },
-  });
+  const createProjectMutation = trpc.project.create.useMutation();
+  const createThreadMutation = trpc.thread.create.useMutation();
 
   const handleCreateProject = async (name: string, description: string) => {
-    const createResult = await createProjectMutation.mutateAsync({
-      orgId: organizationId,
-      name: name,
-      description: description,
-    });
-    if (!createResult) return;
+    if (loading || !name || !description) return;
+    try {
+      setLoading(true);
+      await createProjectMutation.mutateAsync({
+        orgId: organizationId,
+        name: name,
+        description: description,
+      });
+      setShowCreateProjectDialog(false);
 
-    projects?.push(createResult);
-    setShowCreateProjectDialog(false);
+      utils.org.projects.list.invalidate();
+    } catch (error) {
+      console.error(error);
+      showErrorToast('프로젝트 생성 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateStack = async () => {
+    if (loading || !selectedProjectId) return;
+    try {
+      setLoading(true);
+      const { id: threadId } = await createThreadMutation.mutateAsync({
+        projectId: selectedProjectId,
+      });
+
+      router.push(`/threads/${threadId}`);
+    } catch (error) {
+      console.error(error);
+      showErrorToast('스택 생성 중 오류가 발생했습니다.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClickTab = async (tabName: string) => {
@@ -80,16 +89,6 @@ export default function Page() {
       return setSelectedProjectId(null);
     }
     setSelectedProjectId(projectId);
-  };
-
-  const handleCreateStack = async () => {
-    if (!selectedProjectId) return;
-
-    const { id: threadId } = await createThreadMutation.mutateAsync({
-      projectId: selectedProjectId,
-    });
-
-    router.push(`/threads/${threadId}`);
   };
 
   const handleStackClick = (stackId: number) => {
