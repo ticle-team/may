@@ -1,46 +1,26 @@
 import { useState } from 'react';
 import Button from '@/app/_components/Button';
-import useToast from '@/app/_hooks/useToast';
-import { trpc } from '@/app/_trpc/client';
-import { Project } from '@/models/project';
-import { TRPCClientErrorLike } from '@trpc/client';
 
 type Props = {
   organizationId: number;
-  onCreated: (project: Project) => void;
+  onCreate: (name: string, description: string) => Promise<void>;
   onCancel: () => void;
-  handleProjectCreateError: (error: TRPCClientErrorLike<any>) => void;
 };
 
-const CreateProjectModal = ({
-  organizationId,
-  onCreated,
-  onCancel,
-  handleProjectCreateError,
-}: Props) => {
+const CreateProjectModal = ({ onCreate, onCancel }: Props) => {
   const [projectName, setProjectName] = useState<string>('');
   const [projectDescription, setProjectDescription] = useState<string>('');
-
-  const createProjectMutation = trpc.project.create.useMutation({
-    onSuccess: (data) => {
-      return data;
-    },
-    onError: (error) => {
-      console.error(error);
-      handleProjectCreateError(error);
-    },
-  });
+  const [loading, setLoading] = useState(false);
 
   const handleCreateProject = async () => {
-    // TODO: Implement create project feature
-    const createResult = await createProjectMutation.mutateAsync({
-      orgId: organizationId,
-      name: projectName,
-      description: projectDescription,
-    });
-    if (!createResult) return;
+    if (loading) return;
+    setLoading(true);
 
-    onCreated(createResult);
+    try {
+      await onCreate(projectName, projectDescription);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,7 +52,11 @@ const CreateProjectModal = ({
         <Button color="secondary" onClick={onCancel}>
           cancel
         </Button>
-        <Button color="primary" onClick={handleCreateProject}>
+        <Button
+          color="primary"
+          disabled={loading || projectName === '' || projectDescription === ''}
+          onClick={handleCreateProject}
+        >
           Create
         </Button>
       </div>

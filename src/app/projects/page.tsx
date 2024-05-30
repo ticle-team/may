@@ -12,23 +12,42 @@ import ProjectList from '@/app/projects/ProjectList';
 import { TRPCClientErrorLike } from '@trpc/client';
 
 export default function Page() {
-  const [selectedTab, setSelectedTab] = useState('전체');
-  const utils = trpc.useUtils();
+  const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
   // TODO : orgID must be changed.
+  const organizationId = 1;
+  const [selectedTab, setSelectedTab] = useState('전체');
+  const { renderToastContents, showErrorToast } = useToast();
+  const utils = trpc.useUtils();
+  const [showCreateProjectDialog, setShowCreateProjectDialog] =
+    useState<boolean>(false);
+
   const { data: { projects, after } = {}, error } =
     trpc.org.projects.list.useQuery({
-      orgId: 1,
+      orgId: organizationId,
       page: 1,
       perPage: 10,
     });
-  const [showCreateProjectDialog, setShowCreateProjectDialog] =
-    useState<boolean>(false);
-  const { renderToastContents, showErrorToast } = useToast();
 
-  const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
+  const createProjectMutation = trpc.project.create.useMutation({
+    onSuccess: (data) => {
+      return data;
+    },
+    onError: (error) => {
+      console.error(error);
+      showErrorToast('프로젝트 생성 중 오류가 발생했습니다.');
+    },
+  });
 
-  const onProjectCreated = (result: Project) => {
-    projects?.push(result);
+  const handleCreateProject = async (name: string, description: string) => {
+    // TODO: Implement create project feature
+    const createResult = await createProjectMutation.mutateAsync({
+      orgId: organizationId,
+      name: name,
+      description: description,
+    });
+    if (!createResult) return;
+
+    projects?.push(createResult);
     setShowCreateProjectDialog(false);
   };
 
@@ -37,10 +56,6 @@ export default function Page() {
     setSelectedTab(tabName);
 
     await utils.org.projects.list.invalidate();
-  };
-
-  const handleProjectCreateError = (error: TRPCClientErrorLike<any>) => {
-    showErrorToast('프로젝트 생성 중 오류가 발생했습니다.');
   };
 
   const handleThreadCreateError = (error: TRPCClientErrorLike<any>) => {
@@ -60,13 +75,11 @@ export default function Page() {
         setOpen={setShowCreateProjectDialog}
         contents={
           <CreateProjectModal
-            // TODO : orgID must be changed.
-            organizationId={1}
+            organizationId={organizationId}
             onCancel={() => {
               setShowCreateProjectDialog(false);
             }}
-            onCreated={onProjectCreated}
-            handleProjectCreateError={handleProjectCreateError}
+            onCreate={handleCreateProject}
           />
         }
       />
