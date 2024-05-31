@@ -1,19 +1,25 @@
 import { useState } from 'react';
 import Button from '@/app/_components/Button';
-import useToast from '@/app/_hooks/useToast';
 
 type Props = {
-  onAdded: () => void;
+  onAdd: (title: string, url: string) => Promise<void>;
   onCancel: () => void;
 };
 
-const AddReferenceModal = ({ onAdded, onCancel }: Props) => {
+const AddReferenceModal = ({ onAdd, onCancel }: Props) => {
   const [referenceURL, setReferenceURL] = useState<string>('');
   const [referenceTitle, setReferenceTitle] = useState<string>('');
-  const { renderToastContents, showErrorToast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   const handleAddReference = async () => {
-    // TODO: Implement add reference feature
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      await onAdd(referenceTitle, referenceURL);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,11 +51,14 @@ const AddReferenceModal = ({ onAdded, onCancel }: Props) => {
         <Button color="secondary" onClick={onCancel}>
           cancel
         </Button>
-        <Button color="primary" onClick={handleAddReference}>
+        <Button
+          color="primary"
+          disabled={loading || referenceURL === '' || referenceTitle === ''}
+          onClick={handleAddReference}
+        >
           Add
         </Button>
       </div>
-      {renderToastContents()}
     </div>
   );
 };

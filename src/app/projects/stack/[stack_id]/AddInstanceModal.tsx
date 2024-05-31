@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Button from '@/app/_components/Button';
-import useToast from '@/app/_hooks/useToast';
 import Dropdown from '@/app/_components/Dropdown';
 
 // TODO: Change the instance zone items
@@ -13,17 +12,24 @@ const INSTANCE_ZONE_ITEMS = [
 ];
 
 type Props = {
-  onAdded: () => void;
+  onAdd: (zone: string, name: string) => Promise<void>;
   onCancel: () => void;
 };
 
-const AddInstanceModal = ({ onAdded, onCancel }: Props) => {
+const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
   const [instanceZone, setInstanceZone] = useState<string | null>(null);
   const [instanceName, setInstanceName] = useState<string>('');
-  const { renderToastContents, showErrorToast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   const handleAddInstance = async () => {
-    // TODO: Implement add instance feature
+    if (loading || !instanceZone) return;
+    setLoading(true);
+
+    try {
+      await onAdd(instanceZone, instanceName);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,11 +61,14 @@ const AddInstanceModal = ({ onAdded, onCancel }: Props) => {
         <Button color="secondary" onClick={onCancel}>
           cancel
         </Button>
-        <Button color="primary" onClick={handleAddInstance}>
+        <Button
+          color="primary"
+          disabled={loading || instanceZone === null || instanceName === ''}
+          onClick={handleAddInstance}
+        >
           Add
         </Button>
       </div>
-      {renderToastContents()}
     </div>
   );
 };
