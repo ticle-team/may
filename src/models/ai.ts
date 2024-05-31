@@ -9,6 +9,7 @@ export const chatRole = z.union([
 export type ChatRole = z.infer<typeof chatRole>;
 
 export const chatMessage = z.object({
+  id: z.string(),
   role: chatRole,
   text: z.string(),
 });

@@ -60,6 +60,8 @@ const CreateProjectModal = ({ onCreate, onCancel }: Props) => {
           Create
         </Button>
       </div>
+  organizationId: number;
+  onCreate: (name: string, description: string) => Promise<void>;
     </div>
   );
 };
