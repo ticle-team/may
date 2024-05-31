@@ -91,7 +91,7 @@ export default function Page() {
     setSelectedProjectId(projectId);
   };
 
-  const handleStackClick = (stackId: number) => {
+  const handleClickStack = (stackId: number) => {
     router.push(`/projects/stack/${stackId}`);
   };
 
@@ -158,33 +158,32 @@ export default function Page() {
               </Button>
             </div>
           </div>
-          <div role="list">
+          <div className="flex flex-col" role="list">
             {projects?.map((project) => (
-              <div key={`project-${project.id}`}>
-                <ProjectItem
-                  project={project}
-                  handleClickProject={handleClickProject}
-                />
-                {project.id === selectedProjectId && (
-                  <div role="list">
-                    <div
-                      className="relative flex justify-center gap-x-6 px-4 py-2 ml-20 hover:bg-gray-50 sm:px-6 lg:px-8 hover:cursor-pointer"
-                      onClick={() => setShowCreateStackDialog(true)}
-                    >
-                      <div className="font-normal text-sm text-primary-500">
-                        Create Stack
-                      </div>
+              <ProjectItem
+                key={`project-${project.id}`}
+                project={project}
+                expand={selectedProjectId === project.id}
+                onClick={handleClickProject}
+              >
+                <div className="flex flex-col" role="list">
+                  <div
+                    className="relative flex justify-center gap-x-6 px-4 py-2 ml-20 hover:bg-gray-50 sm:px-6 lg:px-8 hover:cursor-pointer"
+                    onClick={() => setShowCreateStackDialog(true)}
+                  >
+                    <div className="font-normal text-sm text-primary-500">
+                      Create Stack
                     </div>
-                    {project?.stacks?.map((stack) => (
-                      <StackItem
-                        key={`stack-${stack.id}`}
-                        stack={stack}
-                        handleStackClick={handleStackClick}
-                      />
-                    ))}
                   </div>
-                )}
-              </div>
+                  {project?.stacks?.map((stack) => (
+                    <StackItem
+                      key={`stack-${stack.id}`}
+                      stack={stack}
+                      onClick={handleClickStack}
+                    />
+                  ))}
+                </div>
+              </ProjectItem>
             ))}
           </div>
         </div>

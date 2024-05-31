@@ -3,15 +3,15 @@ import Badge from '@/app/_components/Badge';
 
 type Props = {
   stack: Stack;
-  handleStackClick: (id: number) => void;
+  onClick: (id: number) => void;
 };
 
-const StackItem = ({ stack, handleStackClick }: Props) => {
+const StackItem = ({ stack, onClick }: Props) => {
   return (
-    <div
-      className="relative flex justify-between gap-x-6 px-4 py-5 ml-20 border-t border-gray-100 hover:bg-gray-50 sm:px-6 lg:px-8  hover:cursor-pointer"
+    <button
+      className="relative flex justify-between gap-x-6 px-4 py-5 ml-20 border-t border-gray-100 hover:bg-gray-50 sm:px-6 lg:px-8"
       onClick={() => {
-        handleStackClick(stack.id);
+        onClick(stack.id);
       }}
     >
       <div className="flex gap-x-5">
@@ -19,7 +19,7 @@ const StackItem = ({ stack, handleStackClick }: Props) => {
         <div>{stack.description}</div>
       </div>
       <Badge color="blue">Blue</Badge>
-    </div>
+    </button>
   );
 };
 
