@@ -2,7 +2,10 @@ import { authedProcedure, router } from '../trpc';
 import { z } from 'zod';
 import { instance, stack } from '@/models/stack';
 import { vapiRelease } from '@/models/vapi';
+import Container from 'typedi';
+import { StackService } from '@/server/domain/stack/stack.service';
 
+const stackService = Container.get(StackService);
 export default router({
   create: authedProcedure
     .input(
@@ -21,8 +24,13 @@ export default router({
         githubBranch: '',
         projectId: 0,
         threadId: 0,
+        endpoint: '',
+        domain: '',
+        authEnabled: false,
         auth: {},
+        storageEnabled: false,
         storage: {},
+        postgrestEnabled: false,
         postgrest: {},
         vapis: [],
       };
@@ -43,21 +51,7 @@ export default router({
       }),
     )
     .output(stack)
-    .query(async () => {
-      return {
-        id: 0,
-        name: '',
-        description: '',
-        githubRepo: '',
-        githubBranch: '',
-        projectId: 0,
-        threadId: 0,
-        auth: {},
-        storage: {},
-        postgrest: {},
-        vapis: [],
-      };
-    }),
+    .query(({ input }) => stackService.getStack(input.stackId)),
   instances: router({
     list: authedProcedure
       .input(
