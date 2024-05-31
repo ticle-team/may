@@ -28,7 +28,6 @@ export default function Page() {
     useState<boolean>(false);
   const [showCreateStackDialog, setShowCreateStackDialog] =
     useState<boolean>(false);
-  const [loading, setLoading] = useState(false);
 
   const { data: { projects, after } = {}, error } =
     trpc.org.projects.list.useQuery({
@@ -41,9 +40,8 @@ export default function Page() {
   const createThreadMutation = trpc.thread.create.useMutation();
 
   const handleCreateProject = async (name: string, description: string) => {
-    if (loading || !name || !description) return;
+    if (createProjectMutation.isPending || !name || !description) return;
     try {
-      setLoading(true);
       await createProjectMutation.mutateAsync({
         orgId: organizationId,
         name: name,
@@ -55,15 +53,12 @@ export default function Page() {
     } catch (error) {
       console.error(error);
       showErrorToast('프로젝트 생성 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleCreateStack = async () => {
-    if (loading || !selectedProjectId) return;
+    if (createThreadMutation.isPending || !selectedProjectId) return;
     try {
-      setLoading(true);
       const { id: threadId } = await createThreadMutation.mutateAsync({
         projectId: selectedProjectId,
       });
@@ -72,8 +67,6 @@ export default function Page() {
     } catch (error) {
       console.error(error);
       showErrorToast('스택 생성 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
     }
   };
 
