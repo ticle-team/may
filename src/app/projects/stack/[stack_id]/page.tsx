@@ -1,22 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
 import StackInfo from './StackInfo';
 import StackStructure from './StackStructure';
+import useToast from '@/app/_hooks/useToast';
+import LoadingSpinner from '@/app/_components/LoadingSpinner';
 
 export default function Page() {
+  const { renderToastContents, showErrorToast } = useToast();
   const { stack_id: stackIdStr } = useParams<{
     stack_id: string;
   }>();
   const stackId = parseInt(stackIdStr);
-  const [selectedTab, setSelectedTab] = React.useState('Info');
-  const { data: stack, isLoading } = trpc.stack.get.useQuery({
-    stackId: stackId,
-  });
-
+  const [selectedTab, setSelectedTab] = useState('Info');
   const tabs = [
     { name: 'Info' },
     { name: 'Structure' },
@@ -24,12 +23,41 @@ export default function Page() {
     { name: 'Settings' },
   ];
 
+  const {
+    data: stack,
+    isLoading: isStackQueryLoading,
+    error: stackQueryError,
+  } = trpc.stack.get.useQuery({
+    stackId: stackId,
+  });
+
+  const {
+    data: { instances, after } = {},
+    isLoading: isInstancesQueryLoading,
+    error: instancesQueryError,
+  } = trpc.stack.instances.list.useQuery({
+    stackId: stackId,
+  });
+
+  useEffect(() => {
+    if (stackQueryError)
+      showErrorToast('스택 정보를 불러오는 중 오류가 발생했습니다.');
+  }, [stackQueryError]);
+
+  useEffect(() => {
+    if (instancesQueryError)
+      showErrorToast('인스턴스 목록을 불러오는 중 오류가 발생했습니다.');
+  }, [instancesQueryError]);
+
   return (
-    <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center">
-      {isLoading ? (
-        <div>{/* TODO: Implement Loading */}</div>
+    <>
+      {renderToastContents()}
+      {isStackQueryLoading || (!isStackQueryLoading && stackQueryError) ? (
+        <div className="flex flex-col justify-center w-[800px] min-h-screen">
+          <LoadingSpinner />
+        </div>
       ) : (
-        <>
+        <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center">
           <div className="w-full flex justify-start">
             <div className="font-bold text-3xl my-6">{stack?.name}</div>
           </div>
@@ -55,11 +83,17 @@ export default function Page() {
                 ))}
               </div>
             </div>
-            {selectedTab === 'Info' && <StackInfo stack={stack!} />}
+            {selectedTab === 'Info' && (
+              <StackInfo
+                stack={stack!}
+                instances={instances ?? []}
+                isInstancesQueryLoading={isInstancesQueryLoading}
+              />
+            )}
             {selectedTab === 'Structure' && <StackStructure stack={stack!} />}
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   );
 }

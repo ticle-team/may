@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { trpc } from '@/app/_trpc/client';
 import { FigmaIcon, ServicePlanIcon } from '@/app/_components/Icons';
-import { Stack } from '@/models/stack';
+import { Instance, Stack } from '@/models/stack';
 import Button from '@/app/_components/Button';
 import Modal from '@/app/_components/Modal';
 import AddReferenceModal from './AddReferenceModal';
@@ -11,25 +10,29 @@ import AddInstanceModal from './AddInstanceModal';
 
 type Props = {
   stack: Stack;
+  instances: Instance[];
+  isInstancesQueryLoading: boolean;
 };
 
-export default function StackInfo({ stack }: Props) {
-  const { data: { instances, after } = {} } =
-    trpc.stack.instances.list.useQuery({ stackId: stack.id });
+export default function StackInfo({
+  stack,
+  instances,
+  isInstancesQueryLoading,
+}: Props) {
   const [showAddInstanceDialog, setShowAddInstanceDialog] =
     useState<boolean>(false);
   const [showAddReferenceDialog, setShowAddReferenceDialog] =
     useState<boolean>(false);
 
-  const onInstanceAdded = () => {
+  const handleAddInstance = async (zone: string, name: string) => {
     // TODO: Implement on instance added
   };
 
-  const handleEditDescription = () => {
+  const handleEditDescription = async () => {
     // TODO: Implement edit description feature
   };
 
-  const onReferenceAdded = () => {
+  const handleAddReference = async (title: string, url: string) => {
     // TODO: Implement on reference added
   };
 
@@ -43,7 +46,7 @@ export default function StackInfo({ stack }: Props) {
             onCancel={() => {
               setShowAddReferenceDialog(false);
             }}
-            onAdded={onReferenceAdded}
+            onAdd={handleAddReference}
           />
         }
       />
@@ -55,7 +58,7 @@ export default function StackInfo({ stack }: Props) {
             onCancel={() => {
               setShowAddInstanceDialog(false);
             }}
-            onAdded={onInstanceAdded}
+            onAdd={handleAddInstance}
           />
         }
       />
@@ -155,30 +158,38 @@ export default function StackInfo({ stack }: Props) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {/* TODO: Implement get Instance list feature */}
-                      {instances &&
-                        instances.length > 0 &&
-                        instances?.map((instance) => (
+                      {isInstancesQueryLoading && (
+                        <tr>
+                          <td colSpan={4} className="py-10 h-5 text-center">
+                            <span className="text-xl font-medium text-primary-600 animate-pulse">
+                              Loading...
+                            </span>
+                          </td>
+                        </tr>
+                      )}
+                      {/* TODO: contents of the table must be modified. */}
+                      {!isInstancesQueryLoading &&
+                        instances.map((instance) => (
                           <tr key={`instance-${instance.id}`}>
                             <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
-                              {instance.id}
+                              instance#{instance.id}
                             </td>
                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                               1
                             </td>
                             <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                              {instance.state}
+                              plargeX
                             </td>
                             <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
                               {instance.zone}
                             </td>
                           </tr>
                         ))}
-                      {instances && instances.length === 0 && (
+                      {!isInstancesQueryLoading && instances.length === 0 && (
                         <tr>
                           <td
                             colSpan={4}
-                            className="whitespace-nowrap text-center py-10 text-sm font-medium text-gray-900 sm:pl-0 "
+                            className="text-center py-10 text-xl font-medium text-gray-900 sm:pl-0 "
                           >
                             No instances
                           </td>
