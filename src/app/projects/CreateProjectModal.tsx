@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import Button from '@/app/_components/Button';
-import useToast from '@/app/_hooks/useToast';
 
 type Props = {
-  onCreated: () => void;
+  organizationId: number;
+  onCreate: (name: string, description: string) => Promise<void>;
   onCancel: () => void;
 };
 
-const CreateProjectModal = ({ onCreated, onCancel }: Props) => {
+const CreateProjectModal = ({ onCreate, onCancel }: Props) => {
   const [projectName, setProjectName] = useState<string>('');
   const [projectDescription, setProjectDescription] = useState<string>('');
-  const { renderToastContents, showErrorToast } = useToast();
+  const [loading, setLoading] = useState(false);
 
   const handleCreateProject = async () => {
-    // TODO: Implement create project feature
-    // TODO: Implement the create thread feature after the project is created
-    // const { id: threadId } = await createThread.mutateAsync({
-    //   projectId: BigInt(1),
-    // });
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      await onCreate(projectName, projectDescription);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,11 +52,14 @@ const CreateProjectModal = ({ onCreated, onCancel }: Props) => {
         <Button color="secondary" onClick={onCancel}>
           cancel
         </Button>
-        <Button color="primary" onClick={handleCreateProject}>
+        <Button
+          color="primary"
+          disabled={loading || projectName === '' || projectDescription === ''}
+          onClick={handleCreateProject}
+        >
           Create
         </Button>
       </div>
-      {renderToastContents()}
     </div>
   );
 };

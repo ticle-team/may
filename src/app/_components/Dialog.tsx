@@ -38,7 +38,7 @@ const DialogModal = ({
             {title}
           </Dialog.Title>
           <div className="mt-2">
-            <p className="text-sm text-gray-500">{description}</p>
+            <p className="text-sm text-gray-900">{description}</p>
           </div>
         </div>
       </div>
@@ -48,7 +48,7 @@ const DialogModal = ({
           <>
             <button
               type="button"
-              className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+              className="inline-flex w-full justify-center rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 sm:ml-3 sm:w-auto"
               onClick={() => {
                 setOpen(false);
                 onClose?.();
@@ -62,7 +62,7 @@ const DialogModal = ({
           <>
             <button
               type="button"
-              className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+              className="inline-flex w-full justify-center rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 sm:ml-3 sm:w-auto"
               onClick={() => {
                 setOpen(false);
                 onClose?.();

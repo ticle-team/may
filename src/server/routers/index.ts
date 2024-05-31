@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+
 import { router } from '@/server/trpc';
 import conversationRouter from '@/server/routers/conversation';
 import threadRouter from '@/server/routers/thread';

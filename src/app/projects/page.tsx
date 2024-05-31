@@ -4,31 +4,78 @@ import React, { useEffect, useState } from 'react';
 import { trpc } from '@/app/_trpc/client';
 import Button from '@/app/_components/Button';
 import classNames from 'classnames';
-import {
-  ClipboardDocumentIcon,
-  StarIcon,
-  UserIcon,
-} from '@heroicons/react/20/solid';
-import StackList from './StackList';
 import Modal from '@/app/_components/Modal';
 import CreateProjectModal from '@/app/projects/CreateProjectModal';
 import useToast from '@/app/_hooks/useToast';
+import DialogModal from '@/app/_components/Dialog';
+import { useRouter } from 'next/navigation';
+import StackItem from '@/app/projects/StackItem';
+import ProjectItem from '@/app/projects/ProjectItem';
 
 export default function Page() {
-  const [selectedTab, setSelectedTab] = useState('전체');
-  const utils = trpc.useUtils();
+  const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
   // TODO : orgID must be changed.
-  const { data: { projects, after } = {}, error } =
-    trpc.org.projects.list.useQuery({ orgId: 1, limit: 10 });
-
+  const organizationId = 1;
+  const [selectedTab, setSelectedTab] = useState('전체');
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null,
   );
+  const { renderToastContents, showErrorToast } = useToast();
+  const utils = trpc.useUtils();
+  const router = useRouter();
+
   const [showCreateProjectDialog, setShowCreateProjectDialog] =
     useState<boolean>(false);
-  const { renderToastContents, showErrorToast } = useToast();
+  const [showCreateStackDialog, setShowCreateStackDialog] =
+    useState<boolean>(false);
 
-  const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
+  const { data: { projects, after } = {}, error } =
+    trpc.org.projects.list.useQuery({
+      orgId: organizationId,
+      page: 1,
+      perPage: 10,
+    });
+
+  const createProjectMutation = trpc.project.create.useMutation();
+  const createThreadMutation = trpc.thread.create.useMutation();
+
+  const handleCreateProject = async (name: string, description: string) => {
+    if (createProjectMutation.isPending || !name || !description) return;
+    try {
+      await createProjectMutation.mutateAsync({
+        orgId: organizationId,
+        name: name,
+        description: description,
+      });
+      setShowCreateProjectDialog(false);
+
+      utils.org.projects.list.invalidate();
+    } catch (error) {
+      console.error(error);
+      showErrorToast('프로젝트 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleCreateStack = async () => {
+    if (createThreadMutation.isPending || !selectedProjectId) return;
+    try {
+      const { id: threadId } = await createThreadMutation.mutateAsync({
+        projectId: selectedProjectId,
+      });
+
+      router.push(`/threads/${threadId}`);
+    } catch (error) {
+      console.error(error);
+      showErrorToast('스택 생성 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleClickTab = async (tabName: string) => {
+    if (selectedTab === tabName) return;
+    setSelectedTab(tabName);
+
+    await utils.org.projects.list.invalidate();
+  };
 
   const handleClickProject = (projectId: number) => {
     if (selectedProjectId === projectId) {
@@ -37,15 +84,8 @@ export default function Page() {
     setSelectedProjectId(projectId);
   };
 
-  const onProjectCreated = () => {
-    // TODO: Implement on project created
-  };
-
-  const handleClickTab = async (tabName: string) => {
-    if (selectedTab === tabName) return;
-    setSelectedTab(tabName);
-
-    await utils.org.projects.list.invalidate();
+  const handleClickStack = (stackId: number) => {
+    router.push(`/projects/stack/${stackId}`);
   };
 
   useEffect(() => {
@@ -61,12 +101,24 @@ export default function Page() {
         setOpen={setShowCreateProjectDialog}
         contents={
           <CreateProjectModal
+            organizationId={organizationId}
             onCancel={() => {
               setShowCreateProjectDialog(false);
             }}
-            onCreated={onProjectCreated}
+            onCreate={handleCreateProject}
           />
         }
+      />
+      <DialogModal
+        open={showCreateStackDialog}
+        setOpen={() => {
+          setShowCreateStackDialog(false);
+        }}
+        title="스택을 생성하시겠습니까?"
+        type="confirm"
+        confirmText="Create"
+        onConfirm={handleCreateStack}
+        cancelText="Cancel"
       />
       <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center">
         <div className="w-full flex flex-col">
@@ -99,33 +151,33 @@ export default function Page() {
               </Button>
             </div>
           </div>
-          <div>
-            <div role="list">
-              {projects?.map((project) => (
-                <div key={`project-${project.id}`}>
+          <div className="flex flex-col" role="list">
+            {projects?.map((project) => (
+              <ProjectItem
+                key={`project-${project.id}`}
+                project={project}
+                expand={selectedProjectId === project.id}
+                onClick={handleClickProject}
+              >
+                <div className="flex flex-col" role="list">
                   <div
-                    className="relative flex justify-between gap-x-6 px-4 py-5 border-y border-gray-100 hover:bg-gray-50 sm:px-6 lg:px-8"
-                    onClick={() => {
-                      handleClickProject(project.id);
-                    }}
+                    className="relative flex justify-center gap-x-6 px-4 py-2 ml-20 hover:bg-gray-50 sm:px-6 lg:px-8 hover:cursor-pointer"
+                    onClick={() => setShowCreateStackDialog(true)}
                   >
-                    <div className="flex min-w-0 items-center">
-                      <p className="text-sm font-semibold leading-6 text-gray-900">
-                        {project.name}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-x-4">
-                      <UserIcon className="h-5 w-5 text-gray-400" />
-                      <StarIcon className="h-5 w-5 text-primary-500" />
-                      <ClipboardDocumentIcon className="h-5 w-5 text-primary-500" />
+                    <div className="font-normal text-sm text-primary-500">
+                      Create Stack
                     </div>
                   </div>
-                  {project.id === selectedProjectId && (
-                    <StackList rows={project.stacks} />
-                  )}
+                  {project?.stacks?.map((stack) => (
+                    <StackItem
+                      key={`stack-${stack.id}`}
+                      stack={stack}
+                      onClick={handleClickStack}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </ProjectItem>
+            ))}
           </div>
         </div>
       </div>

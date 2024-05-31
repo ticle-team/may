@@ -13,6 +13,7 @@ import {
   SearchVapisInput,
   SearchVapisOutput,
   StoaCloudError,
+  getProjectsInput,
 } from '@/models/stoacloud';
 import { camelToSnake, snakeToCamel } from '@/util/cases';
 import { getLogger } from '@/logger';
@@ -92,6 +93,13 @@ export class StoaCloudService {
   async getProject(projectId: number) {
     const { data } = await this.axios.get<Project>(`/v1/projects/${projectId}`);
 
+    return data;
+  }
+
+  async getProjects(input: getProjectsInput) {
+    const { data } = await this.axios.get<Project[]>(`/v1/projects`, {
+      params: input,
+    });
     return data;
   }
 
