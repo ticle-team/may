@@ -4,10 +4,14 @@ import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
-import StackInfo from './StackInfo';
-import StackStructure from './StackStructure';
+import StackInfo from '@/app/projects/stack/[stack_id]/StackInfo';
+import StackStructure from '@/app/projects/stack/[stack_id]/StackStructure';
 import useToast from '@/app/_hooks/useToast';
 import LoadingSpinner from '@/app/_components/LoadingSpinner';
+import Modal from '@/app/_components/Modal';
+import AddReferenceModal from '@/app/projects/stack/[stack_id]/AddReferenceModal';
+import AddInstanceModal from '@/app/projects/stack/[stack_id]/AddInstanceModal';
+import DialogModal from '@/app/_components/Dialog';
 
 export default function Page() {
   const { renderToastContents, showErrorToast } = useToast();
@@ -16,6 +20,14 @@ export default function Page() {
   }>();
   const stackId = parseInt(stackIdStr);
   const [selectedTab, setSelectedTab] = useState('Info');
+  const [showAddInstanceDialog, setShowAddInstanceDialog] =
+    useState<boolean>(false);
+  const [showAddReferenceDialog, setShowAddReferenceDialog] =
+    useState<boolean>(false);
+  const [showDeleteVAPIDialog, setShowDeleteVAPIDialog] =
+    useState<boolean>(false);
+  const [showEditDescriptionDialog, setShowEditDescriptionDialog] =
+    useState<boolean>(false);
   const tabs = [
     { name: 'Info' },
     { name: 'Structure' },
@@ -49,9 +61,67 @@ export default function Page() {
       showErrorToast('인스턴스 목록을 불러오는 중 오류가 발생했습니다.');
   }, [instancesQueryError]);
 
+  const handleAddInstance = async (zone: string, name: string) => {
+    // TODO: Implement on instance added
+  };
+
+  const handleAddReference = async (title: string, url: string) => {
+    // TODO: Implement on reference added
+  };
+
+  const handleEditDescription = async () => {
+    // TODO: Implement edit description feature
+  };
+
+  const handleVAPIUninstall = () => {
+    // TODO: Implement VAPI uninstall feature
+  };
+
   return (
     <>
       {renderToastContents()}
+      <Modal
+        open={showAddReferenceDialog}
+        setOpen={setShowAddReferenceDialog}
+        contents={
+          <AddReferenceModal
+            onCancel={() => {
+              setShowAddReferenceDialog(false);
+            }}
+            onAdd={handleAddReference}
+          />
+        }
+      />
+      <Modal
+        open={showAddInstanceDialog}
+        setOpen={setShowAddInstanceDialog}
+        contents={
+          <AddInstanceModal
+            onCancel={() => {
+              setShowAddInstanceDialog(false);
+            }}
+            onAdd={handleAddInstance}
+          />
+        }
+      />
+      <DialogModal
+        open={showEditDescriptionDialog}
+        setOpen={setShowEditDescriptionDialog}
+        title="Description을 수정하시겠습니까?"
+        type="confirm"
+        confirmText="Edit"
+        onConfirm={handleEditDescription}
+        cancelText="Cancel"
+      />
+      <DialogModal
+        open={showDeleteVAPIDialog}
+        setOpen={setShowDeleteVAPIDialog}
+        title="VAPI를 삭제하시겠습니까?"
+        type="confirm"
+        confirmText="Delete"
+        onConfirm={handleVAPIUninstall}
+        cancelText="Cancel"
+      />
       {isStackQueryLoading || (!isStackQueryLoading && stackQueryError) ? (
         <div className="flex flex-col justify-center w-[800px] min-h-screen">
           <LoadingSpinner />
@@ -88,9 +158,19 @@ export default function Page() {
                 stack={stack!}
                 instances={instances ?? []}
                 isInstancesQueryLoading={isInstancesQueryLoading}
+                openAddInstanceDialog={() => setShowAddInstanceDialog(true)}
+                openAddReferenceDialog={() => setShowAddReferenceDialog(true)}
+                openEditDescriptionDialog={() =>
+                  setShowEditDescriptionDialog(true)
+                }
               />
             )}
-            {selectedTab === 'Structure' && <StackStructure stack={stack!} />}
+            {selectedTab === 'Structure' && (
+              <StackStructure
+                stack={stack!}
+                openVAPIUninstallDialog={() => setShowDeleteVAPIDialog(true)}
+              />
+            )}
           </div>
         </div>
       )}

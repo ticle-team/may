@@ -11,9 +11,13 @@ import 'swagger-ui-react/swagger-ui.css';
 
 type Props = {
   stack: Stack;
+  openVAPIUninstallDialog: () => void;
 };
 
-export default function StackStructure({ stack }: Props) {
+export default function StackStructure({
+  stack,
+  openVAPIUninstallDialog,
+}: Props) {
   const [selectedVAPI, setSelectedVAPI] = useState<VapiRelease | null>(null);
 
   const handleClickVAPI = (vapiName: VapiRelease | null) => {
@@ -21,10 +25,6 @@ export default function StackStructure({ stack }: Props) {
       return setSelectedVAPI(null);
     }
     setSelectedVAPI(vapiName);
-  };
-
-  const handleVAPIUninstall = () => {
-    // TODO: Implement VAPI uninstall feature
   };
 
   const convertToDocsUrl = (
@@ -122,7 +122,7 @@ export default function StackStructure({ stack }: Props) {
               </div>
               <button
                 className="font-normal text-sm text-blue-500"
-                onClick={handleVAPIUninstall}
+                onClick={openVAPIUninstallDialog}
               >
                 Uninstall
               </button>
@@ -131,7 +131,7 @@ export default function StackStructure({ stack }: Props) {
               <SwaggerUI
                 url={convertToDocsUrl(
                   stack.githubRepo,
-                  stack.githubBranch,
+                  stack.githubBranch ?? 'main',
                   selectedVAPI.pkg?.name ?? '',
                 )}
               />
