@@ -149,3 +149,12 @@ export type getProjectsInput = {
   page?: number;
   perPage?: number;
 };
+
+export type CreateInstanceInput = {
+  zone?: string;
+  stackId: number;
+};
+
+export type DeployStackInput = {
+  timeout?: string;
+};

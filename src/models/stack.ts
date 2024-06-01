@@ -108,3 +108,5 @@ export const instance = z.object({
     'deleting',
   ]),
 });
+
+export type Instance = z.infer<typeof instance>;

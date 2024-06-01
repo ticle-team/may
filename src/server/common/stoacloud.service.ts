@@ -1,9 +1,11 @@
 import { Service } from 'typedi';
 import { Axios, AxiosError, isAxiosError } from 'axios';
-import { Stack } from '@/models/stack';
+import { Instance, Stack } from '@/models/stack';
 import { Project } from '@/models/project';
 import { TRPCError } from '@trpc/server';
 import {
+  CreateInstanceInput,
+  DeployStackInput,
   InstallAuthInput,
   InstallPostgrestInput,
   InstallStorageInput,
@@ -253,5 +255,23 @@ export class StoaCloudService {
     await this.axios.post('/reset-schema', undefined, {
       responseType: 'text',
     });
+  }
+
+  async createInstance(input: CreateInstanceInput) {
+    const { data } = await this.axios.post<Instance>('/v1/instances', input);
+
+    return data;
+  }
+
+  async stopInstance(instanceId: number) {
+    await this.axios.post(`/v1/instances/${instanceId}/controls:stop`);
+  }
+
+  async deleteInstance(instanceId: number) {
+    await this.axios.delete(`/v1/instances/${instanceId}`);
+  }
+
+  async deployStack(instanceId: number, input?: DeployStackInput) {
+    await this.axios.post(`/v1/instances/${instanceId}/controls:deploy`, input);
   }
 }

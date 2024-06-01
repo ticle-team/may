@@ -40,10 +40,12 @@ describe('given stoacloud service', () => {
   });
 
   describe('with temporary project', () => {
+    let instanceId = 0;
     let projectId = 0;
     let stackId = 0;
     let scs: StoaCloudService;
     beforeEach(async () => {
+      instanceId = 0;
       stackId = 0;
       projectId = 0;
       scs = Container.get(StoaCloudService);
@@ -55,6 +57,10 @@ describe('given stoacloud service', () => {
     });
 
     afterEach(async () => {
+      if (instanceId > 0) {
+        await scs.stopInstance(instanceId);
+        await scs.deleteInstance(instanceId);
+      }
       if (stackId > 0) {
         await scs.deleteStack(stackId);
       }
@@ -88,10 +94,9 @@ describe('given stoacloud service', () => {
         'test description 2',
       );
       stackId = stack.id;
+
       expect(stack.auth).toBeTruthy();
       await scs.installAuth(stackId, {
-        waiting: true,
-        waitTimeout: '30s',
         mailer: {
           autoConfirm: true,
         },
@@ -103,7 +108,6 @@ describe('given stoacloud service', () => {
           emailEnabled: true,
         },
       });
-      await setTimeout(500);
 
       stack = await scs.getStack(stackId);
       expect(stack.auth).toBeTruthy();
@@ -111,6 +115,16 @@ describe('given stoacloud service', () => {
       const anonApiKey = stack.anonApiKey;
       expect(anonApiKey).toBeDefined();
 
+      const instance = await scs.createInstance({
+        stackId: stackId,
+      });
+      expect(instance).toBeDefined();
+      instanceId = instance.id;
+      await scs.deployStack(instanceId, {
+        timeout: '30s',
+      });
+
+      await setTimeout(500);
       const shaple = createClient(endpoint, anonApiKey!);
       {
         const { error } = await shaple.auth.signUp({
@@ -144,8 +158,6 @@ describe('given stoacloud service', () => {
       stackId = stack.id;
       expect(stack.auth).toBeTruthy();
       await scs.installAuth(stackId, {
-        waiting: true,
-        waitTimeout: '30s',
         mailer: {
           autoConfirm: true,
         },
@@ -158,17 +170,23 @@ describe('given stoacloud service', () => {
         },
       });
       await scs.installStorage(stackId, {
-        waiting: true,
-        waitTimeout: '30s',
         tenantId: 'test-tenant',
       });
-      await setTimeout(1000);
 
       const { domain, adminApiKey, storageEnabled } =
         await scs.getStack(stackId);
       expect(adminApiKey).toBeDefined();
       expect(storageEnabled).toBe(true);
 
+      const instance = await scs.createInstance({
+        stackId: stackId,
+      });
+      instanceId = instance.id;
+      await scs.deployStack(instanceId, {
+        timeout: '30s',
+      });
+
+      await setTimeout(1000);
       const shaple = createClient(`http://${domain}`, adminApiKey!);
       {
         const { error } = await shaple.storage.createBucket('test-bucket');
