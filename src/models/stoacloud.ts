@@ -144,7 +144,7 @@ export type RegisterVapisOutput = {
   releaseId: number;
 };
 
-export type getProjectsInput = {
+export type GetProjectsInput = {
   name?: string;
   page?: number;
   perPage?: number;
