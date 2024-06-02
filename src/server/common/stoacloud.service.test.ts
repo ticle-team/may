@@ -11,6 +11,7 @@ import {
 import { resetSchema } from '@/migrate';
 import { PrismaService } from '@/server/common/prisma.service';
 import { readFileSync } from 'fs';
+import axios, { AxiosError } from 'axios';
 
 describe('given stoacloud service', () => {
   beforeEach(async () => {
@@ -124,7 +125,19 @@ describe('given stoacloud service', () => {
         timeout: '30s',
       });
 
-      await setTimeout(500);
+      let done = false;
+      for (let i = 0; i < 10 && !done; i++) {
+        try {
+          await axios.get(endpoint + '/auth/v1/health');
+          done = true;
+          break;
+        } catch (error) {
+          console.warn(error);
+        }
+        await setTimeout(1000);
+      }
+      expect(done).toBe(true);
+
       const shaple = createClient(endpoint, anonApiKey!);
       {
         const { error } = await shaple.auth.signUp({
@@ -173,10 +186,11 @@ describe('given stoacloud service', () => {
         tenantId: 'test-tenant',
       });
 
-      const { domain, adminApiKey, storageEnabled } =
+      const { domain, anonApiKey, adminApiKey, storageEnabled } =
         await scs.getStack(stackId);
       expect(adminApiKey).toBeDefined();
       expect(storageEnabled).toBe(true);
+      const endpoint = `http://${domain}`;
 
       const instance = await scs.createInstance({
         stackId: stackId,
@@ -186,8 +200,27 @@ describe('given stoacloud service', () => {
         timeout: '30s',
       });
 
-      await setTimeout(1000);
-      const shaple = createClient(`http://${domain}`, adminApiKey!);
+      let done = false;
+      for (let i = 0; i < 10 && !done; i++) {
+        try {
+          await Promise.all([
+            axios.get(endpoint + '/auth/v1/health'),
+            axios.get(endpoint + '/storage/v1/health', {
+              headers: {
+                Authorization: `Bearer ${anonApiKey}`,
+              },
+            }),
+          ]);
+          done = true;
+          break;
+        } catch (error) {
+          console.warn(error);
+        }
+        await setTimeout(1000);
+      }
+      expect(done).toBe(true);
+
+      const shaple = createClient(endpoint, adminApiKey!);
       {
         const { error } = await shaple.storage.createBucket('test-bucket');
         expect(error).toBeNull();
