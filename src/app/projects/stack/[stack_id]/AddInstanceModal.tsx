@@ -17,7 +17,9 @@ type Props = {
 };
 
 const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
-  const [instanceZone, setInstanceZone] = useState<string | null>(null);
+  const [instanceZone, setInstanceZone] = useState<string>(
+    INSTANCE_ZONE_ITEMS[0].label,
+  );
   const [instanceName, setInstanceName] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
