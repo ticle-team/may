@@ -176,8 +176,15 @@ export class StoaCloudService {
   }
 
   async getVapiReleasesInPackage(packageId: number) {
-    const { data } = await this.axios.get<VapiRelease>(
+    const { data } = await this.axios.get<VapiRelease[]>(
       `/v1/vapis/${packageId}/releases`,
+    );
+    return data;
+  }
+
+  async getVapiReleaseInPackage(packageId: number, version: string) {
+    const { data } = await this.axios.get<VapiRelease>(
+      `/v1/vapis/${packageId}/releases/${version}`,
     );
     return data;
   }

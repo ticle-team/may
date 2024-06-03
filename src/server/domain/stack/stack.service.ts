@@ -51,29 +51,37 @@ export class StackService {
       return;
     }
 
-    // TODO: need to implement install vapis given by vapi name
-    // try {
-    //   for (const { id: vapiId } of dependencies) {
-    //     await this.stoacloudService.installVapi(stackId, {
-    //       vapiId,
-    //     });
-    //   }
-    // } catch (e) {
-    //   logger.error('failed to install dependencies', { e });
-    //   this.stoacloudService.deleteStack(stackId).catch((err) => {
-    //     logger.error('failed to delete stack', { err });
-    //   });
-    //   yield* this.openaiAssistant.submitToolOutputsStream(
-    //     openaiThreadId,
-    //     runId,
-    //     toolCallId,
-    //     JSON.stringify({
-    //       status: 'error',
-    //       description: 'failed to install dependencies',
-    //     }),
-    //   );
-    //   return;
-    // }
+    try {
+      for (const { name } of dependencies) {
+        const vapiPackages = await this.stoacloudService.getVapiPackages({
+          name,
+        });
+
+        // TODO: handle case when multi vapiPackages found
+        const vapiRelease = await this.stoacloudService.getVapiReleaseInPackage(
+          vapiPackages[0].id,
+          'latest',
+        );
+        await this.stoacloudService.installVapi(stackId, {
+          vapiId: vapiRelease.id,
+        });
+      }
+    } catch (e) {
+      logger.error('failed to install dependencies', { e });
+      this.stoacloudService.deleteStack(stackId).catch((err) => {
+        logger.error('failed to delete stack', { err });
+      });
+      yield* this.openaiAssistant.submitToolOutputsStream(
+        openaiThreadId,
+        runId,
+        toolCallId,
+        JSON.stringify({
+          status: 'error',
+          description: 'failed to install dependencies',
+        }),
+      );
+      return;
+    }
 
     let generator: ReturnType<OpenAIAssistant['submitToolOutputsStream']>;
     try {

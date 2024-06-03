@@ -348,6 +348,23 @@ describe('given stoacloud service', () => {
           expect(releases).toHaveLength(1);
           console.log(releases);
         });
+
+        it('get vapi release versioned in package, then it is OK', async () => {
+          const vapis = await scs.getVapiPackages({
+            name: 'helloworld',
+          });
+          expect(vapis).toHaveLength(1);
+          expect(vapis[0].name).toBe('helloworld');
+          expect(vapis[0].id).not.toBe(0);
+
+          const release = await scs.getVapiReleaseInPackage(
+            vapis[0].id,
+            'latest',
+          );
+          expect(release.packageId).toBe(vapis[0].id);
+          expect(release.version).toBe('0.1.0');
+          console.log(release);
+        });
       });
     });
   });
