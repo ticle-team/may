@@ -8,19 +8,19 @@ import Button from '@/app/_components/Button';
 type Props = {
   stack: Stack;
   instances: Instance[];
-  isInstancesQueryLoading: boolean;
-  openAddReferenceDialog: () => void;
-  openAddInstanceDialog: () => void;
-  openEditDescriptionDialog: () => void;
+  loading: boolean;
+  onClickAddRefBtn: () => void;
+  onClickAddInstanceBtn: () => void;
+  onClickEditDescBtn: () => void;
 };
 
 export default function StackInfo({
   stack,
   instances,
-  isInstancesQueryLoading,
-  openAddReferenceDialog,
-  openAddInstanceDialog,
-  openEditDescriptionDialog,
+  loading,
+  onClickAddRefBtn,
+  onClickAddInstanceBtn,
+  onClickEditDescBtn,
 }: Props) {
   return (
     <div className="mt-5 flex flex-col gap-x-6 gap-y-12">
@@ -29,7 +29,7 @@ export default function StackInfo({
           <label className="block text-base font-semibold leading-6 text-gray-900">
             Description
           </label>
-          <Button onClick={openEditDescriptionDialog}>Edit</Button>
+          <Button onClick={onClickEditDescBtn}>Edit</Button>
         </div>
         <div className="mt-4">
           <textarea
@@ -45,7 +45,7 @@ export default function StackInfo({
           <label className="block text-base font-semibold leading-6 text-gray-900">
             Reference
           </label>
-          <Button onClick={openAddReferenceDialog}>Add</Button>
+          <Button onClick={onClickAddRefBtn}>Add</Button>
         </div>
         <div className="flex flex-col mt-4 gap-y-4">
           {/* TODO: Implement get reference list feature */}
@@ -71,7 +71,7 @@ export default function StackInfo({
           <label className="block text-base font-semibold leading-6 text-gray-900">
             Instance List
           </label>
-          <Button onClick={openAddInstanceDialog}>Create</Button>
+          <Button onClick={onClickAddInstanceBtn}>Create</Button>
         </div>
         <div className="mt-4 px-4 sm:px-6 lg:px-8">
           <div className="flow-root">
@@ -107,7 +107,7 @@ export default function StackInfo({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {isInstancesQueryLoading && (
+                    {loading && (
                       <tr>
                         <td colSpan={4} className="py-10 h-5 text-center">
                           <span className="text-xl font-medium text-primary-600 animate-pulse">
@@ -117,7 +117,7 @@ export default function StackInfo({
                       </tr>
                     )}
                     {/* TODO: contents of the table must be modified. */}
-                    {!isInstancesQueryLoading &&
+                    {!loading &&
                       instances.map((instance) => (
                         <tr key={`instance-${instance.id}`}>
                           <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0">
@@ -134,7 +134,7 @@ export default function StackInfo({
                           </td>
                         </tr>
                       ))}
-                    {!isInstancesQueryLoading && instances.length === 0 && (
+                    {!loading && instances.length === 0 && (
                       <tr>
                         <td
                           colSpan={4}

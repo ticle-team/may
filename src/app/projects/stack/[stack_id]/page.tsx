@@ -157,10 +157,10 @@ export default function Page() {
               <StackInfo
                 stack={stack!}
                 instances={instances ?? []}
-                isInstancesQueryLoading={isInstancesQueryLoading}
-                openAddInstanceDialog={() => setShowAddInstanceDialog(true)}
-                openAddReferenceDialog={() => setShowAddReferenceDialog(true)}
-                openEditDescriptionDialog={() =>
+                loading={isInstancesQueryLoading}
+                onClickAddInstanceBtn={() => setShowAddInstanceDialog(true)}
+                onClickAddRefBtn={() => setShowAddReferenceDialog(true)}
+                onClickEditDescBtn={() =>
                   setShowEditDescriptionDialog(true)
                 }
               />
