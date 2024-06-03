@@ -279,24 +279,56 @@ describe('given stoacloud service', () => {
         const jwt = session?.access_token;
         expect(jwt).toBeDefined();
 
-        let outputs;
-        try {
-          outputs = await scs.registerVapis(session!.access_token, null, {
-            projectId: projectId,
-            gitBranch: 'main',
-            gitRepo: 'paust-team/shaple-testvapis',
-          });
+        await using cleanup = new AsyncDisposableStack();
+        const outputs = await scs.registerVapis(session!.access_token, null, {
+          projectId: projectId,
+          gitBranch: 'main',
+          gitRepo: 'paust-team/shaple-testvapis',
+        });
 
-          expect(outputs).toHaveLength(2);
-          const output = outputs[0];
-          expect(output.deployStatus).toBe('ok');
-        } finally {
-          if (outputs) {
-            for (const output of outputs) {
-              await scs.deleteVapiRelease(jwt!, output.releaseId);
-            }
+        expect(outputs).toHaveLength(2);
+        const output = outputs[0];
+        expect(output.deployStatus).toBe('ok');
+        cleanup.defer(async () => {
+          for (const output of outputs) {
+            await scs.deleteVapiRelease(jwt!, output.releaseId);
           }
-        }
+        });
+      });
+
+      it('when register vapi and get vapi packages by name, then it is OK', async () => {
+        const {
+          data: { session },
+          error,
+        } = await shaple.auth.getSession();
+        expect(error).toBeNull();
+        expect(session).not.toBeNull();
+
+        const jwt = session?.access_token;
+        expect(jwt).toBeDefined();
+
+        await using cleanup = new AsyncDisposableStack();
+        const outputs = await scs.registerVapis(session!.access_token, null, {
+          projectId: projectId,
+          gitBranch: 'main',
+          gitRepo: 'paust-team/shaple-testvapis',
+        });
+
+        expect(outputs).toHaveLength(2);
+        const output = outputs[0];
+        expect(output.deployStatus).toBe('ok');
+        cleanup.defer(async () => {
+          for (const output of outputs) {
+            await scs.deleteVapiRelease(jwt!, output.releaseId);
+          }
+        });
+
+        const vapis = await scs.getVapiPackages({
+          name: 'helloworld',
+        });
+        expect(vapis).toHaveLength(1);
+        expect(vapis[0].name).toBe('helloworld');
+        expect(vapis[0].id).not.toBe(0);
       });
     });
   });

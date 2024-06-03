@@ -16,9 +16,12 @@ import {
   SearchVapisOutput,
   StoaCloudError,
   GetProjectsInput,
+  GetVapiPackagesInput,
 } from '@/models/stoacloud';
 import { camelToSnake, snakeToCamel } from '@/util/cases';
 import { getLogger } from '@/logger';
+import { VapiPackage } from '@/models/vapi';
+import qs from 'qs';
 
 const logger = getLogger('server.common.stoacloud.service');
 
@@ -170,6 +173,14 @@ export class StoaCloudService {
 
   async getVapiPackage(id: number) {
     await this.axios.get(`/v1/vapis/${id}`);
+  }
+
+  async getVapiPackages(input: GetVapiPackagesInput) {
+    const { data } = await this.axios.get<VapiPackage[]>(
+      `/v1/vapis?${qs.stringify(input)}`,
+    );
+
+    return data;
   }
 
   async searchVapis(input: SearchVapisInput) {

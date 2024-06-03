@@ -158,3 +158,7 @@ export type CreateInstanceInput = {
 export type DeployStackInput = {
   timeout?: string;
 };
+
+export type GetVapiPackagesInput = {
+  name: string;
+};
