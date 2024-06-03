@@ -1,17 +1,11 @@
 'use client';
 
-import {
-  httpLink,
-  splitLink,
-  unstable_httpBatchStreamLink,
-  wsLink,
-} from '@trpc/client';
+import { unstable_httpBatchStreamLink } from '@trpc/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React, { useState } from 'react';
 
 import { trpc } from './client';
 import superjson from 'superjson';
-import { createWSClient } from '@trpc/react-query';
 
 export default function TRPCProvider({
   children,

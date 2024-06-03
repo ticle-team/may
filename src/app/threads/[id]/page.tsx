@@ -1,298 +1,169 @@
 'use client';
 
-import ChatBubble from '@/app/_components/ChatBubble';
-import { PaperAirplaneIcon, StopCircleIcon } from '@heroicons/react/20/solid';
-import { useEffect, useRef, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { trpc } from '@/app/_trpc/client';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import useToast from '@/app/_hooks/useToast';
-import { TRPCError } from '@trpc/server';
-import { skipToken } from '@tanstack/react-query';
 import { ChatMessage, ChatRole } from '@/models/ai';
-import _ from 'lodash';
-import delay from 'delay';
-import { StackCreationEventText } from '@/models/assistant';
-
-type PageState = 'initializing' | 'generating' | 'idle';
-
-function UserMessageForm({
-  answering,
-  onSubmit,
-  onStopAnswering,
-}: {
-  answering: boolean;
-  onSubmit: (message: string) => Promise<void>;
-  onStopAnswering: () => Promise<void>;
-}) {
-  const [userMessage, setUserMessage] = useState('');
-  const userInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!answering) {
-      userInputRef.current?.focus();
-    }
-  }, [answering]);
-
-  return (
-    <form
-      className="flex flex-col w-full"
-      onSubmit={(e) => {
-        if (answering || userMessage == '') {
-          return;
-        }
-
-        e.preventDefault();
-        onSubmit(userMessage).finally(() => {
-          setUserMessage('');
-        });
-      }}
-    >
-      <div className="relative mt-2 rounded-md shadow-sm border-none">
-        <input
-          type="text"
-          className="flex flex-row w-full p-4 pr-10 text-white border-none bg-secondary-700 rounded-xl"
-          placeholder="Type a message"
-          value={userMessage}
-          onChange={(e) => setUserMessage(e.target.value)}
-          disabled={answering}
-          ref={userInputRef}
-        />
-        {!answering ? (
-          <button
-            className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer disabled:cursor-not-allowed"
-            type="submit"
-          >
-            <PaperAirplaneIcon
-              className="h-5 w-5 text-secondary-400 hover:text-secondary-300 active:text-secondary-500 disabled:text-secondary-400"
-              aria-hidden="true"
-            />
-          </button>
-        ) : (
-          <button
-            className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer disabled:cursor-not-allowed"
-            type="button"
-            onClick={() => {
-              onStopAnswering();
-            }}
-          >
-            <StopCircleIcon
-              className="h-5 w-5 text-secondary-400 hover:text-secondary-300 active:text-secondary-500 disabled:text-secondary-400"
-              aria-hidden="true"
-            />
-          </button>
-        )}
-      </div>
-    </form>
-  );
-}
-
-function Conversation({
-  history: threadMessages,
-  answering = false,
-}: {
-  history: ChatMessage[];
-  answering: boolean;
-}) {
-  const chatRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!chatRef.current) {
-      return;
-    }
-
-    chatRef.current.scrollTop = chatRef.current.scrollHeight;
-  }, [threadMessages]);
-
-  return (
-    <div className="flex flex-col w-full overflow-y-auto gap-4" ref={chatRef}>
-      {threadMessages.map(({ role, text }, i) => (
-        <ChatBubble
-          key={`chat-bubble-${i}`}
-          name={role == 'user' ? 'You' : 'Assistant'}
-          message={text}
-          markdown={role == 'assistant'}
-          self={role == 'user'}
-          color="secondary"
-        />
-      ))}
-
-      {answering && (
-        <div className="flex flex-row w-full items-center">
-          <p>Answering...</p>
-        </div>
-      )}
-    </div>
-  );
-}
+import {
+  StackCreationEventText,
+  StackCreationEventTextCreated,
+} from '@/models/assistant';
+import UserMessageForm from './UserMessageForm';
+import Conversation from './Conversation';
 
 export default function Page() {
   const { id: threadIdStr } = useParams<{
     id: string;
   }>();
   const threadId = parseInt(threadIdStr);
-
   const { renderToastContents, showErrorToast, hideToast } = useToast();
-
-  const [Initialized, setInitialized] = useState(false);
-  const [answering, setAnswering] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [initialized, setInitialized] = useState(false);
+  const [enabledChat, setEnabledChat] = useState(false);
 
   const getAllMessages = trpc.thread.messages.list.useQuery({
     threadId,
     limit: 100,
   });
   if (getAllMessages.error) {
+    console.error(getAllMessages.error);
     showErrorToast('', getAllMessages.error.message);
-    hideToast(1500);
-  }
-  useEffect(() => {
-    if (!getAllMessages.data) {
-      return;
-    }
-
-    setChatMessages([...getAllMessages.data.messages].reverse());
-  }, [getAllMessages.data]);
-
-  const getThread = trpc.thread.get.useQuery({
-    threadId,
-  });
-  if (getThread.error) {
-    showErrorToast('', getThread.error.message);
     hideToast(1500);
   }
 
   const run = trpc.thread.runForStackCreation.useQuery(
-    answering
-      ? {
-          threadId,
-        }
-      : skipToken,
+    {
+      threadId,
+    },
+    {
+      enabled: enabledChat,
+    },
   );
   if (run.error) {
+    console.error(run.error);
     showErrorToast('', run.error.message);
     hideToast(1500);
   }
 
   useEffect(() => {
+    // run.data is an array of events
+    // for example:
+    //   events: begin -> text.created -> text -> text -> text.done -> end
+    //   server sent events: begin, text.created, ...
+    //   client states: [begin], [begin, text.created], [begin, text.created, text], ...
     if (!run.data) return;
 
-    let interrupt = false;
     (async () => {
-      try {
-        interrupt = false;
-        for await (const t of run.data) {
-          if (interrupt) {
-            break;
-          }
-          switch (t.event) {
-            case 'created':
-              setChatMessages((messages) => {
-                return [
-                  ...messages,
-                  {
-                    role: 'assistant',
-                    text: '',
-                  },
-                ];
-              });
-              break;
-            case 'text':
-              const { text } = t as StackCreationEventText;
-              setChatMessages((messages) => {
-                const lastMessage = messages[messages.length - 1];
-
-                if (lastMessage.role !== 'assistant') {
-                  throw new Error(
-                    'Invalid conversation: expected last message to be from assistant',
-                  );
-                }
-
-                return [
-                  ...messages.slice(0, messages.length - 1),
-                  {
-                    role: 'assistant',
-                    text: lastMessage.text + text,
-                  },
-                ];
-              });
-              break;
-            default:
-              console.log('Unknown event: ', t);
-          }
+      for (const { event } of run.data) {
+        if (event == 'end') {
+          await getAllMessages.refetch();
+          break;
         }
-      } catch (e) {
-        console.log('error: ', e);
-      } finally {
-        setAnswering(false);
       }
     })();
-
-    return () => {
-      interrupt = true;
-    };
   }, [run.data]);
 
-  const cancelThread = trpc.thread.cancel.useMutation();
-
-  const addUserMessage = trpc.thread.messages.add.useMutation({
-    onMutate: ({ message }) => {
-      setChatMessages((messages) => {
-        return [
-          ...messages,
-          {
-            role: 'user',
-            text: message,
-          },
-        ];
-      });
+  const cancelThread = trpc.thread.cancel.useMutation({
+    onSuccess: async () => {
+      await getAllMessages.refetch();
     },
   });
-  if (addUserMessage.error) {
-    showErrorToast('', addUserMessage.error.message);
-    hideToast(1500);
-  }
+
+  const addUserMessage = trpc.thread.messages.add.useMutation({
+    onSuccess: async () => {
+      await getAllMessages.refetch();
+      setEnabledChat(true);
+      await run.refetch();
+    },
+    onError: (error) => {
+      showErrorToast('', error.message);
+      hideToast(1500);
+    },
+  });
 
   useEffect(() => {
-    cancelThread.mutateAsync({ threadId }).finally(() => {
+    (async () => {
+      await cancelThread.mutateAsync({ threadId });
       setInitialized(true);
-    });
-  }, []);
+    })();
+  }, [threadId]);
 
-  const handleSubmitUserMessage = async (message: string) => {
-    if (message === '') {
-      return;
+  const handleSubmitUserMessage = useCallback(
+    async (message: string) => {
+      if (message === '') {
+        return;
+      }
+
+      await addUserMessage.mutateAsync({
+        threadId,
+        message,
+      });
+    },
+    [threadId],
+  );
+
+  const handleStopAnswering = useCallback(async () => {
+    await cancelThread.mutateAsync({ threadId });
+  }, [threadId]);
+
+  const conversation = getAllMessages.data?.messages.toReversed() || [];
+
+  let answering = !addUserMessage.isIdle || run.isLoading;
+  if (run.data) {
+    let lastMessages: ChatMessage[] = [];
+    for (const t of run.data) {
+      switch (t.event) {
+        case 'text.created': {
+          const { id } = t as StackCreationEventTextCreated;
+          lastMessages = [
+            ...lastMessages,
+            { id: id, role: 'assistant', text: '' },
+          ];
+          break;
+        }
+        case 'text': {
+          const { id, text } = t as StackCreationEventText;
+          const lastMsg = lastMessages[lastMessages.length - 1];
+          if (lastMsg.id != id) {
+            throw new Error(
+              `Unexpected message ID: ${id}, lastMsg.id: ${lastMsg.id}`,
+            );
+          }
+          lastMsg.text += text;
+          answering = true;
+          break;
+        }
+        case 'end': {
+          answering = false;
+          break;
+        }
+      }
     }
 
-    await addUserMessage.mutateAsync({
-      threadId,
-      message,
-    });
-    setAnswering(true);
-  };
-
-  const handleStopAnswering = async () => {
-    await cancelThread.mutateAsync({ threadId });
-    setAnswering(false);
-  };
+    conversation.push(
+      ...lastMessages.filter(({ id }) => {
+        return conversation.findIndex((msg) => msg.id === id) === -1;
+      }),
+    );
+  }
 
   return (
     <>
       {renderToastContents()}
       <br />
-      {Initialized && getThread.isSuccess ? (
+      {initialized ? (
         <main className="flex flex-col w-11/12 h-full">
-          <Suspense fallback={<p>Generating...</p>}>
-            <div className="flex flex-row w-full h-5/6">
-              <Conversation history={chatMessages} answering={answering} />
-            </div>
-            <br />
-            <div className="flex flex-row w-full">
-              <UserMessageForm
-                answering={answering}
-                onSubmit={handleSubmitUserMessage}
-                onStopAnswering={handleStopAnswering}
-              />
-            </div>
-          </Suspense>
+          <div className="flex flex-row w-full h-5/6">
+            <Conversation history={conversation} />
+          </div>
+          <br />
+          <div className="flex flex-row w-full">
+            <UserMessageForm
+              answering={answering}
+              onSubmit={handleSubmitUserMessage}
+              onStopAnswering={handleStopAnswering}
+            />
+          </div>
         </main>
       ) : (
         <p>Loading...</p>

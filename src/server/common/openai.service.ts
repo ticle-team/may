@@ -68,17 +68,16 @@ export class OpenAIAssistant {
       order: 'desc',
     });
 
-    let messages = [];
-    for (const { role, content } of resp.data) {
+    let messages = resp.data.map<ChatMessage>(({ id, role, content }) => {
       const text = content
         .filter(({ type }) => type === 'text')
         .map((t) => (t as TextContentBlock).text.value)
         .join('');
-      messages.push({ role, text });
-    }
+      return { id, role, text };
+    });
 
     return {
-      messages: messages as ChatMessage[],
+      messages: messages,
       after: resp.nextPageParams()?.after ?? undefined,
     };
   }

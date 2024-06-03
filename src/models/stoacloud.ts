@@ -144,8 +144,17 @@ export type RegisterVapisOutput = {
   releaseId: number;
 };
 
-export type getProjectsInput = {
+export type GetProjectsInput = {
   name?: string;
   page?: number;
   perPage?: number;
+};
+
+export type CreateInstanceInput = {
+  zone?: string;
+  stackId: number;
+};
+
+export type DeployStackInput = {
+  timeout?: string;
 };

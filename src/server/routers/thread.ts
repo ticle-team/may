@@ -3,9 +3,9 @@ import { ThreadService } from '@/server/domain/thread/thread.service';
 import { Container } from 'typedi';
 import { thread } from '@/models/thread';
 import { z } from 'zod';
-import { AssistantService } from '@/server/domain/assistant/assistant.service';
 import { getLogger } from '@/logger';
 import { chatMessage } from '@/models/ai';
+import { AssistantService } from '@/server/domain/assistant/assistant.service';
 
 const logger = getLogger('server.routers.thread');
 
@@ -67,7 +67,8 @@ export default router({
     .query(async function* ({ input: { threadId } }) {
       const assistantService = Container.get(AssistantService);
 
-      yield* assistantService.runForCreationStack(threadId);
+      const generator = assistantService.runForCreationStack(threadId);
+      yield* generator;
     }),
   get: authedProcedure
     .input(

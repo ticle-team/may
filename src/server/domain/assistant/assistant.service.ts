@@ -21,15 +21,16 @@ export class AssistantService {
   ) {}
 
   async *runForCreationStack(threadId: number) {
+    yield { event: 'begin' };
     const { openaiThreadId, shapleProjectId } =
       await this.threadStore.findThreadById(threadId);
     const assistantStream = this.openaiAssistant.runStream(
       openaiThreadId,
       this.stackCreationAssistantId,
     );
-    yield { event: 'start' };
 
     const self = this;
+
     async function* handleStream(
       stream: typeof assistantStream,
     ): AsyncGenerator<StackCreationEvent, void> {
@@ -37,30 +38,22 @@ export class AssistantService {
         for await (const { event, data } of stream) {
           switch (event) {
             case 'thread.message.created':
-              yield { event: 'created' };
+              yield { id: data.id, event: 'text.created' };
               break;
             case 'thread.message.delta':
-              const { content } = data.delta;
-              if (!content) {
-                continue;
-              }
-              const textPieces = [] as string[];
-              for (const block of content) {
-                if (block.type != 'text') {
-                  continue;
-                }
-
-                textPieces.push((block as TextDeltaBlock).text?.value ?? '');
-              }
-              const text = textPieces.join('');
+              const text =
+                data.delta.content
+                  ?.filter((block) => block.type == 'text')
+                  .map((block) => (block as TextDeltaBlock).text?.value ?? '')
+                  .join('') ?? '';
               if (text == '') {
                 continue;
               }
 
-              yield { event: 'text', text: text };
+              yield { id: data.id, event: 'text', text: text };
               break;
             case 'thread.message.completed':
-              yield { event: 'done' };
+              yield { id: data.id, event: 'text.done' };
               break;
             case 'thread.run.requires_action':
               const { id: runId, required_action } = data;
@@ -75,6 +68,12 @@ export class AssistantService {
 
                 switch (funcName) {
                   case 'deploy_stack':
+                    if (!shapleProjectId) {
+                      throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: 'Project ID is required for stack deployment',
+                      });
+                    }
                     const generator = handleStream(
                       self.stackService.createStackByToolCall(
                         toolCallId,
@@ -106,5 +105,6 @@ export class AssistantService {
     }
 
     yield* handleStream(assistantStream);
+    yield { event: 'end' };
   }
 }
