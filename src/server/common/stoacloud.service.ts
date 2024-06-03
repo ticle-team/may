@@ -20,7 +20,7 @@ import {
 } from '@/models/stoacloud';
 import { camelToSnake, snakeToCamel } from '@/util/cases';
 import { getLogger } from '@/logger';
-import { VapiPackage } from '@/models/vapi';
+import { VapiPackage, VapiRelease } from '@/models/vapi';
 import qs from 'qs';
 
 const logger = getLogger('server.common.stoacloud.service');
@@ -173,6 +173,13 @@ export class StoaCloudService {
 
   async getVapiPackage(id: number) {
     await this.axios.get(`/v1/vapis/${id}`);
+  }
+
+  async getVapiReleasesInPackage(packageId: number) {
+    const { data } = await this.axios.get<VapiRelease>(
+      `/v1/vapis/${packageId}/releases`,
+    );
+    return data;
   }
 
   async getVapiPackages(input: GetVapiPackagesInput) {
