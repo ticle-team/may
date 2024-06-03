@@ -25,14 +25,11 @@ export default function Page() {
   const [selectedTab, setSelectedTab] = useState('Info');
   const [selectedVapi, setSelectedVapi] = useState<VapiRelease | null>(null);
   const [vapiDocsContent, setVapiDocsContent] = useState<string | null>(null);
-  const [isVapiDocsloading, setIsVapiDocsLoading] = useState<boolean>(false);
+  const [isVapiDocsloading, setVapiDocsLoading] = useState<boolean>(false);
   const [showAddInstanceDialog, setShowAddInstanceDialog] =
     useState<boolean>(false);
   const [showAddReferenceDialog, setShowAddReferenceDialog] =
     useState<boolean>(false);
-  const [confirmDialogType, setConfirmDialogType] = useState<string>('');
-  const [confirmDialogTitle, setConfirmDialogTitle] = useState<string>('');
-  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
   const tabs = [
     { name: 'Info' },
     { name: 'Structure' },
@@ -81,7 +78,7 @@ export default function Page() {
     if (isVapiDocsloading || !vapi.pkg || !stack) return;
 
     try {
-      setIsVapiDocsLoading(true);
+      setVapiDocsLoading(true);
       const result = await getVapiDocs({
         vapiName: vapi.pkg.name,
         githubRepo: stack.githubRepo,
@@ -95,7 +92,7 @@ export default function Page() {
     } catch (error) {
       console.error(error);
     } finally {
-      setIsVapiDocsLoading(false);
+      setVapiDocsLoading(false);
     }
   };
 
@@ -110,38 +107,12 @@ export default function Page() {
     // TODO: Implement on reference added
   };
 
-  const handleEditDescription = async () => {
+  const handleEditDescription = async (description: string) => {
     // TODO: Implement edit description feature
   };
 
-  const handleVapiUninstall = () => {
+  const handleUninstallVapi = async (vapiId: number) => {
     // TODO: Implement VAPI uninstall feature
-  };
-
-  const openConfirmDialog = (type: string) => {
-    switch (type) {
-      case 'editDesc':
-        setConfirmDialogType('editDesc');
-        setConfirmDialogTitle('Description을 수정하시겠습니까?');
-        setShowConfirmDialog(true);
-        break;
-      case 'deleteVapi':
-        setConfirmDialogType('deleteVapi');
-        setConfirmDialogTitle('VAPI를 삭제하시겠습니까?');
-        setShowConfirmDialog(true);
-        break;
-    }
-  };
-
-  const handleConfirmDialog = () => {
-    switch (confirmDialogType) {
-      case 'editDesc':
-        handleEditDescription();
-        break;
-      case 'deleteVapi':
-        handleVapiUninstall();
-        break;
-    }
   };
 
   return (
@@ -170,15 +141,6 @@ export default function Page() {
             onAdd={handleAddInstance}
           />
         }
-      />
-      <DialogModal
-        open={showConfirmDialog}
-        setOpen={setShowConfirmDialog}
-        title={confirmDialogTitle}
-        type="confirm"
-        confirmText="Confirm"
-        onConfirm={() => handleConfirmDialog()}
-        cancelText="Cancel"
       />
       {isStackQueryLoading || (!isStackQueryLoading && stackQueryError) ? (
         <div className="flex flex-col justify-center w-[800px] min-h-screen">
@@ -215,21 +177,19 @@ export default function Page() {
               <StackInfo
                 stack={stack!}
                 instances={instances ?? []}
-                loading={isInstancesQueryLoading}
+                isInstancesLoading={isInstancesQueryLoading}
                 onClickAddInstanceBtn={() => setShowAddInstanceDialog(true)}
                 onClickAddRefBtn={() => setShowAddReferenceDialog(true)}
-                onClickEditDescBtn={() => openConfirmDialog('editDesc')}
+                onEditDescription={handleEditDescription}
               />
             )}
             {selectedTab === 'Structure' && (
               <StackStructure stack={stack!} onClickVapi={handleClickVapi}>
                 <VapiDetail
-                  loading={isVapiDocsloading}
+                  docsLoading={isVapiDocsloading}
                   docsContent={vapiDocsContent ?? null}
                   vapi={selectedVapi}
-                  onClickUninstallVapiBtn={() =>
-                    openConfirmDialog('deleteVapi')
-                  }
+                  onUninstallVapi={handleUninstallVapi}
                 />
               </StackStructure>
             )}
