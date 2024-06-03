@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense, useCallback } from 'react';
+import { useEffect, useState, Suspense, useCallback, useMemo } from 'react';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
 import useToast from '@/app/_hooks/useToast';
@@ -106,10 +106,17 @@ export default function Page() {
     await cancelThread.mutateAsync({ threadId });
   }, [threadId]);
 
-  const conversation = getAllMessages.data?.messages.toReversed() || [];
+  const { answering, conversation } = useMemo(() => {
+    let answering = !addUserMessage.isIdle || run.isLoading;
+    const conversation = getAllMessages.data?.messages.toReversed() || [];
 
-  let answering = !addUserMessage.isIdle || run.isLoading;
-  if (run.data) {
+    if (!run.data) {
+      return {
+        answering,
+        conversation,
+      };
+    }
+
     let lastMessages: ChatMessage[] = [];
     for (const t of run.data) {
       switch (t.event) {
@@ -145,7 +152,12 @@ export default function Page() {
         return conversation.findIndex((msg) => msg.id === id) === -1;
       }),
     );
-  }
+
+    return {
+      answering,
+      conversation,
+    };
+  }, [getAllMessages.data, run.data, addUserMessage.isIdle, run.isLoading]);
 
   return (
     <>
