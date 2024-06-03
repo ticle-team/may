@@ -27,10 +27,9 @@ export default function Page() {
     useState<boolean>(false);
   const [showAddReferenceDialog, setShowAddReferenceDialog] =
     useState<boolean>(false);
-  const [showDeleteVapiDialog, setShowDeleteVapiDialog] =
-    useState<boolean>(false);
-  const [showEditDescriptionDialog, setShowEditDescriptionDialog] =
-    useState<boolean>(false);
+  const [confirmDialogType, setConfirmDialogType] = useState<string>('');
+  const [confirmDialogTitle, setConfirmDialogTitle] = useState<string>('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState<boolean>(false);
   const tabs = [
     { name: 'Info' },
     { name: 'Structure' },
@@ -87,6 +86,32 @@ export default function Page() {
     // TODO: Implement VAPI uninstall feature
   };
 
+  const openConfirmDialog = (type: string) => {
+    switch (type) {
+      case 'editDesc':
+        setConfirmDialogType('editDesc');
+        setConfirmDialogTitle('Description을 수정하시겠습니까?');
+        setShowConfirmDialog(true);
+        break;
+      case 'deleteVapi':
+        setConfirmDialogType('deleteVapi');
+        setConfirmDialogTitle('VAPI를 삭제하시겠습니까?');
+        setShowConfirmDialog(true);
+        break;
+    }
+  };
+
+  const handleConfirmDialog = () => {
+    switch (confirmDialogType) {
+      case 'editDesc':
+        handleEditDescription();
+        break;
+      case 'deleteVapi':
+        handleVapiUninstall();
+        break;
+    }
+  };
+
   return (
     <>
       {renderToastContents()}
@@ -115,21 +140,12 @@ export default function Page() {
         }
       />
       <DialogModal
-        open={showEditDescriptionDialog}
-        setOpen={setShowEditDescriptionDialog}
-        title="Description을 수정하시겠습니까?"
+        open={showConfirmDialog}
+        setOpen={setShowConfirmDialog}
+        title={confirmDialogTitle}
         type="confirm"
-        confirmText="Edit"
-        onConfirm={handleEditDescription}
-        cancelText="Cancel"
-      />
-      <DialogModal
-        open={showDeleteVapiDialog}
-        setOpen={setShowDeleteVapiDialog}
-        title="VAPI를 삭제하시겠습니까?"
-        type="confirm"
-        confirmText="Delete"
-        onConfirm={handleVapiUninstall}
+        confirmText="Confirm"
+        onConfirm={() => handleConfirmDialog()}
         cancelText="Cancel"
       />
       {isStackQueryLoading || (!isStackQueryLoading && stackQueryError) ? (
@@ -170,7 +186,7 @@ export default function Page() {
                 loading={isInstancesQueryLoading}
                 onClickAddInstanceBtn={() => setShowAddInstanceDialog(true)}
                 onClickAddRefBtn={() => setShowAddReferenceDialog(true)}
-                onClickEditDescBtn={() => setShowEditDescriptionDialog(true)}
+                onClickEditDescBtn={() => openConfirmDialog('editDesc')}
               />
             )}
             {selectedTab === 'Structure' && (
@@ -178,7 +194,9 @@ export default function Page() {
                 <VapiDetail
                   stack={stack!}
                   vapi={selectedVapi}
-                  onClickUninstallVapiBtn={() => setShowDeleteVapiDialog(true)}
+                  onClickUninstallVapiBtn={() =>
+                    openConfirmDialog('deleteVapi')
+                  }
                 />
               </StackStructure>
             )}
