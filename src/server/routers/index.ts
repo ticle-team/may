@@ -1,7 +1,6 @@
 import 'reflect-metadata';
 
 import { router } from '@/server/trpc';
-import conversationRouter from '@/server/routers/conversation';
 import threadRouter from '@/server/routers/thread';
 import instanceRouter from '@/server/routers/instance';
 import stackRouter from '@/server/routers/stack';
@@ -16,5 +15,4 @@ export const appRouter = router({
   project: projectRouter,
   org: orgRouter,
   user: userRouter,
-  conversation: conversationRouter,
 });

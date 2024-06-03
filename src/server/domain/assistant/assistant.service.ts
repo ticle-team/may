@@ -3,7 +3,7 @@ import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
 import { StackService } from '@/server/domain/stack/stack.service';
-import { TextDeltaBlock } from 'openai/src/resources/beta/threads/messages';
+import { TextDeltaBlock } from 'openai/resources/beta/threads/messages';
 import { TRPCError } from '@trpc/server';
 import { StackCreationEvent } from '@/models/assistant';
 

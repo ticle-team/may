@@ -33,6 +33,13 @@ export default router({
         postgrestEnabled: false,
         postgrest: {},
         vapis: [],
+        domain: '',
+        endpoint: '',
+        adminApiKey: '',
+        anonApiKey: '',
+        authEnabled: false,
+        postgrestEnabled: false,
+        storageEnabled: false,
       };
     }),
   delete: authedProcedure
