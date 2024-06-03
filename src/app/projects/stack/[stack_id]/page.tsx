@@ -99,7 +99,10 @@ export default function Page() {
     }
   };
 
-  const handleAddInstance = async (zone: string, name: string) => {
+  const handleAddInstance = async (
+    zone: string | null,
+    name: string | null,
+  ) => {
     // TODO: Implement on instance added
   };
 

@@ -12,19 +12,17 @@ const INSTANCE_ZONE_ITEMS = [
 ];
 
 type Props = {
-  onAdd: (zone: string, name: string) => Promise<void>;
+  onAdd: (zone: string | null, name: string | null) => Promise<void>;
   onCancel: () => void;
 };
 
 const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
-  const [instanceZone, setInstanceZone] = useState<string>(
-    INSTANCE_ZONE_ITEMS[0].label,
-  );
-  const [instanceName, setInstanceName] = useState<string>('');
+  const [instanceZone, setInstanceZone] = useState<string | null>(null);
+  const [instanceName, setInstanceName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleAddInstance = async () => {
-    if (loading || !instanceZone) return;
+    if (loading) return;
     setLoading(true);
 
     try {
@@ -53,7 +51,7 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
           <input
             type="text"
             placeholder="Stack-Instance-SK"
-            value={instanceName}
+            value={instanceName ?? ''}
             onChange={(e) => setInstanceName(e.target.value)}
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
           />
@@ -63,11 +61,7 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
         <Button color="secondary" onClick={onCancel}>
           cancel
         </Button>
-        <Button
-          color="primary"
-          disabled={loading || instanceZone === null || instanceName === ''}
-          onClick={handleAddInstance}
-        >
+        <Button color="primary" disabled={loading} onClick={handleAddInstance}>
           Add
         </Button>
       </div>
