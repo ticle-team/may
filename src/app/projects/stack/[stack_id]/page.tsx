@@ -14,6 +14,7 @@ import AddInstanceModal from '@/app/projects/stack/[stack_id]/AddInstanceModal';
 import DialogModal from '@/app/_components/Dialog';
 import { VapiRelease } from '@/models/vapi';
 import VapiDetail from '@/app/projects/stack/[stack_id]/VapiDetail';
+import { getVapiDocs } from '@/util/utils';
 
 export default function Page() {
   const { renderToastContents, showErrorToast } = useToast();
@@ -23,6 +24,8 @@ export default function Page() {
   const stackId = parseInt(stackIdStr);
   const [selectedTab, setSelectedTab] = useState('Info');
   const [selectedVapi, setSelectedVapi] = useState<VapiRelease | null>(null);
+  const [vapiDocsContent, setVapiDocsContent] = useState<string | null>(null);
+  const [isVapiDocsloading, setIsVapiDocsLoading] = useState<boolean>(false);
   const [showAddInstanceDialog, setShowAddInstanceDialog] =
     useState<boolean>(false);
   const [showAddReferenceDialog, setShowAddReferenceDialog] =
@@ -63,11 +66,37 @@ export default function Page() {
       showErrorToast('인스턴스 목록을 불러오는 중 오류가 발생했습니다.');
   }, [instancesQueryError]);
 
-  const handleClickVapi = (vapiName: VapiRelease | null) => {
-    if (selectedVapi === vapiName) {
+  const handleClickVapi = (vapi: VapiRelease | null) => {
+    setVapiDocsContent(null);
+    if (selectedVapi === vapi) {
       return setSelectedVapi(null);
     }
-    setSelectedVapi(vapiName);
+    setSelectedVapi(vapi);
+
+    if (!vapi) return;
+    fetchVapiDocs(vapi);
+  };
+
+  const fetchVapiDocs = async (vapi: VapiRelease) => {
+    if (isVapiDocsloading || !vapi.pkg || !stack) return;
+
+    try {
+      setIsVapiDocsLoading(true);
+      const result = await getVapiDocs({
+        vapiName: vapi.pkg.name,
+        githubRepo: stack.githubRepo,
+        githubBranch: stack.githubBranch ?? 'main',
+        // TODO: Implement githubAccessToken fetch feature
+        githubAccessToken: '',
+      });
+
+      if (!result) return;
+      setVapiDocsContent(result);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsVapiDocsLoading(false);
+    }
   };
 
   const handleAddInstance = async (zone: string, name: string) => {
@@ -192,7 +221,8 @@ export default function Page() {
             {selectedTab === 'Structure' && (
               <StackStructure stack={stack!} onClickVapi={handleClickVapi}>
                 <VapiDetail
-                  stack={stack!}
+                  loading={isVapiDocsloading}
+                  docsContent={vapiDocsContent ?? null}
                   vapi={selectedVapi}
                   onClickUninstallVapiBtn={() =>
                     openConfirmDialog('deleteVapi')

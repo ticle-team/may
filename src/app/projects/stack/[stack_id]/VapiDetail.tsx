@@ -1,4 +1,3 @@
-import { Stack } from '@/models/stack';
 import { VapiRelease } from '@/models/vapi';
 import { StarIcon } from '@heroicons/react/20/solid';
 import Badge from '@/app/_components/Badge';
@@ -7,21 +6,18 @@ import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
 
 type Props = {
-  stack: Stack;
   vapi: VapiRelease | null;
+  docsContent: string | null;
+  loading: boolean;
   onClickUninstallVapiBtn: () => void;
 };
 
-const VapiDetail = ({ stack, vapi, onClickUninstallVapiBtn }: Props) => {
-  const convertToDocsUrl = (
-    githubRepo: string,
-    githubBranch: string,
-    vapiName: string,
-  ) => {
-    if (!githubRepo || !vapiName) return '';
-    return `https://raw.githubusercontent.com/${githubRepo}/${githubBranch}/${vapiName}/docs.yml`;
-  };
-
+const VapiDetail = ({
+  vapi,
+  docsContent,
+  loading,
+  onClickUninstallVapiBtn,
+}: Props) => {
   return (
     <>
       {vapi && (
@@ -47,13 +43,21 @@ const VapiDetail = ({ stack, vapi, onClickUninstallVapiBtn }: Props) => {
             </button>
           </div>
           <div>
-            <SwaggerUI
-              url={convertToDocsUrl(
-                stack.githubRepo,
-                stack.githubBranch ?? 'main',
-                vapi.pkg?.name ?? '',
-              )}
-            />
+            {loading && (
+              <div className="flex justify-center my-10">
+                <span className="text-xl font-medium text-primary-600 animate-pulse">
+                  Loading...
+                </span>
+              </div>
+            )}
+            {!loading && !docsContent && (
+              <div className="flex justify-center my-10">
+                <span className="font-normal text-sm text-gray-400">
+                  No VAPI definition provided.
+                </span>
+              </div>
+            )}
+            {!loading && docsContent && <SwaggerUI spec={docsContent} />}
           </div>
         </div>
       )}
