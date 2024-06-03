@@ -2,40 +2,20 @@
 
 import React, { useState } from 'react';
 import { Stack } from '@/models/stack';
-import { StarIcon } from '@heroicons/react/20/solid';
 import Badge from '@/app/_components/Badge';
-import { ExclamationCircleIcon } from '@/app/_components/Icons';
 import { VapiRelease } from '@/models/vapi';
-import SwaggerUI from 'swagger-ui-react';
-import 'swagger-ui-react/swagger-ui.css';
 
 type Props = {
   stack: Stack;
-  openVAPIUninstallDialog: () => void;
+  onClickVapi: (vapi: VapiRelease) => void;
+  children?: React.ReactNode;
 };
 
 export default function StackStructure({
   stack,
-  openVAPIUninstallDialog,
+  onClickVapi,
+  children,
 }: Props) {
-  const [selectedVAPI, setSelectedVAPI] = useState<VapiRelease | null>(null);
-
-  const handleClickVAPI = (vapiName: VapiRelease | null) => {
-    if (selectedVAPI === vapiName) {
-      return setSelectedVAPI(null);
-    }
-    setSelectedVAPI(vapiName);
-  };
-
-  const convertToDocsUrl = (
-    githubRepo: string,
-    githubBranch: string,
-    vapiName: string,
-  ) => {
-    if (!githubRepo || !vapiName) return '';
-    return `https://raw.githubusercontent.com/${githubRepo}/${githubBranch}/${vapiName}/docs.yml`;
-  };
-
   return (
     <div className="flex w-full mt-5 justify-between">
       <div className="w-[25%] flex flex-col gap-y-12">
@@ -96,7 +76,7 @@ export default function StackStructure({
                 key={`vapi-${index}`}
                 className="ml-5 hover:cursor-pointer"
                 onClick={() => {
-                  handleClickVAPI(vapi ?? null);
+                  onClickVapi(vapi);
                 }}
               >
                 <span className="font-normal text-sm">{vapi.pkg?.name}</span>
@@ -104,41 +84,7 @@ export default function StackStructure({
             ))}
         </div>
       </div>
-      <div className="flex flex-col w-[calc(75%-100px)]">
-        {selectedVAPI && (
-          <div>
-            <div className="flex justify-between items-center">
-              <div className="flex flex-col gap-y-2">
-                <div className="flex gap-x-5 items-center">
-                  <span className="text-base font-semibold text-gray-900">
-                    {selectedVAPI.pkg?.name}
-                  </span>
-                  <StarIcon className="h-5 w-5 text-yellow-400" />
-                </div>
-                <div className="flex gap-x-3">
-                  <Badge color="pink">{selectedVAPI.version}</Badge>
-                  <ExclamationCircleIcon />
-                </div>
-              </div>
-              <button
-                className="font-normal text-sm text-blue-500"
-                onClick={openVAPIUninstallDialog}
-              >
-                Uninstall
-              </button>
-            </div>
-            <div>
-              <SwaggerUI
-                url={convertToDocsUrl(
-                  stack.githubRepo,
-                  stack.githubBranch ?? 'main',
-                  selectedVAPI.pkg?.name ?? '',
-                )}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      <div className="flex flex-col w-[calc(75%-100px)]">{children}</div>
     </div>
   );
 }

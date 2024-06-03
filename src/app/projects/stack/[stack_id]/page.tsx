@@ -12,6 +12,8 @@ import Modal from '@/app/_components/Modal';
 import AddReferenceModal from '@/app/projects/stack/[stack_id]/AddReferenceModal';
 import AddInstanceModal from '@/app/projects/stack/[stack_id]/AddInstanceModal';
 import DialogModal from '@/app/_components/Dialog';
+import { VapiRelease } from '@/models/vapi';
+import VapiDetail from '@/app/projects/stack/[stack_id]/VapiDetail';
 
 export default function Page() {
   const { renderToastContents, showErrorToast } = useToast();
@@ -20,11 +22,12 @@ export default function Page() {
   }>();
   const stackId = parseInt(stackIdStr);
   const [selectedTab, setSelectedTab] = useState('Info');
+  const [selectedVapi, setSelectedVapi] = useState<VapiRelease | null>(null);
   const [showAddInstanceDialog, setShowAddInstanceDialog] =
     useState<boolean>(false);
   const [showAddReferenceDialog, setShowAddReferenceDialog] =
     useState<boolean>(false);
-  const [showDeleteVAPIDialog, setShowDeleteVAPIDialog] =
+  const [showDeleteVapiDialog, setShowDeleteVapiDialog] =
     useState<boolean>(false);
   const [showEditDescriptionDialog, setShowEditDescriptionDialog] =
     useState<boolean>(false);
@@ -61,6 +64,13 @@ export default function Page() {
       showErrorToast('인스턴스 목록을 불러오는 중 오류가 발생했습니다.');
   }, [instancesQueryError]);
 
+  const handleClickVapi = (vapiName: VapiRelease | null) => {
+    if (selectedVapi === vapiName) {
+      return setSelectedVapi(null);
+    }
+    setSelectedVapi(vapiName);
+  };
+
   const handleAddInstance = async (zone: string, name: string) => {
     // TODO: Implement on instance added
   };
@@ -73,7 +83,7 @@ export default function Page() {
     // TODO: Implement edit description feature
   };
 
-  const handleVAPIUninstall = () => {
+  const handleVapiUninstall = () => {
     // TODO: Implement VAPI uninstall feature
   };
 
@@ -114,12 +124,12 @@ export default function Page() {
         cancelText="Cancel"
       />
       <DialogModal
-        open={showDeleteVAPIDialog}
-        setOpen={setShowDeleteVAPIDialog}
+        open={showDeleteVapiDialog}
+        setOpen={setShowDeleteVapiDialog}
         title="VAPI를 삭제하시겠습니까?"
         type="confirm"
         confirmText="Delete"
-        onConfirm={handleVAPIUninstall}
+        onConfirm={handleVapiUninstall}
         cancelText="Cancel"
       />
       {isStackQueryLoading || (!isStackQueryLoading && stackQueryError) ? (
@@ -160,16 +170,17 @@ export default function Page() {
                 loading={isInstancesQueryLoading}
                 onClickAddInstanceBtn={() => setShowAddInstanceDialog(true)}
                 onClickAddRefBtn={() => setShowAddReferenceDialog(true)}
-                onClickEditDescBtn={() =>
-                  setShowEditDescriptionDialog(true)
-                }
+                onClickEditDescBtn={() => setShowEditDescriptionDialog(true)}
               />
             )}
             {selectedTab === 'Structure' && (
-              <StackStructure
-                stack={stack!}
-                openVAPIUninstallDialog={() => setShowDeleteVAPIDialog(true)}
-              />
+              <StackStructure stack={stack!} onClickVapi={handleClickVapi}>
+                <VapiDetail
+                  stack={stack!}
+                  vapi={selectedVapi}
+                  onClickUninstallVapiBtn={() => setShowDeleteVapiDialog(true)}
+                />
+              </StackStructure>
             )}
           </div>
         </div>
