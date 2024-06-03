@@ -19,7 +19,7 @@ export const getVapiDocs = async ({
     const axios = new Axios({
       baseURL: 'https://api.github.com',
       headers: {
-        'Accept': 'application/vnd.github.raw+json',
+        Accept: 'application/vnd.github.raw+json',
         'X-GitHub-Api-Version': '2022-11-28',
         ...(githubAccessToken && {
           Authorization: `Bearer ${githubAccessToken}`,
