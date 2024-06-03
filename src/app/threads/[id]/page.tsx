@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
 import useToast from '@/app/_hooks/useToast';
@@ -46,6 +46,11 @@ export default function Page() {
   }
 
   useEffect(() => {
+    // run.data is an array of events
+    // for example:
+    //   events: begin -> text.created -> text -> text -> text.done -> end
+    //   server sent events: begin, text.created, ...
+    //   client states: [begin], [begin, text.created], [begin, text.created, text], ...
     if (!run.data) return;
 
     (async () => {
@@ -81,22 +86,25 @@ export default function Page() {
       await cancelThread.mutateAsync({ threadId });
       setInitialized(true);
     })();
-  }, []);
+  }, [threadId]);
 
-  const handleSubmitUserMessage = async (message: string) => {
-    if (message === '') {
-      return;
-    }
+  const handleSubmitUserMessage = useCallback(
+    async (message: string) => {
+      if (message === '') {
+        return;
+      }
 
-    await addUserMessage.mutateAsync({
-      threadId,
-      message,
-    });
-  };
+      await addUserMessage.mutateAsync({
+        threadId,
+        message,
+      });
+    },
+    [threadId],
+  );
 
-  const handleStopAnswering = async () => {
+  const handleStopAnswering = useCallback(async () => {
     await cancelThread.mutateAsync({ threadId });
-  };
+  }, [threadId]);
 
   const conversation = getAllMessages.data?.messages.toReversed() || [];
 
