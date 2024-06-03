@@ -64,9 +64,6 @@ export default router({
         threadId: z.number(),
       }),
     )
-    .meta({
-      subscription: true,
-    })
     .query(async function* ({ input: { threadId } }) {
       const assistantService = Container.get(AssistantService);
 
