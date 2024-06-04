@@ -4,17 +4,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
-import StackInfo from '@/app/stacks/[stackId]/StackInfo';
 import StackStructure from '@/app/stacks/[stackId]/StackStructure';
 import useToast from '@/app/_hooks/useToast';
 import LoadingSpinner from '@/app/_components/LoadingSpinner';
-import Modal from '@/app/_components/Modal';
-import AddReferenceModal from '@/app/stacks/[stackId]/AddReferenceModal';
-import AddInstanceModal from '@/app/stacks/[stackId]/AddInstanceModal';
 import { VapiRelease } from '@/models/vapi';
 import VapiDetail from '@/app/stacks/[stackId]/VapiDetail';
 import { getVapiDocs } from '@/util/utils';
 import { shapleClient } from '@/app/_services/shapleClient';
+import StackInfoContainer from './StackInfoContainer';
 
 export default function Page() {
   const { renderToastContents, showErrorToast } = useToast();
@@ -26,10 +23,7 @@ export default function Page() {
   const [selectedVapi, setSelectedVapi] = useState<VapiRelease | null>(null);
   const [vapiDocsContent, setVapiDocsContent] = useState<string | null>(null);
   const [isVapiDocsloading, setVapiDocsLoading] = useState<boolean>(false);
-  const [showAddInstanceDialog, setShowAddInstanceDialog] =
-    useState<boolean>(false);
-  const [showAddReferenceDialog, setShowAddReferenceDialog] =
-    useState<boolean>(false);
+
   const tabs = [
     { name: 'Info' },
     { name: 'Structure' },
@@ -45,23 +39,10 @@ export default function Page() {
     stackId: stackId,
   });
 
-  const {
-    data: { instances, after } = {},
-    isLoading: isInstancesQueryLoading,
-    error: instancesQueryError,
-  } = trpc.stack.instances.list.useQuery({
-    stackId: stackId,
-  });
-
   useEffect(() => {
     if (stackQueryError)
       showErrorToast('스택 정보를 불러오는 중 오류가 발생했습니다.');
   }, [stackQueryError]);
-
-  useEffect(() => {
-    if (instancesQueryError)
-      showErrorToast('인스턴스 목록을 불러오는 중 오류가 발생했습니다.');
-  }, [instancesQueryError]);
 
   useEffect(() => {
     setVapiDocsContent(null);
@@ -104,21 +85,6 @@ export default function Page() {
     }
   }, [selectedVapi]);
 
-  const handleAddInstance = async (
-    zone: string | null,
-    name: string | null,
-  ) => {
-    // TODO: Implement on instance added
-  };
-
-  const handleAddReference = async (title: string, url: string) => {
-    // TODO: Implement on reference added
-  };
-
-  const handleEditDescription = async (description: string) => {
-    // TODO: Implement edit description feature
-  };
-
   const handleUninstallVapi = async (vapiId: number) => {
     // TODO: Implement VAPI uninstall feature
   };
@@ -126,30 +92,6 @@ export default function Page() {
   return (
     <>
       {renderToastContents()}
-      <Modal
-        open={showAddReferenceDialog}
-        setOpen={setShowAddReferenceDialog}
-        contents={
-          <AddReferenceModal
-            onCancel={() => {
-              setShowAddReferenceDialog(false);
-            }}
-            onAdd={handleAddReference}
-          />
-        }
-      />
-      <Modal
-        open={showAddInstanceDialog}
-        setOpen={setShowAddInstanceDialog}
-        contents={
-          <AddInstanceModal
-            onCancel={() => {
-              setShowAddInstanceDialog(false);
-            }}
-            onAdd={handleAddInstance}
-          />
-        }
-      />
       {isStackQueryLoading || (!isStackQueryLoading && stackQueryError) ? (
         <div className="flex flex-col justify-center w-[800px] min-h-screen">
           <LoadingSpinner />
@@ -181,16 +123,7 @@ export default function Page() {
                 ))}
               </div>
             </div>
-            {selectedTab === 'Info' && (
-              <StackInfo
-                stack={stack!}
-                instances={instances ?? []}
-                isInstancesLoading={isInstancesQueryLoading}
-                onClickAddInstanceBtn={() => setShowAddInstanceDialog(true)}
-                onClickAddRefBtn={() => setShowAddReferenceDialog(true)}
-                onEditDescription={handleEditDescription}
-              />
-            )}
+            {selectedTab === 'Info' && <StackInfoContainer stack={stack!} />}
             {selectedTab === 'Structure' && (
               <StackStructure stack={stack!} onClickVapi={handleClickVapi}>
                 <VapiDetail

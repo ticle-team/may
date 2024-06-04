@@ -38,7 +38,10 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
         <span className="font-semibold text-xl">인스턴스 추가하기</span>
       </div>
       <div className="flex flex-col gap-y-3">
-        <div className="w-full">
+        <div className="flex w-full items-center">
+          <span className="font-bold text-sm text-gray-900 min-w-16">
+            Region
+          </span>
           <Dropdown
             className="max-w-40"
             placeholder="Zone"
@@ -47,7 +50,8 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
             onSelected={(item) => setInstanceZone(item.value)}
           />
         </div>
-        <div className="w-full">
+        <div className="flex w-full items-center">
+          <span className="font-bold text-sm text-gray-900 min-w-16">Name</span>
           <input
             type="text"
             placeholder="Stack-Instance-SK"
