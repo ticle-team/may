@@ -6,6 +6,7 @@ import { StackService } from '@/server/domain/stack/stack.service';
 import { TextDeltaBlock } from 'openai/resources/beta/threads/messages';
 import { TRPCError } from '@trpc/server';
 import { StackCreationEvent } from '@/models/assistant';
+import { ThreadService } from '@/server/domain/thread/thread.service';
 
 const logger = getLogger('AssistantService');
 
@@ -16,16 +17,15 @@ export class AssistantService {
 
   constructor(
     private readonly openaiAssistant: OpenAIAssistant,
-    private readonly threadStore: ThreadStore,
+    private readonly threadService: ThreadService,
     private readonly stackService: StackService,
   ) {}
 
   async *runForCreationStack(threadId: number) {
     yield { event: 'begin' };
-    const { openaiThreadId, shapleProjectId } =
-      await this.threadStore.findThreadById(threadId);
+    const thread = await this.threadService.get(threadId);
     const assistantStream = this.openaiAssistant.runStream(
-      openaiThreadId,
+      thread.openaiThreadId,
       this.stackCreationAssistantId,
     );
 
@@ -67,25 +67,28 @@ export class AssistantService {
                 }
 
                 switch (funcName) {
-                  case 'deploy_stack':
-                    if (!shapleProjectId) {
+                  case 'deploy_stack': {
+                    if (!thread.shapleProjectId) {
                       throw new TRPCError({
                         code: 'BAD_REQUEST',
                         message: 'Project ID is required for stack deployment',
                       });
                     }
-                    const generator = handleStream(
-                      self.stackService.createStackByToolCall(
+                    const { stackId, generator } =
+                      await self.stackService.createStackByToolCall(
                         toolCallId,
                         runId,
                         threadId,
                         funcArguments,
-                        shapleProjectId,
-                      ),
-                    );
-                    yield { event: 'deploy' };
-                    yield* generator;
+                        thread.shapleProjectId,
+                      );
+
+                    thread.shapleStackId = stackId;
+                    await self.threadService.save(thread);
+                    yield* handleStream(generator);
+                    yield { event: 'deploy', stackId };
                     break;
+                  }
                 }
               }
               break;

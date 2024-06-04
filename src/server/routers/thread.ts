@@ -83,6 +83,7 @@ export default router({
       return {
         id: thread.id,
         shapleProjectId: thread.shapleProjectId,
+        shapleStackId: thread.shapleStackId,
       };
     }),
   cancel: authedProcedure

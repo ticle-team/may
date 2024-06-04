@@ -129,7 +129,7 @@ export class OpenAIAssistant {
     runId: string,
     toolCallId: string,
     output: string,
-  ) {
+  ): AsyncGenerator<OpenAI.Beta.AssistantStreamEvent> {
     const stream = await this.openai.beta.threads.runs.submitToolOutputs(
       threadId,
       runId,

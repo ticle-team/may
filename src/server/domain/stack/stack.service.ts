@@ -4,6 +4,8 @@ import { PrismaService } from '@/server/common/prisma.service';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
+import { OpenAI } from 'openai';
+import _ from 'lodash';
 
 const logger = getLogger('server.domain.stack.service');
 
@@ -16,7 +18,7 @@ export class StackService {
     private readonly threadStore: ThreadStore,
   ) {}
 
-  async *createStackByToolCall(
+  async createStackByToolCall(
     toolCallId: string,
     runId: string,
     threadId: number,
@@ -39,7 +41,7 @@ export class StackService {
       stackId = data.id;
     } catch (err) {
       logger.error('failed to create stack', { e: err });
-      yield* this.openaiAssistant.submitToolOutputsStream(
+      const generator = this.openaiAssistant.submitToolOutputsStream(
         openaiThreadId,
         runId,
         toolCallId,
@@ -48,11 +50,59 @@ export class StackService {
           description: 'failed to create stack',
         }),
       );
-      return;
+
+      return {
+        stackId: 0,
+        generator,
+      };
+    }
+
+    logger.debug('install dependencies', { dependencies });
+    const { vapis, base_apis: baseApis } = dependencies;
+
+    for (const { name } of baseApis) {
+      try {
+        switch (_.lowerCase(name)) {
+          case 'auth': {
+            await this.stoacloudService.installAuth(stackId, {});
+            break;
+          }
+          case 'storage': {
+            await this.stoacloudService.installStorage(stackId, {
+              tenantId: name,
+            });
+            break;
+          }
+          case 'database': {
+            await this.stoacloudService.installPostgrest(stackId, {
+              schemas: ['public'],
+            });
+            break;
+          }
+        }
+      } catch (e) {
+        logger.error('failed to install base api', { e });
+        this.stoacloudService.deleteStack(stackId).catch((err) => {
+          logger.error('failed to delete stack', { err });
+        });
+        const generator = this.openaiAssistant.submitToolOutputsStream(
+          openaiThreadId,
+          runId,
+          toolCallId,
+          JSON.stringify({
+            status: 'error',
+            description: 'failed to install base api',
+          }),
+        );
+        return {
+          stackId,
+          generator,
+        };
+      }
     }
 
     try {
-      for (const { name } of dependencies) {
+      for (const { name } of vapis) {
         const vapiPackages = await this.stoacloudService.getVapiPackages({
           name,
         });
@@ -71,7 +121,7 @@ export class StackService {
       this.stoacloudService.deleteStack(stackId).catch((err) => {
         logger.error('failed to delete stack', { err });
       });
-      yield* this.openaiAssistant.submitToolOutputsStream(
+      const generator = this.openaiAssistant.submitToolOutputsStream(
         openaiThreadId,
         runId,
         toolCallId,
@@ -80,10 +130,13 @@ export class StackService {
           description: 'failed to install dependencies',
         }),
       );
-      return;
+      return {
+        stackId,
+        generator,
+      };
     }
 
-    let generator: ReturnType<OpenAIAssistant['submitToolOutputsStream']>;
+    let generator;
     try {
       generator = await this.prisma.$transaction(async (tx) => {
         await tx.thread.update({
@@ -110,7 +163,7 @@ export class StackService {
       this.stoacloudService.deleteStack(stackId).catch((err) => {
         logger.error('failed to delete stack', { err });
       });
-      yield* this.openaiAssistant.submitToolOutputsStream(
+      const generator = this.openaiAssistant.submitToolOutputsStream(
         openaiThreadId,
         runId,
         toolCallId,
@@ -119,16 +172,24 @@ export class StackService {
           description: 'failed to update thread',
         }),
       );
-      return;
+
+      return {
+        stackId,
+        generator,
+      };
     }
 
     try {
-      yield* generator;
+      return {
+        stackId,
+        generator,
+      };
     } catch (err) {
       logger.error('received error while generating', { err });
       this.stoacloudService.deleteStack(stackId).catch((err) => {
         logger.error('failed to delete stack', { err });
       });
+      throw err;
     }
   }
 

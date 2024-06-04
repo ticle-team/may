@@ -26,6 +26,7 @@ export type StackCreationEventError = {
 
 export type StackCreationEventDeploy = {
   event: 'deploy';
+  stackId: number;
 };
 
 export type StackCreationEventTextCreated = {

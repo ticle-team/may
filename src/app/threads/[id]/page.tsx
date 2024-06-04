@@ -2,17 +2,20 @@
 
 import { useEffect, useState, Suspense, useCallback, useMemo } from 'react';
 import { trpc } from '@/app/_trpc/client';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import useToast from '@/app/_hooks/useToast';
 import { ChatMessage, ChatRole } from '@/models/ai';
 import {
+  StackCreationEventDeploy,
   StackCreationEventText,
   StackCreationEventTextCreated,
 } from '@/models/assistant';
 import UserMessageForm from './UserMessageForm';
 import Conversation from './Conversation';
+import Button from '@/app/_components/Button';
 
 export default function Page() {
+  const router = useRouter();
   const { id: threadIdStr } = useParams<{
     id: string;
   }>();
@@ -21,13 +24,22 @@ export default function Page() {
   const [initialized, setInitialized] = useState(false);
   const [enabledChat, setEnabledChat] = useState(false);
 
-  const getAllMessages = trpc.thread.messages.list.useQuery({
+  const thread = trpc.thread.get.useQuery({
+    threadId,
+  });
+  if (thread.error) {
+    console.error(thread.error);
+    showErrorToast('', thread.error.message);
+    hideToast(1500);
+  }
+
+  const allMessages = trpc.thread.messages.list.useQuery({
     threadId,
     limit: 100,
   });
-  if (getAllMessages.error) {
-    console.error(getAllMessages.error);
-    showErrorToast('', getAllMessages.error.message);
+  if (allMessages.error) {
+    console.error(allMessages.error);
+    showErrorToast('', allMessages.error.message);
     hideToast(1500);
   }
 
@@ -37,6 +49,9 @@ export default function Page() {
     },
     {
       enabled: enabledChat,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
     },
   );
   if (run.error) {
@@ -55,9 +70,15 @@ export default function Page() {
 
     (async () => {
       for (const { event } of run.data) {
-        if (event == 'end') {
-          await getAllMessages.refetch();
-          break;
+        switch (event) {
+          case 'deploy': {
+            await thread.refetch();
+            break;
+          }
+          case 'end': {
+            await allMessages.refetch();
+            break;
+          }
         }
       }
     })();
@@ -65,13 +86,13 @@ export default function Page() {
 
   const cancelThread = trpc.thread.cancel.useMutation({
     onSuccess: async () => {
-      await getAllMessages.refetch();
+      await allMessages.refetch();
     },
   });
 
   const addUserMessage = trpc.thread.messages.add.useMutation({
     onSuccess: async () => {
-      await getAllMessages.refetch();
+      await allMessages.refetch();
       setEnabledChat(true);
       await run.refetch();
     },
@@ -99,16 +120,16 @@ export default function Page() {
         message,
       });
     },
-    [threadId],
+    [threadId, addUserMessage],
   );
 
   const handleStopAnswering = useCallback(async () => {
     await cancelThread.mutateAsync({ threadId });
-  }, [threadId]);
+  }, [threadId, cancelThread]);
 
   const { answering, conversation } = useMemo(() => {
     let answering = !addUserMessage.isIdle || run.isLoading;
-    const conversation = getAllMessages.data?.messages.toReversed() || [];
+    const conversation = allMessages.data?.messages.toReversed() || [];
 
     if (!run.data) {
       return {
@@ -157,7 +178,15 @@ export default function Page() {
       answering,
       conversation,
     };
-  }, [getAllMessages.data, run.data, addUserMessage.isIdle, run.isLoading]);
+  }, [allMessages.data, run.data, addUserMessage.isIdle, run.isLoading]);
+
+  const goToStack = useCallback(() => {
+    if (!thread.data) {
+      return;
+    }
+
+    router.push(`/stacks/${thread.data.shapleStackId}`);
+  }, [router, thread.data]);
 
   return (
     <>
@@ -166,7 +195,15 @@ export default function Page() {
       {initialized ? (
         <main className="flex flex-col w-11/12 h-full">
           <div className="flex flex-row w-full h-5/6">
-            <Conversation history={conversation} />
+            <Conversation history={conversation}>
+              {!answering && thread.data?.shapleStackId && (
+                <div className="flex flex-row -mt-2.5 justify-center">
+                  <Button color="success" size="lg" onClick={goToStack}>
+                    Go to stack
+                  </Button>
+                </div>
+              )}
+            </Conversation>
           </div>
           <br />
           <div className="flex flex-row w-full">
