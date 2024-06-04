@@ -64,15 +64,17 @@ export default function Page() {
       showErrorToast('인스턴스 목록을 불러오는 중 오류가 발생했습니다.');
   }, [instancesQueryError]);
 
-  const handleClickVapi = (vapi: VapiRelease | null) => {
+  useEffect(() => {
     setVapiDocsContent(null);
+    if (!selectedVapi) return;
+    fetchVapiDocs(selectedVapi);
+  }, [selectedVapi]);
+
+  const handleClickVapi = (vapi: VapiRelease | null) => {
     if (selectedVapi === vapi) {
       return setSelectedVapi(null);
     }
     setSelectedVapi(vapi);
-
-    if (!vapi) return;
-    fetchVapiDocs(vapi);
   };
 
   const fetchVapiDocs = async (vapi: VapiRelease) => {
