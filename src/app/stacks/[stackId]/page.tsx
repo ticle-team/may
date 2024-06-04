@@ -77,36 +77,28 @@ export default function Page() {
   };
 
   const fetchVapiDocs = useCallback(async () => {
-    if (isVapiDocsloading || !selectedVapi || !selectedVapi.pkg || !stack) return;
+    if (isVapiDocsloading || !selectedVapi || !selectedVapi.pkg || !stack)
+      return;
 
     try {
       setVapiDocsLoading(true);
+      const { data, error } = await shapleClient.auth.getSession();
+      if (!data) throw error;
+      const githubAccessToken = data?.session?.provider_token;
+      // TODO: Implement open guthub Oauth login modal when providerToken is not available
 
-      let githubAccessToken = '';
-      if (selectedVapi.access === 'private') {
-        const { data, error } = await shapleClient.auth.getSession();
-
-        if (!data) throw error;
-        if (!data?.session?.provider_token) {
-          // TODO: Implement open guthub Oauth login modal
-          throw new Error('GitHub Access Token is not provided');
-        }
-        githubAccessToken = data?.session?.provider_token;
-      }
-
+      // TODO: In this function, 'vapi docs' that are inquired through github api must be modified to look up the archived 'vapi docs' later.
       const result = await getVapiDocs({
         vapiName: selectedVapi.pkg.name,
-        githubRepo: stack.githubRepo,
-        githubBranch: stack.githubBranch ?? 'main',
-        isPrivate: selectedVapi.access === 'private',
-        githubAccessToken: selectedVapi.access === 'private' ? githubAccessToken : '',
+        githubRepo: selectedVapi.pkg.gitRepo,
+        githubBranch: selectedVapi.pkg.gitBranch ?? 'main',
+        githubAccessToken: githubAccessToken ?? '',
       });
 
       if (!result) return;
       setVapiDocsContent(result);
     } catch (error) {
       console.error(error);
-      showErrorToast('VAPI 문서를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setVapiDocsLoading(false);
     }

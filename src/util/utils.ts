@@ -1,10 +1,9 @@
-import { Axios } from 'axios';
+import { Octokit } from '@octokit/core';
 
 type PropsAxios = {
   githubRepo: string;
   githubBranch: string;
   vapiName: string;
-  isPrivate: boolean;
   githubAccessToken?: string;
 };
 
@@ -12,29 +11,29 @@ export const getVapiDocs = async ({
   githubRepo,
   githubBranch,
   vapiName,
-  isPrivate,
   githubAccessToken,
 }: PropsAxios) => {
   if (!githubRepo || !vapiName) return '';
 
   try {
-    const axios = new Axios({
-      baseURL: 'https://api.github.com',
-      headers: {
-        Accept: 'application/vnd.github.raw+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        ...(isPrivate &&
-          githubAccessToken && {
-            Authorization: `Bearer ${githubAccessToken}`,
-          }),
-      },
-      responseType: 'json',
+    const octokit = new Octokit({
+      auth: githubAccessToken,
     });
 
-    const result = await axios.get(
-      `/repos/${githubRepo}/contents/${vapiName}/docs.yml?ref=${githubBranch}`,
+    const { data } = await octokit.request(
+      'GET /repos/{owner}/{repo}/contents/{path}?ref={ref}',
+      {
+        owner: githubRepo.split('/')[0],
+        repo: githubRepo.split('/')[1],
+        path: `${vapiName}/docs.yml`,
+        ref: githubBranch,
+        headers: {
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
+      },
     );
-    return result.data;
+
+    return Buffer.from(data.content, 'base64').toString('utf8');
   } catch (error) {
     throw error;
   }
