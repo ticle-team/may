@@ -26,6 +26,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ['/guide', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
     ['/signin', { hideSideMenu: true, hideHeader: true, hideChatBar: true }],
     ['/chat', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
+    ['/stacks', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
   ]);
 
   const currentPath = `/${usePathname().split('/')[1]}`;

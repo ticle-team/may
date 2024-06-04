@@ -85,7 +85,7 @@ export default function Page() {
   };
 
   const handleClickStack = (stackId: number) => {
-    router.push(`/projects/stack/${stackId}`);
+    router.push(`/stacks/${stackId}`);
   };
 
   useEffect(() => {

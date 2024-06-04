@@ -4,23 +4,22 @@ import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
-import StackInfo from '@/app/projects/stack/[stack_id]/StackInfo';
-import StackStructure from '@/app/projects/stack/[stack_id]/StackStructure';
+import StackInfo from '@/app/stacks/[stackId]/StackInfo';
+import StackStructure from '@/app/stacks/[stackId]/StackStructure';
 import useToast from '@/app/_hooks/useToast';
 import LoadingSpinner from '@/app/_components/LoadingSpinner';
 import Modal from '@/app/_components/Modal';
-import AddReferenceModal from '@/app/projects/stack/[stack_id]/AddReferenceModal';
-import AddInstanceModal from '@/app/projects/stack/[stack_id]/AddInstanceModal';
-import DialogModal from '@/app/_components/Dialog';
+import AddReferenceModal from '@/app/stacks/[stackId]/AddReferenceModal';
+import AddInstanceModal from '@/app/stacks/[stackId]/AddInstanceModal';
 import { VapiRelease } from '@/models/vapi';
-import VapiDetail from '@/app/projects/stack/[stack_id]/VapiDetail';
+import VapiDetail from '@/app/stacks/[stackId]/VapiDetail';
 import { getVapiDocs } from '@/util/utils';
 import { shapleClient } from '@/app/_services/shapleClient';
 
 export default function Page() {
   const { renderToastContents, showErrorToast } = useToast();
-  const { stack_id: stackIdStr } = useParams<{
-    stack_id: string;
+  const { stackId: stackIdStr } = useParams<{
+    stackId: string;
   }>();
   const stackId = parseInt(stackIdStr);
   const [selectedTab, setSelectedTab] = useState('Info');
