@@ -4,49 +4,22 @@ import Badge from '@/app/_components/Badge';
 import { ExclamationCircleIcon } from '@/app/_components/Icons';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
-import { useState } from 'react';
-import DialogModal from '@/app/_components/Dialog';
 
 type Props = {
   vapi: VapiRelease | null;
   docsContent: string | null;
-  docsLoading: boolean;
-  onUninstallVapi: (vapiId: number) => Promise<void>;
+  loading: boolean;
+  onClickUninstallVapiBtn: () => void;
 };
 
 const VapiDetail = ({
   vapi,
   docsContent,
-  docsLoading,
-  onUninstallVapi,
+  loading,
+  onClickUninstallVapiBtn,
 }: Props) => {
-  const [showDeleteVapiDialog, setShowDeleteVapiDialog] =
-    useState<boolean>(false);
-  const [isUninstallVapiLoading, setUninstallVapiLoading] = useState(false);
-
-  const handleUninstallVapi = async () => {
-    if (isUninstallVapiLoading) return;
-    setUninstallVapiLoading(true);
-
-    try {
-      // TODO: vapiId must be modified
-      await onUninstallVapi(1);
-    } finally {
-      setUninstallVapiLoading(false);
-    }
-  };
-
   return (
     <>
-      <DialogModal
-        open={showDeleteVapiDialog}
-        setOpen={setShowDeleteVapiDialog}
-        title="VAPI를 삭제하시겠습니까?"
-        type="confirm"
-        confirmText="Delete"
-        onConfirm={handleUninstallVapi}
-        cancelText="Cancel"
-      />
       {vapi && (
         <div>
           <div className="flex justify-between items-center">
@@ -64,27 +37,27 @@ const VapiDetail = ({
             </div>
             <button
               className="font-normal text-sm text-blue-500"
-              onClick={() => setShowDeleteVapiDialog(true)}
+              onClick={onClickUninstallVapiBtn}
             >
               Uninstall
             </button>
           </div>
           <div>
-            {docsLoading && (
+            {loading && (
               <div className="flex justify-center my-10">
                 <span className="text-xl font-medium text-primary-600 animate-pulse">
                   Loading...
                 </span>
               </div>
             )}
-            {!docsLoading && !docsContent && (
+            {!loading && !docsContent && (
               <div className="flex justify-center my-10">
                 <span className="font-normal text-sm text-gray-400">
                   No VAPI definition provided.
                 </span>
               </div>
             )}
-            {!docsLoading && docsContent && <SwaggerUI spec={docsContent} />}
+            {!loading && docsContent && <SwaggerUI spec={docsContent} />}
           </div>
         </div>
       )}

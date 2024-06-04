@@ -1,17 +1,13 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
-import StackStructure from '@/app/stacks/[stackId]/StackStructure';
 import useToast from '@/app/_hooks/useToast';
 import LoadingSpinner from '@/app/_components/LoadingSpinner';
-import { VapiRelease } from '@/models/vapi';
-import VapiDetail from '@/app/stacks/[stackId]/VapiDetail';
-import { getVapiDocs } from '@/util/utils';
-import { shapleClient } from '@/app/_services/shapleClient';
 import StackInfoContainer from './StackInfoContainer';
+import StackStructureContainer from './StackStructureContainer';
 
 export default function Page() {
   const { renderToastContents, showErrorToast } = useToast();
@@ -20,9 +16,6 @@ export default function Page() {
   }>();
   const stackId = parseInt(stackIdStr);
   const [selectedTab, setSelectedTab] = useState('Info');
-  const [selectedVapi, setSelectedVapi] = useState<VapiRelease | null>(null);
-  const [vapiDocsContent, setVapiDocsContent] = useState<string | null>(null);
-  const [isVapiDocsloading, setVapiDocsLoading] = useState<boolean>(false);
 
   const tabs = [
     { name: 'Info' },
@@ -33,66 +26,20 @@ export default function Page() {
 
   const {
     data: stack,
-    isLoading: isStackQueryLoading,
-    error: stackQueryError,
+    isLoading: loading,
+    error: error,
   } = trpc.stack.get.useQuery({
     stackId: stackId,
   });
 
   useEffect(() => {
-    if (stackQueryError)
-      showErrorToast('스택 정보를 불러오는 중 오류가 발생했습니다.');
-  }, [stackQueryError]);
-
-  useEffect(() => {
-    setVapiDocsContent(null);
-    if (!selectedVapi) return;
-    fetchVapiDocs();
-  }, [selectedVapi]);
-
-  const handleClickVapi = (vapi: VapiRelease | null) => {
-    if (selectedVapi === vapi) {
-      return setSelectedVapi(null);
-    }
-    setSelectedVapi(vapi);
-  };
-
-  const fetchVapiDocs = useCallback(async () => {
-    if (isVapiDocsloading || !selectedVapi || !selectedVapi.pkg || !stack)
-      return;
-
-    try {
-      setVapiDocsLoading(true);
-      const { data, error } = await shapleClient.auth.getSession();
-      if (!data) throw error;
-      const githubAccessToken = data?.session?.provider_token;
-      // TODO: Implement open guthub Oauth login modal when providerToken is not available
-
-      // TODO: In this function, 'vapi docs' that are inquired through github api must be modified to look up the archived 'vapi docs' later.
-      const result = await getVapiDocs({
-        vapiName: selectedVapi.pkg.name,
-        githubRepo: selectedVapi.pkg.gitRepo,
-        githubBranch: selectedVapi.pkg.gitBranch ?? 'main',
-        githubAccessToken: githubAccessToken ?? '',
-      });
-
-      if (!result) return;
-      setVapiDocsContent(result);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setVapiDocsLoading(false);
-    }
-  }, [selectedVapi]);
-
-  const handleUninstallVapi = async (vapiId: number) => {
-    // TODO: Implement VAPI uninstall feature
-  };
+    if (error) showErrorToast('스택 정보를 불러오는 중 오류가 발생했습니다.');
+  }, [error]);
 
   return (
     <>
       {renderToastContents()}
-      {isStackQueryLoading || (!isStackQueryLoading && stackQueryError) ? (
+      {loading || (!loading && error) ? (
         <div className="flex flex-col justify-center w-[800px] min-h-screen">
           <LoadingSpinner />
         </div>
@@ -125,14 +72,7 @@ export default function Page() {
             </div>
             {selectedTab === 'Info' && <StackInfoContainer stack={stack!} />}
             {selectedTab === 'Structure' && (
-              <StackStructure stack={stack!} onClickVapi={handleClickVapi}>
-                <VapiDetail
-                  docsLoading={isVapiDocsloading}
-                  docsContent={vapiDocsContent ?? null}
-                  vapi={selectedVapi}
-                  onUninstallVapi={handleUninstallVapi}
-                />
-              </StackStructure>
+              <StackStructureContainer stack={stack!} />
             )}
           </div>
         </div>
