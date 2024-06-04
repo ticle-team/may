@@ -15,6 +15,7 @@ import DialogModal from '@/app/_components/Dialog';
 import { VapiRelease } from '@/models/vapi';
 import VapiDetail from '@/app/projects/stack/[stack_id]/VapiDetail';
 import { getVapiDocs } from '@/util/utils';
+import { shapleClient } from '@/app/_services/shapleClient';
 
 export default function Page() {
   const { renderToastContents, showErrorToast } = useToast();
@@ -79,18 +80,32 @@ export default function Page() {
 
     try {
       setVapiDocsLoading(true);
+
+      let githubAccessToken = '';
+      if (vapi.access === 'private') {
+        const { data, error } = await shapleClient.auth.getSession();
+
+        if (!data) throw error;
+        if (!data?.session?.provider_token) {
+          // TODO: Implement open guthub Oauth login modal
+          throw new Error('GitHub Access Token is not provided');
+        }
+        githubAccessToken = data?.session?.provider_token;
+      }
+
       const result = await getVapiDocs({
         vapiName: vapi.pkg.name,
         githubRepo: stack.githubRepo,
         githubBranch: stack.githubBranch ?? 'main',
-        // TODO: Implement githubAccessToken fetch feature
-        githubAccessToken: '',
+        isPrivate: vapi.access === 'private',
+        githubAccessToken: vapi.access === 'private' ? githubAccessToken : '',
       });
 
       if (!result) return;
       setVapiDocsContent(result);
     } catch (error) {
       console.error(error);
+      showErrorToast('VAPI 문서를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setVapiDocsLoading(false);
     }

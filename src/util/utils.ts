@@ -4,6 +4,7 @@ type PropsAxios = {
   githubRepo: string;
   githubBranch: string;
   vapiName: string;
+  isPrivate: boolean;
   githubAccessToken?: string;
 };
 
@@ -11,6 +12,7 @@ export const getVapiDocs = async ({
   githubRepo,
   githubBranch,
   vapiName,
+  isPrivate,
   githubAccessToken,
 }: PropsAxios) => {
   if (!githubRepo || !vapiName) return '';
@@ -21,9 +23,10 @@ export const getVapiDocs = async ({
       headers: {
         Accept: 'application/vnd.github.raw+json',
         'X-GitHub-Api-Version': '2022-11-28',
-        ...(githubAccessToken && {
-          Authorization: `Bearer ${githubAccessToken}`,
-        }),
+        ...(isPrivate &&
+          githubAccessToken && {
+            Authorization: `Bearer ${githubAccessToken}`,
+          }),
       },
       responseType: 'json',
     });
