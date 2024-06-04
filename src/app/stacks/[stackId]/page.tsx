@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
@@ -66,7 +66,7 @@ export default function Page() {
   useEffect(() => {
     setVapiDocsContent(null);
     if (!selectedVapi) return;
-    fetchVapiDocs(selectedVapi);
+    fetchVapiDocs();
   }, [selectedVapi]);
 
   const handleClickVapi = (vapi: VapiRelease | null) => {
@@ -76,14 +76,14 @@ export default function Page() {
     setSelectedVapi(vapi);
   };
 
-  const fetchVapiDocs = async (vapi: VapiRelease) => {
-    if (isVapiDocsloading || !vapi.pkg || !stack) return;
+  const fetchVapiDocs = useCallback(async () => {
+    if (isVapiDocsloading || !selectedVapi || !selectedVapi.pkg || !stack) return;
 
     try {
       setVapiDocsLoading(true);
 
       let githubAccessToken = '';
-      if (vapi.access === 'private') {
+      if (selectedVapi.access === 'private') {
         const { data, error } = await shapleClient.auth.getSession();
 
         if (!data) throw error;
@@ -95,11 +95,11 @@ export default function Page() {
       }
 
       const result = await getVapiDocs({
-        vapiName: vapi.pkg.name,
+        vapiName: selectedVapi.pkg.name,
         githubRepo: stack.githubRepo,
         githubBranch: stack.githubBranch ?? 'main',
-        isPrivate: vapi.access === 'private',
-        githubAccessToken: vapi.access === 'private' ? githubAccessToken : '',
+        isPrivate: selectedVapi.access === 'private',
+        githubAccessToken: selectedVapi.access === 'private' ? githubAccessToken : '',
       });
 
       if (!result) return;
@@ -110,7 +110,7 @@ export default function Page() {
     } finally {
       setVapiDocsLoading(false);
     }
-  };
+  }, [selectedVapi]);
 
   const handleAddInstance = async (
     zone: string | null,
