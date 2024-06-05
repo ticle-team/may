@@ -1,21 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import { useParams } from 'next/navigation';
-import StackInfo from './StackInfo';
-import StackStructure from './StackStructure';
+import useToast from '@/app/_hooks/useToast';
+import LoadingSpinner from '@/app/_components/LoadingSpinner';
+import StackInfoContainer from './StackInfoContainer';
+import StackStructureContainer from './StackStructureContainer';
 
 export default function Page() {
-  const { stack_id: stackIdStr } = useParams<{
-    stack_id: string;
+  const { renderToastContents, showErrorToast } = useToast();
+  const { stackId: stackIdStr } = useParams<{
+    stackId: string;
   }>();
   const stackId = parseInt(stackIdStr);
-  const [selectedTab, setSelectedTab] = React.useState('Info');
-  const { data: stack, isLoading } = trpc.stack.get.useQuery({
-    stackId: stackId,
-  });
+  const [selectedTab, setSelectedTab] = useState('Info');
 
   const tabs = [
     { name: 'Info' },
@@ -24,12 +24,27 @@ export default function Page() {
     { name: 'Settings' },
   ];
 
+  const {
+    data: stack,
+    isLoading: loading,
+    error: error,
+  } = trpc.stack.get.useQuery({
+    stackId: stackId,
+  });
+
+  useEffect(() => {
+    if (error) showErrorToast('스택 정보를 불러오는 중 오류가 발생했습니다.');
+  }, [error]);
+
   return (
-    <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center">
-      {isLoading ? (
-        <div>{/* TODO: Implement Loading */}</div>
+    <>
+      {renderToastContents()}
+      {loading || (!loading && error) ? (
+        <div className="flex flex-col justify-center w-[800px] min-h-screen">
+          <LoadingSpinner />
+        </div>
       ) : (
-        <>
+        <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center">
           <div className="w-full flex justify-start">
             <div className="font-bold text-3xl my-6">{stack?.name}</div>
           </div>
@@ -55,11 +70,13 @@ export default function Page() {
                 ))}
               </div>
             </div>
-            {selectedTab === 'Info' && <StackInfo stack={stack!} />}
-            {selectedTab === 'Structure' && <StackStructure stack={stack!} />}
+            {selectedTab === 'Info' && <StackInfoContainer stack={stack!} />}
+            {selectedTab === 'Structure' && (
+              <StackStructureContainer stack={stack!} />
+            )}
           </div>
-        </>
+        </div>
       )}
-    </div>
+    </>
   );
 }

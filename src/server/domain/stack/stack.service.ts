@@ -123,4 +123,10 @@ export class StackService {
       });
     }
   }
+
+  async getStack(stackId: number) {
+    // TODO: Implement getStack feature using StackStore
+    const stack = await this.stoacloudService.getStack(stackId);
+    return stack;
+  }
 }

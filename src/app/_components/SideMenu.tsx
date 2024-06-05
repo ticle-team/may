@@ -24,7 +24,6 @@ export default function SideMenu({ currentMenu, hidden = true }: Props) {
   });
 
   const navigations = [
-    { name: 'Organization', href: '/organizations', icon: UserGroupIcon },
     { name: 'Stage', href: '/stage', icon: FolderIcon },
     { name: 'Project', href: '/projects', icon: ServerIcon },
     { name: 'Planet', href: '/planet', icon: GlobeAltIcon },

@@ -85,7 +85,7 @@ export default function Page() {
   };
 
   const handleClickStack = (stackId: number) => {
-    router.push(`/projects/stack/${stackId}`);
+    router.push(`/stacks/${stackId}`);
   };
 
   useEffect(() => {
@@ -111,9 +111,7 @@ export default function Page() {
       />
       <DialogModal
         open={showCreateStackDialog}
-        setOpen={() => {
-          setShowCreateStackDialog(false);
-        }}
+        setOpen={setShowCreateStackDialog}
         title="스택을 생성하시겠습니까?"
         type="confirm"
         confirmText="Create"
