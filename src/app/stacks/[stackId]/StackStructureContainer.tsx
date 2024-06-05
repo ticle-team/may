@@ -65,6 +65,10 @@ export default function StackStructureContainer({ stack }: Props) {
     // TODO: Implement VAPI uninstall feature
   };
 
+  const handleAddApi = async (isBaseApi: boolean) => {
+    // TODO: Implement add API feature
+  };
+
   return (
     <>
       <DialogModal
@@ -80,7 +84,11 @@ export default function StackStructureContainer({ stack }: Props) {
       />
       <div className="flex w-full mt-5 justify-between">
         <div className="w-[25%] flex flex-col gap-y-12">
-          <StackFeatures stack={stack} onClickVapiBtn={handleClickVapi} />
+          <StackFeatures
+            stack={stack}
+            onClickVapiBtn={handleClickVapi}
+            onClickAddApiBtn={handleAddApi}
+          />
         </div>
         <div className="flex flex-col w-[calc(75%-100px)]">
           <VapiDetail

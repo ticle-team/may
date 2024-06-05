@@ -4,18 +4,28 @@ import React from 'react';
 import { Stack } from '@/models/stack';
 import Badge from '@/app/_components/Badge';
 import { VapiRelease } from '@/models/vapi';
+import {
+  ApiAddIcon,
+  ExclamationCircleIcon,
+  StopIcon,
+  WarningIcon,
+} from '@/app/_components/Icons';
 
 type Props = {
   stack: Stack;
   onClickVapiBtn: (vapi: VapiRelease) => void;
+  onClickAddApiBtn: (isBaseApi: boolean) => void;
 };
 
-const StackFeatures = ({ stack, onClickVapiBtn }: Props) => {
+const StackFeatures = ({ stack, onClickVapiBtn, onClickAddApiBtn }: Props) => {
   return (
     <>
       <div className="flex flex-col gap-y-2">
-        <div className="flex mb-2">
+        <div className="flex mb-2 items-center gap-x-2">
           <span className="font-semibold text-base">Base API</span>
+          <button onClick={() => onClickAddApiBtn(true)}>
+            <ApiAddIcon />
+          </button>
         </div>
         {!stack.authEnabled &&
           !stack.storageEnabled &&
@@ -31,7 +41,9 @@ const StackFeatures = ({ stack, onClickVapiBtn }: Props) => {
           <div className="flex ml-5 justify-between">
             <span className="font-normal text-sm">Auth API</span>
             <div className="flex gap-x-3">
+              {/* TODO: Implement version and status display function of Auth API  */}
               <Badge color="pink">V1.0</Badge>
+              <ExclamationCircleIcon />
             </div>
           </div>
         )}
@@ -39,7 +51,9 @@ const StackFeatures = ({ stack, onClickVapiBtn }: Props) => {
           <div className="flex ml-5 justify-between">
             <span className="font-normal text-sm">Database API</span>
             <div className="flex gap-x-3">
+              {/* TODO: Implement version and status display function of Database API  */}
               <Badge color="pink">V1.0</Badge>
+              <WarningIcon />
             </div>
           </div>
         )}
@@ -47,14 +61,19 @@ const StackFeatures = ({ stack, onClickVapiBtn }: Props) => {
           <div className="flex ml-5 justify-between">
             <span className="font-normal text-sm">Storage API</span>
             <div className="flex gap-x-3">
+              {/* TODO: Implement version and status display function of Storage API  */}
               <Badge color="pink">V1.0</Badge>
+              <StopIcon />
             </div>
           </div>
         )}
       </div>
       <div className="flex flex-col gap-y-2">
-        <div className="flex mb-2">
+        <div className="flex mb-2 items-center gap-x-2">
           <span className="font-semibold text-base">Vertical API</span>
+          <button onClick={() => onClickAddApiBtn(false)}>
+            <ApiAddIcon />
+          </button>
         </div>
         {!stack.vapis ||
           (stack.vapis.length === 0 && (
