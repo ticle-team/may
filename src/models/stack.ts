@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { vapiRelease } from '@/models/vapi';
+import { thread } from '@/models/thread';
 
 export const authExternalOAuthProvider = z.object({
   enabled: z.boolean().optional(),
@@ -76,10 +77,9 @@ export const stack = z.object({
   projectId: z.number(),
   name: z.string(),
   description: z.string(),
-  githubRepo: z.string(),
-  githubBranch: z.string(),
-  threadId: z.number(),
-  endpoint: z.string(),
+  gitRepo: z.string(),
+  gitBranch: z.string(),
+  thread: thread,
   domain: z.string(),
   anonApiKey: z.string().optional(),
   adminApiKey: z.string().optional(),
@@ -89,10 +89,23 @@ export const stack = z.object({
   storage,
   postgrestEnabled: z.boolean(),
   postgrest,
-  vapis: z.array(vapiRelease),
+  vapis: z
+    .array(
+      z.object({
+        vapiId: z.number(),
+        vapi: vapiRelease.optional(),
+      }),
+    )
+    .nullable(),
 });
 
 export type Stack = z.infer<typeof stack>;
+
+export const shapleStack = stack.omit({
+  thread: true,
+});
+
+export type ShapleStack = z.infer<typeof shapleStack>;
 
 export const instance = z.object({
   id: z.number(),

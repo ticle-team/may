@@ -1,11 +1,13 @@
 import { Service } from 'typedi';
 import { Axios, AxiosError, isAxiosError } from 'axios';
-import { Instance, Stack } from '@/models/stack';
+import { Instance, ShapleStack } from '@/models/stack';
 import { Project } from '@/models/project';
 import { TRPCError } from '@trpc/server';
 import {
   CreateInstanceInput,
   DeployStackInput,
+  GetProjectsInput,
+  GetVapiPackagesInput,
   InstallAuthInput,
   InstallPostgrestInput,
   InstallStorageInput,
@@ -15,8 +17,6 @@ import {
   SearchVapisInput,
   SearchVapisOutput,
   StoaCloudError,
-  GetProjectsInput,
-  GetVapiPackagesInput,
 } from '@/models/stoacloud';
 import { camelToSnake, snakeToCamel } from '@/util/cases';
 import { getLogger } from '@/logger';
@@ -101,7 +101,7 @@ export class StoaCloudService {
     return data;
   }
 
-  async getProjects(input: GetProjectsInput) {
+  async getProjects(input: GetProjectsInput): Promise<Project[]> {
     const { data } = await this.axios.get<Project[]>(`/v1/projects`, {
       params: input,
     });
@@ -113,8 +113,8 @@ export class StoaCloudService {
     projectId: number,
     name: string,
     description: string,
-  ) {
-    const { data: stack } = await this.axios.post<Stack>('/v1/stacks', {
+  ): Promise<ShapleStack> {
+    const { data: stack } = await this.axios.post<ShapleStack>('/v1/stacks', {
       siteUrl,
       projectId: projectId,
       name,
@@ -124,8 +124,8 @@ export class StoaCloudService {
     return stack;
   }
 
-  async getStack(stackId: number) {
-    const { data: stack } = await this.axios.get<Stack>(
+  async getStack(stackId: number): Promise<ShapleStack> {
+    const { data: stack } = await this.axios.get<ShapleStack>(
       `/v1/stacks/${stackId}`,
     );
     return stack;

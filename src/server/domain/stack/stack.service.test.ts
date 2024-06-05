@@ -3,39 +3,48 @@ import { PrismaService } from '@/server/common/prisma.service';
 import { resetSchema } from '@/migrate';
 import { StackService } from '@/server/domain/stack/stack.service';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
-import { createStoaCloudServiceMock } from '@/server/common/__mocks__/stoacloud.service';
+import {
+  createStoaCloudServiceMock,
+  StoaCloudServiceMock,
+} from '@/server/common/__mocks__/stoacloud.service';
+import {
+  createThreadStoreMock,
+  ThreadStoreMock,
+} from '@/server/domain/thread/__mocks__/thread.store';
+import { ThreadStore } from '@/server/domain/thread/thread.store';
+import { Thread } from '@prisma/client';
 
 describe('given StackService', () => {
   let stackService: StackService;
-  let mockStoaCloudService: any;
+  let mockStoaCloudService: StoaCloudServiceMock;
+  let mockThreadStore: ThreadStoreMock;
 
   beforeEach(async () => {
     await resetSchema();
     mockStoaCloudService = createStoaCloudServiceMock();
+    mockThreadStore = createThreadStoreMock();
     Container.set(StoaCloudService, mockStoaCloudService);
+    Container.set(ThreadStore, mockThreadStore);
     stackService = Container.get(StackService);
   });
 
   afterEach(async () => {
     const prisma = Container.get(PrismaService);
-    await prisma.shapleStack.deleteMany({});
-    await prisma.shapleProject.deleteMany({});
     await prisma.$disconnect();
 
     Container.reset();
   });
 
   it('should retrieve and return a stack', async () => {
+    await using cleanup = new DisposableStack();
     // given
-    const queriedStack = {
+    const expectedStack = {
       id: 1,
       name: 'New Stack',
       description: 'This is a new stack',
-      githubRepo: 'vincent-1014/self_test',
-      githubBranch: 'main',
+      gitRepo: 'vincent-1014/self_test',
+      gitBranch: 'main',
       projectId: 1,
-      threadId: 1,
-      endpoint: '',
       domain: '',
       authEnabled: true,
       auth: {},
@@ -45,28 +54,51 @@ describe('given StackService', () => {
       postgrest: {},
       vapis: [
         {
-          version: '1.0',
-          pkg: {
-            name: 'task-management',
-            version: '1.0',
+          vapiId: 1,
+          vapi: {
+            id: 1,
+            version: '1.0.0',
+            access: 'public',
+            package: {
+              id: 1,
+              name: 'task-management',
+              gitRepo: 'paust-team/may-demo-vapis',
+              gitBranch: 'main',
+            },
           },
         },
       ],
     };
-    mockStoaCloudService.getStack.mockResolvedValue(queriedStack);
-
+    mockStoaCloudService.getStack.mockResolvedValue(expectedStack);
+    cleanup.defer(() => {
+      expect(mockStoaCloudService.getStack).toHaveBeenCalledTimes(1);
+    });
+    const expectedThread: Thread = {
+      id: 1,
+      authorId: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: 0,
+      openaiThreadId: '',
+      shapleStackId: 1,
+      shapleProjectId: 1,
+    };
+    mockThreadStore.findThreadByStackId.mockResolvedValue(expectedThread);
+    cleanup.defer(() => {
+      expect(mockThreadStore.findThreadByStackId).toHaveBeenCalledTimes(1);
+    });
     // when
-    const result = await stackService.getStack(queriedStack.id);
+    const result = await stackService.getStack(expectedStack.id);
 
     // then
     expect(result).not.toBeNull();
-    expect(result.id).toEqual(queriedStack.id);
-    expect(result.name).toEqual(queriedStack.name);
-    expect(result.description).toEqual(queriedStack.description);
-    expect(result.githubRepo).toEqual(queriedStack.githubRepo);
-    expect(result.githubBranch).toEqual(queriedStack.githubBranch);
-    expect(result.projectId).toEqual(queriedStack.projectId);
-    expect(result.threadId).toEqual(queriedStack.threadId);
-    expect(result.vapis).toHaveLength(queriedStack.vapis.length);
+    expect(result.id).toEqual(expectedStack.id);
+    expect(result.name).toEqual(expectedStack.name);
+    expect(result.description).toEqual(expectedStack.description);
+    expect(result.gitRepo).toEqual(expectedStack.gitRepo);
+    expect(result.gitBranch).toEqual(expectedStack.gitBranch);
+    expect(result.projectId).toEqual(expectedStack.projectId);
+    expect(result.thread.id).toEqual(expectedThread.id);
+    expect(result.vapis).toHaveLength(expectedStack.vapis.length);
   });
 });

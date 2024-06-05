@@ -4,8 +4,8 @@ import { PrismaService } from '@/server/common/prisma.service';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
-import { OpenAI } from 'openai';
 import _ from 'lodash';
+import { Stack } from '@/models/stack';
 
 const logger = getLogger('server.domain.stack.service');
 
@@ -46,8 +46,8 @@ export class StackService {
         runId,
         toolCallId,
         JSON.stringify({
-          status: 'error',
-          description: 'failed to create stack',
+          success: false,
+          message: 'failed to create stack',
         }),
       );
 
@@ -90,8 +90,8 @@ export class StackService {
           runId,
           toolCallId,
           JSON.stringify({
-            status: 'error',
-            description: 'failed to install base api',
+            success: false,
+            message: 'failed to install base api',
           }),
         );
         return {
@@ -126,8 +126,8 @@ export class StackService {
         runId,
         toolCallId,
         JSON.stringify({
-          status: 'error',
-          description: 'failed to install dependencies',
+          success: false,
+          message: 'failed to install dependencies',
         }),
       );
       return {
@@ -153,8 +153,7 @@ export class StackService {
           runId,
           toolCallId,
           JSON.stringify({
-            status: 'ok',
-            description: 'Stack created successfully',
+            success: true,
           }),
         );
       });
@@ -168,8 +167,8 @@ export class StackService {
         runId,
         toolCallId,
         JSON.stringify({
-          status: 'failed',
-          description: 'failed to update thread',
+          success: false,
+          message: 'failed to update thread',
         }),
       );
 
@@ -193,9 +192,16 @@ export class StackService {
     }
   }
 
-  async getStack(stackId: number) {
-    // TODO: Implement getStack feature using StackStore
-    const stack = await this.stoacloudService.getStack(stackId);
+  async getStack(stackId: number): Promise<Stack> {
+    const [shapleStack, thread] = await Promise.all([
+      this.stoacloudService.getStack(stackId),
+      this.threadStore.findThreadByStackId(stackId),
+    ]);
+    const stack = {
+      ...shapleStack,
+      thread,
+    };
+    logger.debug('call getStack', { stack });
     return stack;
   }
 }

@@ -13,7 +13,7 @@ export const vapiRelease = z.object({
   access: z.string(),
   id: z.number(),
   version: z.string(),
-  packageId: z.number(),
+  package: vapiPackage.nullish(),
 });
 
 export type VapiRelease = z.infer<typeof vapiRelease>;

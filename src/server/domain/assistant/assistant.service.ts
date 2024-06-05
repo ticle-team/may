@@ -1,6 +1,5 @@
 import { Service } from 'typedi';
 import { OpenAIAssistant } from '@/server/common/openai.service';
-import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
 import { StackService } from '@/server/domain/stack/stack.service';
 import { TextDeltaBlock } from 'openai/resources/beta/threads/messages';
@@ -87,6 +86,20 @@ export class AssistantService {
                     await self.threadService.save(thread);
                     yield* handleStream(generator);
                     yield { event: 'deploy', stackId };
+                    break;
+                  }
+                  case 'create_vapis': {
+                    const generator =
+                      self.openaiAssistant.submitToolOutputsStream(
+                        thread.openaiThreadId,
+                        runId,
+                        toolCallId,
+                        JSON.stringify({
+                          success: false,
+                          message: 'Not implemented yet',
+                        }),
+                      );
+                    yield* handleStream(generator);
                     break;
                   }
                 }

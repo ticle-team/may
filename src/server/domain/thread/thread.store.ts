@@ -54,4 +54,21 @@ export class ThreadStore {
       },
     });
   }
+
+  async findThreadByStackId(stackId: number) {
+    const thread = await this.prisma.thread.findFirst({
+      where: {
+        shapleStackId: stackId,
+      },
+    });
+
+    if (!thread) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Thread not found',
+      });
+    }
+
+    return thread!;
+  }
 }

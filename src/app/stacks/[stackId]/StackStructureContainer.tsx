@@ -27,7 +27,7 @@ export default function StackStructureContainer({ stack }: Props) {
   }, [selectedVapi]);
 
   const fetchVapiDocs = useCallback(async () => {
-    if (isVapiDocsloading || !selectedVapi || !selectedVapi.pkg || !stack)
+    if (isVapiDocsloading || !selectedVapi || !selectedVapi.package || !stack)
       return;
 
     try {
@@ -39,9 +39,9 @@ export default function StackStructureContainer({ stack }: Props) {
 
       // TODO: In this function, 'vapi docs' that are inquired through github api must be modified to look up the archived 'vapi docs' later.
       const result = await getVapiDocs({
-        vapiName: selectedVapi.pkg.name,
-        githubRepo: selectedVapi.pkg.gitRepo,
-        githubBranch: selectedVapi.pkg.gitBranch ?? 'main',
+        vapiName: selectedVapi.package.name,
+        githubRepo: selectedVapi.package.gitRepo,
+        githubBranch: selectedVapi.package.gitBranch ?? 'main',
         githubAccessToken: githubAccessToken ?? '',
       });
 

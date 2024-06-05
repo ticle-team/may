@@ -1,7 +1,8 @@
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 
-export type StoacloudServiceMock = jest.Mocked<StoaCloudService>;
-export function createStoaCloudServiceMock(): StoacloudServiceMock {
+export type StoaCloudServiceMock = jest.Mocked<StoaCloudService>;
+
+export function createStoaCloudServiceMock(): StoaCloudServiceMock {
   // @ts-ignore
   return {
     createProject: jest.fn(),
