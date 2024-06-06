@@ -12,7 +12,7 @@ const logger = getLogger('AssistantService');
 @Service()
 export class AssistantService {
   private readonly stackCreationAssistantId =
-    process.env.OPENAI_API_STACK_CREATION_ASSISTANT_ID!;
+    process.env.OPENAI_API_STACK_CREATION_ASSISTANT_ID || '';
 
   constructor(
     private readonly openaiAssistant: OpenAIAssistant,

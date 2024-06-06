@@ -8,7 +8,7 @@ import { TRPCError } from '@trpc/server';
 @Service()
 export class OpenAIAssistant {
   private readonly openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY || '',
     dangerouslyAllowBrowser: true,
   });
 
@@ -157,7 +157,7 @@ export class OpenAIAssistant {
 @Service()
 export class OpenAICompletions {
   private readonly client = new OpenAIClient(
-    process.env.AZURE_OPENAI_ENDPOINT!,
+    process.env.AZURE_OPENAI_ENDPOINT || '',
     new AzureKeyCredential(process.env.AZURE_OPENAI_API_KEY!),
   );
 

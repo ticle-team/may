@@ -1,8 +1,8 @@
-import { Stack } from '@/models/stack';
+import { ShapleStack, Stack } from '@/models/stack';
 import Badge from '@/app/_components/Badge';
 
 type Props = {
-  stack: Stack;
+  stack: ShapleStack;
   onClick: (id: number) => void;
 };
 
