@@ -1,6 +1,9 @@
 import { Service } from 'typedi';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { CreateProjectRequest } from '@/models/project';
+import { getLogger } from '@/logger';
+
+const logger = getLogger('server.domain.stack.service');
 
 @Service()
 export class ProjectService {

@@ -26,13 +26,13 @@ const CreateProjectModal = ({ onCreate, onCancel }: Props) => {
   return (
     <div className="flex flex-col gap-y-6">
       <div>
-        <span className="font-semibold text-xl">프로젝트 생성하기</span>
+        <span className="font-semibold text-xl">Create Project</span>
       </div>
       <div className="flex flex-col gap-y-3">
         <div className="w-full">
           <input
             type="text"
-            placeholder="프로젝트 명"
+            placeholder="name"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
@@ -41,7 +41,7 @@ const CreateProjectModal = ({ onCreate, onCancel }: Props) => {
         <div className="w-full">
           <textarea
             rows={5}
-            placeholder="설명"
+            placeholder="Description (optional)"
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
             defaultValue={projectDescription}
             onChange={(e) => setProjectDescription(e.target.value)}

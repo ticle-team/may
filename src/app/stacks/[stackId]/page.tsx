@@ -33,7 +33,7 @@ export default function Page() {
   });
 
   useEffect(() => {
-    if (error) showErrorToast('스택 정보를 불러오는 중 오류가 발생했습니다.');
+    if (error) showErrorToast('Failed to load stack data.');
   }, [error]);
 
   return (

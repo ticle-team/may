@@ -279,24 +279,92 @@ describe('given stoacloud service', () => {
         const jwt = session?.access_token;
         expect(jwt).toBeDefined();
 
-        let outputs;
-        try {
-          outputs = await scs.registerVapis(session!.access_token, null, {
+        await using cleanup = new AsyncDisposableStack();
+        const outputs = await scs.registerVapis(session!.access_token, null, {
+          projectId: projectId,
+          gitBranch: 'main',
+          gitRepo: 'paust-team/shaple-testvapis',
+        });
+
+        expect(outputs).toHaveLength(2);
+        const output = outputs[0];
+        expect(output.deployStatus).toBe('ok');
+        cleanup.defer(async () => {
+          for (const output of outputs) {
+            await scs.deleteVapiRelease(jwt!, output.releaseId);
+          }
+        });
+      });
+
+      let registerVapiReleaseIds: number[] = [];
+      let jwt: string = '';
+      describe('with registered vapis', () => {
+        beforeEach(async () => {
+          const {
+            data: { session },
+            error,
+          } = await shaple.auth.getSession();
+          expect(error).toBeNull();
+          expect(session).not.toBeNull();
+
+          jwt = session?.access_token ?? '';
+          expect(jwt).not.toBe('');
+
+          const outputs = await scs.registerVapis(session!.access_token, null, {
             projectId: projectId,
             gitBranch: 'main',
             gitRepo: 'paust-team/shaple-testvapis',
           });
 
           expect(outputs).toHaveLength(2);
-          const output = outputs[0];
-          expect(output.deployStatus).toBe('ok');
-        } finally {
-          if (outputs) {
-            for (const output of outputs) {
-              await scs.deleteVapiRelease(jwt!, output.releaseId);
-            }
+
+          registerVapiReleaseIds = outputs.map((output) => output.releaseId);
+        });
+
+        afterEach(async () => {
+          for (const relId of registerVapiReleaseIds) {
+            await scs.deleteVapiRelease(jwt, relId);
           }
-        }
+        });
+
+        it('get vapi packages by name, then it is OK', async () => {
+          const vapis = await scs.getVapiPackages({
+            name: 'helloworld',
+          });
+          expect(vapis).toHaveLength(1);
+          expect(vapis[0].name).toBe('helloworld');
+          expect(vapis[0].id).not.toBe(0);
+        });
+
+        it('get vapi release by package id, then it is OK', async () => {
+          const vapis = await scs.getVapiPackages({
+            name: 'helloworld',
+          });
+          expect(vapis).toHaveLength(1);
+          expect(vapis[0].name).toBe('helloworld');
+          expect(vapis[0].id).not.toBe(0);
+
+          const releases = await scs.getVapiReleasesInPackage(vapis[0].id);
+          expect(releases).toHaveLength(1);
+          console.log(releases);
+        });
+
+        it('get vapi release versioned in package, then it is OK', async () => {
+          const vapis = await scs.getVapiPackages({
+            name: 'helloworld',
+          });
+          expect(vapis).toHaveLength(1);
+          expect(vapis[0].name).toBe('helloworld');
+          expect(vapis[0].id).not.toBe(0);
+
+          const release = await scs.getVapiReleaseInPackage(
+            vapis[0].id,
+            'latest',
+          );
+          expect(release.packageId).toBe(vapis[0].id);
+          expect(release.version).toBe('0.1.0');
+          console.log(release);
+        });
       });
     });
   });

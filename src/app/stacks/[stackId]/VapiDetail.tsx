@@ -26,7 +26,7 @@ const VapiDetail = ({
             <div className="flex flex-col gap-y-2">
               <div className="flex gap-x-5 items-center">
                 <span className="text-base font-semibold text-gray-900">
-                  {vapi.pkg?.name}
+                  {vapi.package?.name}
                 </span>
                 <StarIcon className="h-5 w-5 text-yellow-400" />
               </div>

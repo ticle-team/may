@@ -18,14 +18,14 @@ const StackReference = ({ onClickAddRefBtn }: Props) => {
         {/* TODO: Implement get reference list feature */}
         <div className="flex gap-x-6">
           <FigmaIcon />
-          <span className="font-normal text-sm">와이어프레임 컨셉</span>
+          <span className="font-normal text-sm">Wireframe concept</span>
           <button className="font-normal text-sm text-indigo-500 hover:cursor-pointer">
             Edit
           </button>
         </div>
         <div className="flex gap-x-6">
           <ServicePlanIcon />
-          <span className="font-normal text-sm">서비스 기획서</span>
+          <span className="font-normal text-sm">Service plan</span>
           <button className="font-normal text-sm text-indigo-500 hover:cursor-pointer">
             Edit
           </button>

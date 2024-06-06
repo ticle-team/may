@@ -5,6 +5,7 @@ import { TRPCError } from '@trpc/server';
 import { getLogger } from '@/logger';
 import { UserStore } from '@/server/domain/user/user.store';
 import { PrismaService } from '@/server/common/prisma.service';
+import { Thread } from '@prisma/client';
 
 const logger = getLogger('ThreadService');
 
@@ -79,5 +80,11 @@ export class ThreadService {
 
   async get(threadId: number) {
     return this.threadStore.findThreadById(threadId);
+  }
+
+  async save(thread: Thread) {
+    return this.prisma.$transaction(async (tx) => {
+      return this.threadStore.updateThread(tx, thread);
+    });
   }
 }

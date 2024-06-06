@@ -13,13 +13,14 @@ import StackItem from '@/app/projects/StackItem';
 import ProjectItem from '@/app/projects/ProjectItem';
 
 export default function Page() {
-  const tabs = [{ name: '전체' }, { name: '관심' }, { name: '아카이브' }];
+  const tabs = [{ name: 'All' }, { name: 'Liked' }, { name: 'Archived' }];
   // TODO : orgID must be changed.
   const organizationId = 1;
-  const [selectedTab, setSelectedTab] = useState('전체');
+  const [selectedTab, setSelectedTab] = useState('All');
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(
     null,
   );
+
   const { renderToastContents, showErrorToast } = useToast();
   const utils = trpc.useUtils();
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function Page() {
       utils.org.projects.list.invalidate();
     } catch (error) {
       console.error(error);
-      showErrorToast('프로젝트 생성 중 오류가 발생했습니다.');
+      showErrorToast('Failed to create project.');
     }
   };
 
@@ -66,7 +67,7 @@ export default function Page() {
       router.push(`/threads/${threadId}`);
     } catch (error) {
       console.error(error);
-      showErrorToast('스택 생성 중 오류가 발생했습니다.');
+      showErrorToast('Failed to create stack.');
     }
   };
 
@@ -90,7 +91,7 @@ export default function Page() {
 
   useEffect(() => {
     if (error)
-      showErrorToast('프로젝트 목록을 불러오는 중 오류가 발생했습니다.');
+      showErrorToast('Failed to load projects. Please try again later.');
   }, [error]);
 
   return (
@@ -145,7 +146,7 @@ export default function Page() {
                 color="primary"
                 onClick={() => setShowCreateProjectDialog(true)}
               >
-                프로젝트 생성
+                Create Project
               </Button>
             </div>
           </div>

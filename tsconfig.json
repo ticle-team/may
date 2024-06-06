@@ -23,19 +23,22 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next.production/types/**/*.ts",
-    ".next.development/types/**/*.ts",
-    ".next.prod/types/**/*.ts",
-    ".next.dev/types/**/*.ts"
+    ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "stoacloud"],
-  "files": ["node_modules/jest-expect-message/types/index.d.ts"],
+  "exclude": [
+    "node_modules",
+    "stoacloud"
+  ],
+  "files": [
+    "node_modules/jest-expect-message/types/index.d.ts"
+  ]
 }

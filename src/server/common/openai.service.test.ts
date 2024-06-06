@@ -1,7 +1,7 @@
 import { loadEnvConfig } from '@next/env';
 import { Container } from 'typedi';
 import { OpenAIAssistant } from '@/server/common/openai.service';
-import { TextDeltaBlock } from 'openai/src/resources/beta/threads/messages';
+import { TextDeltaBlock } from 'openai/resources/beta/threads/messages';
 import { getLogger } from '@/logger';
 
 const logger = getLogger('openai.service.test.ts');

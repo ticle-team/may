@@ -1,31 +1,30 @@
 import { Service } from 'typedi';
 import { OpenAIAssistant } from '@/server/common/openai.service';
-import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
 import { StackService } from '@/server/domain/stack/stack.service';
-import { TextDeltaBlock } from 'openai/src/resources/beta/threads/messages';
+import { TextDeltaBlock } from 'openai/resources/beta/threads/messages';
 import { TRPCError } from '@trpc/server';
 import { StackCreationEvent } from '@/models/assistant';
+import { ThreadService } from '@/server/domain/thread/thread.service';
 
 const logger = getLogger('AssistantService');
 
 @Service()
 export class AssistantService {
   private readonly stackCreationAssistantId =
-    process.env.OPENAI_API_STACK_CREATION_ASSISTANT_ID!;
+    process.env.OPENAI_API_STACK_CREATION_ASSISTANT_ID || '';
 
   constructor(
     private readonly openaiAssistant: OpenAIAssistant,
-    private readonly threadStore: ThreadStore,
+    private readonly threadService: ThreadService,
     private readonly stackService: StackService,
   ) {}
 
   async *runForCreationStack(threadId: number) {
     yield { event: 'begin' };
-    const { openaiThreadId, shapleProjectId } =
-      await this.threadStore.findThreadById(threadId);
+    const thread = await this.threadService.get(threadId);
     const assistantStream = this.openaiAssistant.runStream(
-      openaiThreadId,
+      thread.openaiThreadId,
       this.stackCreationAssistantId,
     );
 
@@ -67,25 +66,42 @@ export class AssistantService {
                 }
 
                 switch (funcName) {
-                  case 'deploy_stack':
-                    if (!shapleProjectId) {
+                  case 'deploy_stack': {
+                    if (!thread.shapleProjectId) {
                       throw new TRPCError({
                         code: 'BAD_REQUEST',
                         message: 'Project ID is required for stack deployment',
                       });
                     }
-                    const generator = handleStream(
-                      self.stackService.createStackByToolCall(
+                    const { stackId, generator } =
+                      await self.stackService.createStackByToolCall(
                         toolCallId,
                         runId,
                         threadId,
                         funcArguments,
-                        shapleProjectId,
-                      ),
-                    );
-                    yield { event: 'deploy' };
-                    yield* generator;
+                        thread.shapleProjectId,
+                      );
+
+                    thread.shapleStackId = stackId;
+                    await self.threadService.save(thread);
+                    yield* handleStream(generator);
+                    yield { event: 'deploy', stackId };
                     break;
+                  }
+                  case 'create_vapis': {
+                    const generator =
+                      self.openaiAssistant.submitToolOutputsStream(
+                        thread.openaiThreadId,
+                        runId,
+                        toolCallId,
+                        JSON.stringify({
+                          success: false,
+                          message: 'Not implemented yet',
+                        }),
+                      );
+                    yield* handleStream(generator);
+                    break;
+                  }
                 }
               }
               break;

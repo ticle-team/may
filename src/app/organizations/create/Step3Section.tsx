@@ -7,7 +7,7 @@ export default function Step3Section() {
             Welcome!
           </h2>
           <p className="mt-2 text-lg leading-8 text-gray-600">
-            앞으로 MAY와 함께 다양한 애플리케이션을 손쉽게 만들어보세요!
+            Create a variety of applications with ease with MAY in the future!
           </p>
         </div>
         <div className="mx-auto mt-16 flex max-w-2xl ">
@@ -18,7 +18,7 @@ export default function Step3Section() {
         </div>
         <div className="mt-10">
           <button className="block w-full rounded-md bg-indigo-600 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-            지금 바로 애플리케이션 만들러가기
+            Create your application now
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { Service } from 'typedi';
 import { PrismaService } from '@/server/common/prisma.service';
 import { TRPCError } from '@trpc/server';
-import { Prisma } from '@prisma/client';
+import { Prisma, Thread } from '@prisma/client';
 
 @Service()
 export class ThreadStore {
@@ -19,6 +19,15 @@ export class ThreadStore {
         openaiThreadId,
         shapleProjectId,
       },
+    });
+  }
+
+  async updateThread(tx: Prisma.TransactionClient, thread: Thread) {
+    return tx.thread.update({
+      where: {
+        id: thread.id,
+      },
+      data: thread,
     });
   }
 
@@ -44,5 +53,22 @@ export class ThreadStore {
         id: threadId,
       },
     });
+  }
+
+  async findThreadByStackId(stackId: number) {
+    const thread = await this.prisma.thread.findFirst({
+      where: {
+        shapleStackId: stackId,
+      },
+    });
+
+    if (!thread) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Thread not found',
+      });
+    }
+
+    return thread!;
   }
 }

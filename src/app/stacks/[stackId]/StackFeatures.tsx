@@ -84,17 +84,22 @@ const StackFeatures = ({ stack, onClickVapiBtn, onClickAddApiBtn }: Props) => {
             </div>
           ))}
         {stack.vapis &&
-          stack.vapis.map((vapi, index) => (
-            <button
-              key={`vapi-${index}`}
-              className="ml-5 text-left"
-              onClick={() => {
-                onClickVapiBtn(vapi);
-              }}
-            >
-              <span className="font-normal text-sm">{vapi.pkg?.name}</span>
-            </button>
-          ))}
+          stack.vapis.map(
+            ({ vapi }, index) =>
+              vapi && (
+                <button
+                  key={`vapi-${index}`}
+                  className="ml-5 text-left"
+                  onClick={() => {
+                    onClickVapiBtn(vapi);
+                  }}
+                >
+                  <span className="font-normal text-sm">
+                    {vapi.package?.name}
+                  </span>
+                </button>
+              ),
+          )}
       </div>
     </>
   );

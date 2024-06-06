@@ -7,34 +7,6 @@ import { StackService } from '@/server/domain/stack/stack.service';
 
 const stackService = Container.get(StackService);
 export default router({
-  create: authedProcedure
-    .input(
-      z.object({
-        projectId: z.number(),
-        threadId: z.number(),
-      }),
-    )
-    .output(stack)
-    .mutation(async ({ ctx, input }) => {
-      return {
-        id: 0,
-        name: '',
-        description: '',
-        githubRepo: '',
-        githubBranch: '',
-        projectId: 0,
-        threadId: 0,
-        endpoint: '',
-        domain: '',
-        authEnabled: false,
-        auth: {},
-        storageEnabled: false,
-        storage: {},
-        postgrestEnabled: false,
-        postgrest: {},
-        vapis: [],
-      };
-    }),
   delete: authedProcedure
     .input(
       z.object({

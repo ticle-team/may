@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { stack } from '@/models/stack';
+import { shapleStack } from '@/models/stack';
 
 export const project = z.object({
   id: z.number(),
   name: z.string(),
   description: z.string(),
-  stacks: z.array(stack).nullable(),
+  stacks: z.array(shapleStack).nullable(),
   createdAt: z.string(),
   updatedAt: z.string().optional(),
 });

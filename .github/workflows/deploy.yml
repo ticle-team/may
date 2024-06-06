@@ -1,0 +1,44 @@
+name: CD
+run-name: ${{ github.actor }} is deploying shaple-builder 🚀
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  Deploy:
+    name: Rollout kubernetes deployment
+    runs-on: [ self-hosted, Linux ]
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/deploy')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - name: Setup yarn
+        run: |
+          npm install -g yarn
+      - name: Install dependencies
+        run: yarn install
+      - name: Build docker
+        run: yarn docker
+      - name: Rollout shaple-builder
+        run: |
+          kubectl --context shaple-oke -n dev rollout restart deploy/may
+      - name: Notify success
+        if: success()
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            Succeeded to deploy it! 🚀
+          reactions: hooray
+      - name: Notify failure
+        if: failure()
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            Failed to deploy it! 🚀
+          reactions: eyes

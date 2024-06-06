@@ -5,6 +5,7 @@ import { ProjectService } from '@/server/domain/project/project.service';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { createStoaCloudServiceMock } from '@/server/common/__mocks__/stoacloud.service';
 import * as uuid from 'uuid';
+import { project } from '@/models/project';
 
 describe('given ProjectService', () => {
   let projectService: ProjectService;
@@ -25,8 +26,6 @@ describe('given ProjectService', () => {
 
   afterEach(async () => {
     const prisma = Container.get(PrismaService);
-    await prisma.shapleStack.deleteMany({});
-    await prisma.shapleProject.deleteMany({});
     await prisma.$disconnect();
 
     Container.reset();
@@ -64,12 +63,45 @@ describe('given ProjectService', () => {
   it('should retrieve and return a project', async () => {
     // given
     const selectedProject = {
-      id: mockData.id,
-      name: mockData.name,
-      description: mockData.description,
-      stacks: [],
-      createdAt: '2024-05-30T12:38:55.605056Z',
-      updatedAt: '2024-05-31T12:38:55.605056Z',
+      id: 2,
+      createdAt: '2024-06-05T05:31:38.7425Z',
+      updatedAt: '2024-06-05T05:31:38.7425Z',
+      name: 'test1',
+      description: 'test1',
+      stacks: [
+        {
+          id: 1,
+          createdAt: '2024-06-05T05:55:23.338072Z',
+          updatedAt: '2024-06-05T05:55:23.523317Z',
+          projectId: 2,
+          project: null,
+          gitRepo: '',
+          gitBranch: '',
+          name: 'MySNS',
+          domain: '5xm64tjweavzel9ley7rna2a3.local.shaple.io',
+          scheme: 'http',
+          siteUrl: 'http://localhost:3000',
+          description: 'Social Networking Service stack',
+          authEnabled: true,
+          auth: {
+            jwtSecret: 'AGe0rYSrkglFRjJsCPJSq8koxhjgitut',
+          },
+          adminApiKey:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.eir4W8W4FWHjrgck4N68N3ieB59463Qpr1-_TVYk800',
+          anonApiKey:
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.80qKP_y-Md9uLsUOoqRFCkVqD5BvkThhIB_-8Y8bvrc',
+          storageEnabled: true,
+          storage: {
+            s3Bucket: '5xm64tjweavzel9ley7rna2a3.local.shaple.io',
+            tenantId: 'Storage',
+          },
+          postgrestEnabled: true,
+          postgrest: {
+            schemas: ['public'],
+          },
+          vapis: null,
+        },
+      ],
     };
     mockStoaCloudService.getProject.mockResolvedValue(selectedProject);
 
@@ -83,6 +115,9 @@ describe('given ProjectService', () => {
     expect(result.description).toEqual(selectedProject.description);
     expect(result.createdAt).toEqual(selectedProject.createdAt);
     expect(result.updatedAt).toEqual(selectedProject.updatedAt);
+    project.parse(result);
+
+    expect(mockStoaCloudService.getProject).toHaveBeenCalledTimes(1);
   });
 
   it('should delete a project', async () => {
