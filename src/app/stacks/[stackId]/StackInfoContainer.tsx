@@ -38,8 +38,7 @@ export default function StackInfoContainer({ stack }: Props) {
   });
 
   useEffect(() => {
-    if (instancesQueryError)
-      showErrorToast('인스턴스 목록을 불러오는 중 오류가 발생했습니다.');
+    if (instancesQueryError) showErrorToast('Failed to load stack instances.');
   }, [instancesQueryError]);
 
   const handleAddReference = async (title: string, url: string) => {

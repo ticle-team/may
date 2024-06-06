@@ -11,7 +11,7 @@ export default function Button({
   children,
   onClick,
   color = 'primary',
-  size = 'lg',
+  size = 'base',
   disabled = false,
 }: Props) {
   const buttonClass = classNames({

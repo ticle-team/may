@@ -35,7 +35,7 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
   return (
     <div className="flex flex-col gap-y-6">
       <div>
-        <span className="font-semibold text-xl">인스턴스 추가하기</span>
+        <span className="font-semibold text-xl">Create Instance</span>
       </div>
       <div className="flex flex-col gap-y-3">
         <div className="flex w-full items-center">

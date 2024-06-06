@@ -25,7 +25,7 @@ const AddReferenceModal = ({ onAdd, onCancel }: Props) => {
   return (
     <div className="flex flex-col gap-y-6">
       <div>
-        <span className="font-semibold text-xl">레퍼런스 추가하기</span>
+        <span className="font-semibold text-xl">Add reference</span>
       </div>
       <div className="flex flex-col gap-y-3">
         <div className="flex flex-col w-full gap-y-2">
