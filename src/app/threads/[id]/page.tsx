@@ -193,7 +193,7 @@ export default function Page() {
       {renderToastContents()}
       <br />
       {initialized ? (
-        <main className="flex flex-col w-11/12 h-full">
+        <main className="flex flex-col w-9/12 h-full">
           <div className="flex flex-row w-full h-5/6">
             <Conversation history={conversation}>
               {!answering && thread.data?.shapleStackId && (
