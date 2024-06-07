@@ -1,6 +1,6 @@
 import { createMiddlewareClient } from '@shaple/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
@@ -11,11 +11,21 @@ export async function middleware(req: NextRequest) {
   // Refresh session if expired - required for Server Components
   await shaple.auth.getSession();
 
-  const getUserRspn = await shaple.auth.getUser();
-  if (getUserRspn.error || getUserRspn.data.user === null) {
+  const {
+    data: { user },
+    error,
+  } = await shaple.auth.getUser();
+  if (error || user === null) {
+    let callbackUrl = req.nextUrl.href.replace(req.nextUrl.origin, '');
+    if (!callbackUrl.startsWith('/')) {
+      callbackUrl = '/' + callbackUrl;
+    }
     //   redirect to signin page
     return NextResponse.redirect(
-      new URL(`/signin?callbackUrl=${encodeURIComponent(req.url)}`, req.url),
+      new URL(
+        `/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+        req.url,
+      ),
     );
   }
 
