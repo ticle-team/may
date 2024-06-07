@@ -1,14 +1,8 @@
 import pg from 'pg';
 import { readdir, readFile } from 'fs/promises';
-import { loadEnvConfig } from '@next/env';
-
-const appEnv = {
-  ...process.env,
-  ...loadEnvConfig(process.cwd(), true).combinedEnv,
-};
 
 export async function resetSchema() {
-  if (appEnv.NODE_ENV == 'production') {
+  if (process.env.NODE_ENV == 'production') {
     throw new Error('resetSchema is not allowed in production');
   }
   await dropAllTables();
@@ -21,7 +15,7 @@ export async function migrate({ migrationHome = './prisma/migrations' }) {
   }
 
   const pool = new pg.Pool({
-    connectionString: appEnv.DATABASE_URL ?? '',
+    connectionString: process.env.DATABASE_URL ?? '',
   });
 
   try {
@@ -80,12 +74,12 @@ export async function migrate({ migrationHome = './prisma/migrations' }) {
 }
 
 export async function dropAllTables() {
-  if (appEnv.NODE_ENV == 'production') {
+  if (process.env.NODE_ENV == 'production') {
     throw new Error('dropAllTables is not allowed in production');
   }
 
   const pool = new pg.Pool({
-    connectionString: appEnv.DATABASE_URL ?? '',
+    connectionString: process.env.DATABASE_URL ?? '',
   });
 
   try {

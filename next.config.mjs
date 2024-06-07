@@ -15,6 +15,9 @@ export default (phase, { defaultConfig }) => {
     httpAgentOptions: {
       keepAlive: false,
     },
+    experimental: {
+      instrumentationHook: true,
+    }
   };
 
   const k8sEnv = process.env.K8S_ENV || 'local';
