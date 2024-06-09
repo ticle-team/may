@@ -69,7 +69,7 @@ export const storage = z.object({
 });
 
 export const postgrest = z.object({
-  schemas: z.array(z.string()).optional(),
+  schemas: z.array(z.string()).nullish(),
 });
 
 export const stack = z.object({

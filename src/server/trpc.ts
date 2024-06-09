@@ -1,6 +1,10 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { Context } from '@/server/context';
+import { ZodError } from 'zod';
+import { getLogger } from '@/logger';
+
+const logger = getLogger('server.trpc');
 
 /**
  * Initialization of tRPC backend
@@ -11,6 +15,18 @@ const t = initTRPC.context<Context>().create({
   experimental: {
     iterablesAndDeferreds: true,
   },
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError:
+          error.code === 'BAD_REQUEST' && error.cause instanceof ZodError
+            ? error.cause.flatten()
+            : null,
+      },
+    };
+  },
 });
 
 /**
@@ -18,6 +34,7 @@ const t = initTRPC.context<Context>().create({
  * that can be used throughout the router
  */
 export const { createCallerFactory, router, procedure: baseProcedure } = t;
+
 export const authedProcedure = baseProcedure.use(
   async ({ ctx: { user }, next }) => {
     if (!user) {
@@ -27,7 +44,7 @@ export const authedProcedure = baseProcedure.use(
       });
     }
 
-    return next({
+    return await next({
       ctx: { user: user! },
     });
   },
