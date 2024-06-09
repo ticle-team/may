@@ -86,11 +86,11 @@ export default function StackInfoContainer({ stack }: Props) {
       <DialogModal
         open={showEditDescriptionDialog}
         setOpen={setShowEditDescriptionDialog}
-        title="Description을 수정하시겠습니까?"
+        title="Would you like to edit the description?"
         type="confirm"
-        confirmText="Edit"
+        confirmText="OK"
         onConfirm={() => handleEditDescription()}
-        cancelText="Cancel"
+        cancelText="No"
       />
       <div className="mt-5 flex flex-col gap-x-6 gap-y-12">
         <StackDescription
