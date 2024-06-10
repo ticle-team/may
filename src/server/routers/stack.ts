@@ -34,15 +34,12 @@ export default router({
       .output(
         z.object({
           instances: z.array(instance),
-          after: z.number(),
+          after: z.number().nullish(),
         }),
       )
-      .query(async () => {
-        return {
-          instances: [],
-          after: 0,
-        };
-      }),
+      .query(({ input: { stackId } }) =>
+        stackService.getInstancesInStack(stackId),
+      ),
   }),
   vapis: router({
     list: authedProcedure
@@ -74,20 +71,4 @@ export default router({
         return;
       }),
   }),
-  deploy: authedProcedure
-    .input(
-      z.object({
-        stackId: z.number(),
-        zone: z.string().nullish(),
-      }),
-    )
-    .output(instance)
-    .mutation(async () => {
-      return {
-        id: 0,
-        stackId: 0,
-        zone: '',
-        state: 'pending',
-      };
-    }),
 });

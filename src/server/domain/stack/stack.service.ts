@@ -64,7 +64,14 @@ export class StackService {
       try {
         switch (_.lowerCase(name)) {
           case 'auth': {
-            await this.stoacloudService.installAuth(stackId, {});
+            await this.stoacloudService.installAuth(stackId, {
+              mailer: {
+                autoConfirm: true,
+              },
+              external: {
+                emailEnabled: true,
+              },
+            });
             break;
           }
           case 'storage': {
@@ -203,5 +210,13 @@ export class StackService {
     };
     logger.debug('call getStack', { stack });
     return stack;
+  }
+
+  async getInstancesInStack(stackId: number) {
+    const instances = await this.stoacloudService.getInstancesInStack(stackId);
+    return {
+      instances,
+      after: null,
+    };
   }
 }

@@ -107,19 +107,16 @@ export const shapleStack = stack.omit({
 
 export type ShapleStack = z.infer<typeof shapleStack>;
 
+export const instanceState_NONE = 0;
+export const instanceState_RUNNING = 1;
+export const instanceState_READY = 2;
+export const instanceState_INITIALIZE = 3;
+
 export const instance = z.object({
   id: z.number(),
   stackId: z.number(),
   zone: z.string(),
-  state: z.enum([
-    'pending',
-    'launched',
-    'launching',
-    'paused',
-    'pausing',
-    'deleted',
-    'deleting',
-  ]),
+  state: z.number().default(instanceState_NONE),
 });
 
 export type Instance = z.infer<typeof instance>;

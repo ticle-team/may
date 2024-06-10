@@ -151,7 +151,8 @@ export type GetProjectsInput = {
 };
 
 export type CreateInstanceInput = {
-  zone?: string;
+  name?: string | null;
+  zone?: string | null;
   stackId: number;
 };
 

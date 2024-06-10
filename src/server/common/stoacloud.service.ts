@@ -284,7 +284,6 @@ export class StoaCloudService {
 
   async createInstance(input: CreateInstanceInput) {
     const { data } = await this.axios.post<Instance>('/v1/instances', input);
-
     return data;
   }
 
@@ -298,5 +297,12 @@ export class StoaCloudService {
 
   async deployStack(instanceId: number, input?: DeployStackInput) {
     await this.axios.post(`/v1/instances/${instanceId}/controls:deploy`, input);
+  }
+
+  async getInstancesInStack(stackId: number) {
+    const { data } = await this.axios.get<Instance[]>(
+      `/v1/stacks/${stackId}/instances`,
+    );
+    return data;
   }
 }
