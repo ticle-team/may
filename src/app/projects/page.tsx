@@ -41,7 +41,7 @@ export default function Page() {
   const createThreadMutation = trpc.thread.create.useMutation();
 
   const handleCreateProject = async (name: string, description: string) => {
-    if (createProjectMutation.isPending || !name || !description) return;
+    if (createProjectMutation.isPending || !name) return;
     try {
       await createProjectMutation.mutateAsync({
         orgId: organizationId,

@@ -1,15 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Button from '@/app/_components/Button';
 import Dropdown from '@/app/_components/Dropdown';
 
 // TODO: Change the instance zone items
-const INSTANCE_ZONE_ITEMS = [
-  { label: 'east-korea', value: 'east-korea' },
-  { label: 'east-asia', value: 'east-asia' },
-  { label: 'east-japan', value: 'east-japan' },
-  { label: 'east-us', value: 'east-us' },
-  { label: 'west-us', value: 'west-us' },
-];
+const INSTANCE_ZONE_ITEMS = [{ label: 'default', value: 'default' }];
 
 type Props = {
   onAdd: (zone: string | null, name: string | null) => Promise<void>;
@@ -21,7 +15,7 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
   const [instanceName, setInstanceName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleAddInstance = async () => {
+  const handleAddInstance = useCallback(async () => {
     if (loading) return;
     setLoading(true);
 
@@ -30,7 +24,7 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loading, onAdd, instanceZone, instanceName]);
 
   return (
     <div className="flex flex-col gap-y-6">
@@ -43,7 +37,7 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
             Region
           </span>
           <Dropdown
-            className="max-w-40"
+            className="w-3/12"
             placeholder="Zone"
             items={INSTANCE_ZONE_ITEMS}
             selectedValue={instanceZone}

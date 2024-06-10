@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Stack } from '@/models/stack';
 import DialogModal from '@/app/_components/Dialog';
 import StackReference from './StackReference';
@@ -29,17 +29,32 @@ export default function StackInfoContainer({ stack }: Props) {
   const [showEditDescriptionDialog, setShowEditDescriptionDialog] =
     useState<boolean>(false);
 
+  const createInstance = trpc.instance.create.useMutation({
+    onError: (error) => {
+      showErrorToast('Failed to create instance.');
+      throw error;
+    },
+  });
+  const deployStack = trpc.instance.deployStack.useMutation({
+    onError: (error) => {
+      showErrorToast('Failed to deploy stack.');
+      throw error;
+    },
+  });
+
   const {
     data: { instances, after } = {},
     isLoading: isInstancesQueryLoading,
     error: instancesQueryError,
+    refetch: refetchInstances,
   } = trpc.stack.instances.list.useQuery({
     stackId: stack.id,
   });
 
-  useEffect(() => {
-    if (instancesQueryError) showErrorToast('Failed to load stack instances.');
-  }, [instancesQueryError]);
+  if (instancesQueryError) {
+    showErrorToast('Failed to load stack instances.');
+    throw instancesQueryError;
+  }
 
   const handleAddReference = async (title: string, url: string) => {
     // TODO: Implement on reference added
@@ -49,7 +64,14 @@ export default function StackInfoContainer({ stack }: Props) {
     zone: string | null,
     name: string | null,
   ) => {
-    // TODO: Implement on instance added
+    const { id: instanceId } = await createInstance.mutateAsync({
+      stackId: stack.id,
+      zone,
+      name,
+    });
+    await deployStack.mutateAsync({ instanceId });
+    await refetchInstances();
+    setShowAddInstanceDialog(false);
   };
 
   const handleEditDescription = async () => {

@@ -54,7 +54,7 @@ const CreateProjectModal = ({ onCreate, onCancel }: Props) => {
         </Button>
         <Button
           color="primary"
-          disabled={loading || projectName === '' || projectDescription === ''}
+          disabled={loading || projectName === ''}
           onClick={handleCreateProject}
         >
           Create
