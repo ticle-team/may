@@ -22,7 +22,7 @@ export class InstanceService {
 
   async deployStack(instanceId: number) {
     await this.stoaCloudService.deployStack(instanceId, {
-      timeout: '30s',
+      timeout: '5m',
     });
   }
 }
