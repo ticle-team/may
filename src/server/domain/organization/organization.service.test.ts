@@ -25,8 +25,6 @@ describe('given OrganizationService', () => {
 
   afterEach(async () => {
     const prisma = Container.get(PrismaService);
-    await prisma.shapleStack.deleteMany({});
-    await prisma.shapleProject.deleteMany({});
     await prisma.$disconnect();
 
     Container.reset();

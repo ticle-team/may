@@ -12,9 +12,7 @@
   },
   "scripts": {
     "clean:next": "rimraf .next",
-    "dev:migrate": "dotenv -e .env.local ts-node src/migrate.run.ts",
-    "dev:run": "next dev",
-    "dev": "run-s dev:*",
+    "dev": "next dev",
     "build": "next build",
     "clean": "run-s clean:*",
     "start": "next start",

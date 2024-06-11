@@ -113,7 +113,7 @@ export default function Page() {
       <DialogModal
         open={showCreateStackDialog}
         setOpen={setShowCreateStackDialog}
-        title="스택을 생성하시겠습니까?"
+        title="Would you like to create a stack?"
         type="confirm"
         confirmText="Create"
         onConfirm={handleCreateStack}

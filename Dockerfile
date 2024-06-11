@@ -22,8 +22,10 @@ COPY . .
 # ENV NEXT_TELEMETRY_DISABLED 1
 
 RUN yarn prisma generate
-RUN export K8S_ENV=dev && yarn build && mv .next .next.dev
-RUN export K8S_ENV=prod && yarn build && mv .next .next.prod
+RUN --mount=type=cache,target=/app/.next K8S_ENV=dev yarn build && \
+    cp -rf .next .next.dev && \
+    K8S_ENV=prod yarn build && \
+    cp -rf .next .next.prod
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -37,11 +39,13 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/prisma ./prisma
 
 # Set the correct permission for prerender cache
 RUN mkdir -p dev/.next &&\
     chown -R nextjs:nodejs dev &&\
-    ln -s ../public dev/public
+    ln -s ../public dev/public &&\
+    ln -s ../prisma dev/prisma
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
@@ -51,7 +55,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next.dev/static ./dev/.next/stat
 # Set the correct permission for prerender cache
 RUN mkdir -p prod/.next &&\
     chown -R nextjs:nodejs prod &&\
-    ln -s ../public prod/public
+    ln -s ../public prod/public && \
+    ln -s ../prisma prod/prisma
 
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
