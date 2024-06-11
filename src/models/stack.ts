@@ -79,7 +79,7 @@ export const stack = z.object({
   description: z.string(),
   gitRepo: z.string(),
   gitBranch: z.string(),
-  thread: thread,
+  thread: thread.nullable(),
   domain: z.string(),
   anonApiKey: z.string().optional(),
   adminApiKey: z.string().optional(),

@@ -32,13 +32,13 @@ export default function StackInfoContainer({ stack }: Props) {
   const createInstance = trpc.instance.create.useMutation({
     onError: (error) => {
       showErrorToast('Failed to create instance.');
-      throw error;
+      console.error(error);
     },
   });
   const deployStack = trpc.instance.deployStack.useMutation({
     onError: (error) => {
       showErrorToast('Failed to deploy stack.');
-      throw error;
+      console.error(error);
     },
   });
 
@@ -53,7 +53,7 @@ export default function StackInfoContainer({ stack }: Props) {
 
   if (instancesQueryError) {
     showErrorToast('Failed to load stack instances.');
-    throw instancesQueryError;
+    console.error(instancesQueryError);
   }
 
   const handleAddReference = async (title: string, url: string) => {

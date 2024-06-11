@@ -204,6 +204,7 @@ export class StackService {
       this.stoacloudService.getStack(stackId),
       this.threadStore.findThreadByStackId(stackId),
     ]);
+
     const stack = {
       ...shapleStack,
       thread,
