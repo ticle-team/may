@@ -48,11 +48,6 @@ export default function Page() {
           <div className="w-full flex justify-start">
             <div className="font-bold text-3xl my-6">{stack?.name}</div>
           </div>
-          <div className="w-full flex justify-start">
-            <div className="text-sm -my-6 text-gray-400">
-              https://{stack?.domain}
-            </div>
-          </div>
           <div className="w-full flex flex-col">
             <div className="w-full flex">
               <div className="-mb-px flex space-x-8" aria-label="Tabs">

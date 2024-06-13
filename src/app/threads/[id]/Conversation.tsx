@@ -31,10 +31,10 @@ export default function Conversation({
           <div className="flex flex-col justify-center h-full">
             <div className="relative -top-1/4 prose prose-base">
               <h2>
-                Hello.
+                Hello Builder!
                 <br />
                 <br />
-                What kind of service do you want to create!
+                What would you like to build?
               </h2>
             </div>
           </div>

@@ -9,7 +9,7 @@ import Layout from '@/app/_components/Layout';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'MAY | Software developer AI Agent',
+  title: 'Software developer AI Agent',
   description: 'Make your backend easier to build, deploy, manage, and scale.',
 };
 
