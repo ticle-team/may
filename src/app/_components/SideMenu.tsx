@@ -1,6 +1,5 @@
 import classNames from 'classnames';
 import Link from 'next/link';
-import { LogoIcon } from '@/app/_components/Icons';
 import {
   BookOpenIcon,
   FolderIcon,
@@ -10,6 +9,7 @@ import {
   Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 import SelectBox from '@/app/_components/SelectBox';
+import { TicleLogo } from '@/app/_components/TicleLogo';
 
 type Props = {
   currentMenu?: string;
@@ -30,13 +30,13 @@ export default function SideMenu({ currentMenu, hidden = true }: Props) {
     { name: 'Guide', href: '/guide', icon: BookOpenIcon },
   ];
 
-  const teams = [{ id: 1, name: 'Team PAUST' }];
+  const teams = [{ id: 1, name: 'Team FOO' }];
 
   return (
     <div className={sideBarClass}>
       <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
-        <div className="flex h-16 shrink-0 items-center">
-          <LogoIcon />
+        <div className="flex h-16 shrink-0 items-center w-32">
+          <TicleLogo text="side" color="black" />
         </div>
 
         <div className="flex items-center gap-x-2">
