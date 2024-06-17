@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stoacloud } from '@/protos/stoacloud';
 
 export const vapiPackage = z.object({
   id: z.number(),
@@ -17,3 +18,14 @@ export const vapiRelease = z.object({
 });
 
 export type VapiRelease = z.infer<typeof vapiRelease>;
+
+export function vapiAccessToString(access: number): string {
+  switch (access) {
+    case stoacloud.v1.VapiPackageAccess.VapiPackageAccessPublic:
+      return 'public';
+    case stoacloud.v1.VapiPackageAccess.VapiPackageAccessPrivate:
+      return 'private';
+    default:
+      return 'unknown';
+  }
+}

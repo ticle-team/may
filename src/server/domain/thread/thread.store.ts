@@ -55,8 +55,8 @@ export class ThreadStore {
     });
   }
 
-  findThreadByStackId(stackId: number) {
-    return this.prisma.thread.findFirst({
+  async findThreadByStackId(stackId: number) {
+    return await this.prisma.thread.findFirst({
       where: {
         shapleStackId: stackId,
       },

@@ -5,8 +5,11 @@ metadata:
   namespace: default
   labels:
     app: shaple-builder-test
+  annotations:
+    traefik.ingress.kubernetes.io/service.serversscheme: h2c
 spec:
   type: ClusterIP
+  clusterIP: None
   ports:
     - port: 8080
       targetPort: 8080

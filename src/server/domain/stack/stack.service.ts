@@ -5,7 +5,14 @@ import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
 import _ from 'lodash';
-import { Stack } from '@/models/stack';
+import {
+  Instance,
+  parseZoneFromProto,
+  ShapleStack,
+  Stack,
+  StackVapi,
+} from '@/models/stack';
+import { vapiAccessToString, VapiPackage } from '@/models/vapi';
 
 const logger = getLogger('server.domain.stack.service');
 
@@ -65,12 +72,8 @@ export class StackService {
         switch (_.lowerCase(name)) {
           case 'auth': {
             await this.stoacloudService.installAuth(stackId, {
-              mailer: {
-                autoConfirm: true,
-              },
-              external: {
-                emailEnabled: true,
-              },
+              mailerAutoConfirm: true,
+              externalEmailEnabled: true,
             });
             break;
           }
@@ -199,24 +202,65 @@ export class StackService {
     }
   }
 
-  async getStack(stackId: number): Promise<Stack> {
+  async getStack(stackId: number) {
     const [shapleStack, thread] = await Promise.all([
       this.stoacloudService.getStack(stackId),
       this.threadStore.findThreadByStackId(stackId),
     ]);
 
-    const stack = {
-      ...shapleStack,
-      thread,
+    const stack: Stack = {
+      id: shapleStack.id,
+      name: shapleStack.name,
+      projectId: shapleStack.projectId,
+      gitRepo: shapleStack.gitRepo,
+      description: shapleStack.description,
+      gitBranch: shapleStack.gitBranch,
+      domain: shapleStack.domain,
+      authEnabled: shapleStack.authEnabled,
+      auth: shapleStack.auth,
+      storageEnabled: shapleStack.storageEnabled,
+      storage: shapleStack.storage,
+      postgrestEnabled: shapleStack.postgrestEnabled,
+      postgrest: shapleStack.postgrest,
+      vapis: await Promise.all(
+        shapleStack.vapis.map(
+          async ({ vapi, stackId, vapiId }): Promise<StackVapi> => ({
+            stackId: stackId,
+            vapiId: vapiId,
+            vapi: {
+              id: vapi.id,
+              version: vapi.version,
+              access: vapiAccessToString(vapi.access),
+              package: await this.stoacloudService
+                .getVapiPackage(vapi.packageId)
+                .then((pkg): VapiPackage => {
+                  return {
+                    id: pkg.id,
+                    name: pkg.name,
+                    gitBranch: pkg.gitBranch,
+                    gitRepo: pkg.gitRepo,
+                  };
+                }),
+            },
+          }),
+        ),
+      ),
+      thread: thread,
     };
-    logger.debug('call getStack', { stack });
     return stack;
   }
 
   async getInstancesInStack(stackId: number) {
     const instances = await this.stoacloudService.getInstancesInStack(stackId);
     return {
-      instances,
+      instances: instances.map(
+        (instance): Instance => ({
+          id: instance.id,
+          stackId: instance.stackId,
+          state: instance.state,
+          zone: parseZoneFromProto(instance.zone),
+        }),
+      ),
       after: null,
     };
   }

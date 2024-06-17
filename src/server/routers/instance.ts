@@ -57,7 +57,7 @@ export default router({
       }),
     )
     .output(instance)
-    .mutation(async ({ input: { stackId, zone, name } }) =>
+    .mutation(({ input: { stackId, zone, name } }) =>
       instanceService.createInstance(stackId, zone ?? null, name ?? null),
     ),
   deployStack: authedProcedure
