@@ -319,7 +319,7 @@ describe('given stoacloud service', () => {
         });
 
         it('get vapi packages by name, then it is OK', async () => {
-          const { packages: vapis } = await scs.getVapiPackages({
+          const vapis = await scs.getVapiPackages({
             name: 'helloworld',
           });
           expect(vapis).toHaveLength(1);
@@ -328,7 +328,7 @@ describe('given stoacloud service', () => {
         });
 
         it('get vapi release by package id, then it is OK', async () => {
-          const { packages: vapis } = await scs.getVapiPackages({
+          const vapis = await scs.getVapiPackages({
             name: 'helloworld',
           });
           expect(vapis).toHaveLength(1);
@@ -341,7 +341,7 @@ describe('given stoacloud service', () => {
         });
 
         it('get vapi release versioned in package, then it is OK', async () => {
-          const { packages: vapis } = await scs.getVapiPackages({
+          const vapis = await scs.getVapiPackages({
             name: 'helloworld',
           });
           expect(vapis).toHaveLength(1);

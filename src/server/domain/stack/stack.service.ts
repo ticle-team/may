@@ -7,12 +7,14 @@ import { getLogger } from '@/logger';
 import _ from 'lodash';
 import {
   Instance,
+  parseShapleStackFromProto,
   parseZoneFromProto,
   ShapleStack,
   Stack,
   StackVapi,
 } from '@/models/stack';
 import { vapiAccessToString, VapiPackage } from '@/models/vapi';
+import { stoacloud } from '@/protos/stoacloud';
 
 const logger = getLogger('server.domain.stack.service');
 
@@ -209,42 +211,7 @@ export class StackService {
     ]);
 
     const stack: Stack = {
-      id: shapleStack.id,
-      name: shapleStack.name,
-      projectId: shapleStack.projectId,
-      gitRepo: shapleStack.gitRepo,
-      description: shapleStack.description,
-      gitBranch: shapleStack.gitBranch,
-      domain: shapleStack.domain,
-      authEnabled: shapleStack.authEnabled,
-      auth: shapleStack.auth,
-      storageEnabled: shapleStack.storageEnabled,
-      storage: shapleStack.storage,
-      postgrestEnabled: shapleStack.postgrestEnabled,
-      postgrest: shapleStack.postgrest,
-      vapis: await Promise.all(
-        shapleStack.vapis.map(
-          async ({ vapi, stackId, vapiId }): Promise<StackVapi> => ({
-            stackId: stackId,
-            vapiId: vapiId,
-            vapi: {
-              id: vapi.id,
-              version: vapi.version,
-              access: vapiAccessToString(vapi.access),
-              package: await this.stoacloudService
-                .getVapiPackage(vapi.packageId)
-                .then((pkg): VapiPackage => {
-                  return {
-                    id: pkg.id,
-                    name: pkg.name,
-                    gitBranch: pkg.gitBranch,
-                    gitRepo: pkg.gitRepo,
-                  };
-                }),
-            },
-          }),
-        ),
-      ),
+      ...parseShapleStackFromProto(shapleStack),
       thread: thread,
     };
     return stack;

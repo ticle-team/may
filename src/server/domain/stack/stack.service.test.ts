@@ -13,6 +13,9 @@ import {
 } from '@/server/domain/thread/__mocks__/thread.store';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { Thread } from '@prisma/client';
+import { stoacloud } from '@/protos/stoacloud';
+import { google } from '@/protos/google/protobuf/timestamp';
+import VapiPackageAccess = stoacloud.v1.VapiPackageAccess;
 
 describe('given StackService', () => {
   let stackService: StackService;
@@ -38,7 +41,7 @@ describe('given StackService', () => {
   it('should retrieve and return a stack', async () => {
     await using cleanup = new DisposableStack();
     // given
-    const expectedStack = {
+    const expectedStack = stoacloud.v1.Stack.fromObject({
       id: 1,
       name: 'New Stack',
       description: 'This is a new stack',
@@ -46,29 +49,30 @@ describe('given StackService', () => {
       gitBranch: 'main',
       projectId: 1,
       domain: '',
+      scheme: 'http',
+      createdAt: { seconds: 0, nanos: 0 },
+      updatedAt: { seconds: 0, nanos: 0 },
       authEnabled: true,
       auth: {},
       storageEnabled: true,
       storage: {},
       postgrestEnabled: true,
       postgrest: {},
+      siteUrl: 'localhost:3000',
+      adminApiKey: '',
+      anonApiKey: '',
       vapis: [
         {
           vapiId: 1,
           vapi: {
             id: 1,
             version: '1.0.0',
-            access: 'public',
-            package: {
-              id: 1,
-              name: 'task-management',
-              gitRepo: 'paust-team/may-demo-vapis',
-              gitBranch: 'main',
-            },
+            access: VapiPackageAccess.VapiPackageAccessPublic,
+            packageId: 1,
           },
         },
       ],
-    };
+    });
     mockStoaCloudService.getStack.mockResolvedValue(expectedStack);
     cleanup.defer(() => {
       expect(mockStoaCloudService.getStack).toHaveBeenCalledTimes(1);
@@ -98,7 +102,7 @@ describe('given StackService', () => {
     expect(result.gitRepo).toEqual(expectedStack.gitRepo);
     expect(result.gitBranch).toEqual(expectedStack.gitBranch);
     expect(result.projectId).toEqual(expectedStack.projectId);
-    expect(result.thread.id).toEqual(expectedThread.id);
+    expect(result.thread!.id).toEqual(expectedThread.id);
     expect(result.vapis).toHaveLength(expectedStack.vapis.length);
   });
 });

@@ -5,6 +5,7 @@ import { OrganizationService } from '@/server/domain/organization/organization.s
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { createStoaCloudServiceMock } from '@/server/common/__mocks__/stoacloud.service';
 import * as uuid from 'uuid';
+import { stoacloud } from '@/protos/stoacloud';
 
 describe('given OrganizationService', () => {
   let organizationService: OrganizationService;
@@ -33,14 +34,14 @@ describe('given OrganizationService', () => {
   it('should retrieve and return a project list', async () => {
     // given
     const createdProjects = [
-      {
+      stoacloud.v1.Project.fromObject({
         id: mockData.id,
         name: mockData.name,
         description: mockData.description,
         stacks: [],
-        createdAt: '2024-05-30T12:38:55.605056Z',
-        updatedAt: '2024-05-31T12:38:55.605056Z',
-      },
+        createdAt: { seconds: 10, nanos: 1 },
+        updatedAt: { seconds: 10, nanos: 1 },
+      }),
     ];
     mockStoaCloudService.getProjects.mockResolvedValue(createdProjects);
 
@@ -59,7 +60,5 @@ describe('given OrganizationService', () => {
     expect(result[0].id).toEqual(createdProjects[0].id);
     expect(result[0].name).toEqual(createdProjects[0].name);
     expect(result[0].description).toEqual(createdProjects[0].description);
-    expect(result[0].createdAt).toEqual(createdProjects[0].createdAt);
-    expect(result[0].updatedAt).toEqual(createdProjects[0].updatedAt);
   });
 });

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { vapiRelease } from '@/models/vapi';
+import { vapiAccessToString, VapiPackage, vapiRelease } from '@/models/vapi';
 import { thread } from '@/models/thread';
 import { stoacloud } from '@/protos/stoacloud';
 import { TRPCError } from '@trpc/server';
@@ -144,4 +144,36 @@ export function parseZoneFromProto(zone: stoacloud.v1.InstanceZone) {
         message: 'Unknown zone',
       });
   }
+}
+
+export function parseShapleStackFromProto(
+  stack: stoacloud.v1.Stack,
+): ShapleStack {
+  return {
+    id: stack.id,
+    name: stack.name,
+    projectId: stack.projectId,
+    gitRepo: stack.gitRepo,
+    description: stack.description,
+    gitBranch: stack.gitBranch,
+    domain: stack.domain,
+    authEnabled: stack.authEnabled,
+    auth: stack.auth,
+    storageEnabled: stack.storageEnabled,
+    storage: stack.storage,
+    postgrestEnabled: stack.postgrestEnabled,
+    postgrest: stack.postgrest,
+    vapis: stack.vapis.map(
+      ({ vapi, stackId, vapiId }): StackVapi => ({
+        stackId: stackId,
+        vapiId: vapiId,
+        vapi: {
+          id: vapi.id,
+          version: vapi.version,
+          access: vapiAccessToString(vapi.access),
+          packageId: vapi.packageId,
+        },
+      }),
+    ),
+  };
 }

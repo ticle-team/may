@@ -64,15 +64,15 @@ describe('given ProjectService', () => {
     // given
     const selectedProject = {
       id: 2,
-      createdAt: '2024-06-05T05:31:38.7425Z',
-      updatedAt: '2024-06-05T05:31:38.7425Z',
+      createdAt: new Date('2024-06-05T05:31:38.7425Z'),
+      updatedAt: new Date('2024-06-05T05:31:38.7425Z'),
       name: 'test1',
       description: 'test1',
       stacks: [
         {
           id: 1,
-          createdAt: '2024-06-05T05:55:23.338072Z',
-          updatedAt: '2024-06-05T05:55:23.523317Z',
+          createdAt: new Date('2024-06-05T05:55:23.338072Z'),
+          updatedAt: new Date('2024-06-05T05:55:23.523317Z'),
           projectId: 2,
           project: null,
           gitRepo: '',

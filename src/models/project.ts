@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { shapleStack } from '@/models/stack';
+import { parseShapleStackFromProto, shapleStack } from '@/models/stack';
+import { stoacloud } from '@/protos/stoacloud';
 
 export const project = z.object({
   id: z.number(),
@@ -31,3 +32,20 @@ export const getProjectSchema = z.object({
 });
 
 export type GetProjectRequest = z.infer<typeof getProjectSchema>;
+
+export function parseShapleProjectFromProto(
+  project: stoacloud.v1.Project,
+): Project {
+  return {
+    id: project.id,
+    name: project.name,
+    description: project.description,
+    stacks: project.stacks.map(parseShapleStackFromProto),
+    createdAt: new Date(
+      project.createdAt.seconds * 1000 + project.createdAt.nanos / 1000000,
+    ),
+    updatedAt: new Date(
+      project.updatedAt.seconds * 1000 + project.updatedAt.nanos / 1000000,
+    ),
+  };
+}
