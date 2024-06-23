@@ -11,7 +11,8 @@ import {
 import { resetSchema } from '@/migrate';
 import { PrismaService } from '@/server/common/prisma.service';
 import { readFileSync } from 'fs';
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
+import { stoacloud } from '@/protos/stoacloud';
 
 describe('given stoacloud service', () => {
   beforeEach(async () => {
@@ -98,16 +99,10 @@ describe('given stoacloud service', () => {
 
       expect(stack.auth).toBeTruthy();
       await scs.installAuth(stackId, {
-        mailer: {
-          autoConfirm: true,
-        },
-        smtp: {
-          senderName: 'stoacloud',
-          adminEmail: 'stoacloud@stoacloud.io',
-        },
-        external: {
-          emailEnabled: true,
-        },
+        mailerAutoConfirm: true,
+        smtpSenderName: 'stoacloud',
+        smtpAdminEmail: 'stoacloud@stoacloud.io',
+        externalEmailEnabled: true,
       });
 
       stack = await scs.getStack(stackId);
@@ -171,16 +166,10 @@ describe('given stoacloud service', () => {
       stackId = stack.id;
       expect(stack.auth).toBeTruthy();
       await scs.installAuth(stackId, {
-        mailer: {
-          autoConfirm: true,
-        },
-        smtp: {
-          senderName: 'stoacloud',
-          adminEmail: 'stoacloud@stoacloud.io',
-        },
-        external: {
-          emailEnabled: true,
-        },
+        mailerAutoConfirm: true,
+        smtpSenderName: 'stoacloud',
+        smtpAdminEmail: 'stoacloud@stoacloud.io',
+        externalEmailEnabled: true,
       });
       await scs.installStorage(stackId, {
         tenantId: 'test-tenant',
@@ -259,7 +248,7 @@ describe('given stoacloud service', () => {
             gitPrivateKeyPem,
           },
         });
-        await scs.addProjectUser(projectId, user.id);
+        await scs.addProjectMember(projectId, user.id);
       });
 
       afterEach(async () => {
@@ -288,7 +277,9 @@ describe('given stoacloud service', () => {
 
         expect(outputs).toHaveLength(2);
         const output = outputs[0];
-        expect(output.deployStatus).toBe('ok');
+        expect(output.status).toBe(
+          stoacloud.v1.RegisterVapiResult.Status.StatusOK,
+        );
         cleanup.defer(async () => {
           for (const output of outputs) {
             await scs.deleteVapiRelease(jwt!, output.releaseId);

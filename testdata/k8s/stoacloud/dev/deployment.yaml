@@ -36,6 +36,7 @@ spec:
               ## end
 
               bin/shaplebuilder serve \
+                --server.address ":$PORT" \
                 --stack.skipHealthCheck true \
                 --k8s.kubeconfig kube/config.yaml \
                 --k8s.context "kind-kind" \
@@ -65,6 +66,8 @@ spec:
                 secretKeyRef:
                   name: shaple-builder
                   key: s3_secret_key
+            - name: PORT
+              value: "8080"
           volumeMounts:
             - mountPath: /shaple/kube/config.yaml
               name: kubeconfig
@@ -83,17 +86,17 @@ spec:
               cpu: 250m
               memory: 256Mi
           startupProbe:
-            httpGet:
-              path: /ping
+            grpc:
               port: 8080
+              service: stoacloud.v1
             periodSeconds: 5
             timeoutSeconds: 5
             failureThreshold: 3
             successThreshold: 1
           livenessProbe:
-            httpGet:
-              path: /ping
+            grpc:
               port: 8080
+              service: stoacloud.v1
             initialDelaySeconds: 10
             periodSeconds: 30
             timeoutSeconds: 5

@@ -1,6 +1,8 @@
 import { z } from 'zod';
-import { vapiRelease } from '@/models/vapi';
+import { vapiAccessToString, VapiPackage, vapiRelease } from '@/models/vapi';
 import { thread } from '@/models/thread';
+import { stoacloud } from '@/protos/stoacloud';
+import { TRPCError } from '@trpc/server';
 
 export const authExternalOAuthProvider = z.object({
   enabled: z.boolean().optional(),
@@ -12,7 +14,7 @@ export const authExternalOAuthProvider = z.object({
 
 export const auth = z.object({
   jwtSecret: z.string().optional(),
-  jwtExp: z.string().optional(), // In TypeScript, durations are typically represented as strings
+  jwtExp: z.number().optional(),
   smtpSenderName: z.string().optional(),
   mailerAutoConfirm: z.boolean().optional(),
   mailerConfirmationSubject: z.string().optional(),
@@ -26,7 +28,7 @@ export const auth = z.object({
   mailerEmailChangeTemplate: z.string().optional(),
   mailerMagicLinkTemplate: z.string().optional(),
   smsAutoConfirm: z.boolean().optional(),
-  smsOtpExp: z.string().optional(), // In TypeScript, durations are typically represented as strings
+  smsOtpExp: z.number().optional(),
   smsOtpLength: z.number().optional(),
   smsProvider: z.string().optional(),
   smsTwilioAccountSid: z.string().optional(),
@@ -48,7 +50,7 @@ export const auth = z.object({
   externalIosBundleId: z.string().optional(),
   externalOAuthProviders: z.array(authExternalOAuthProvider).optional(),
   mfaEnabled: z.boolean().optional(),
-  mfaChallengeExpiryDuration: z.string().optional(), // In TypeScript, durations are typically represented as strings
+  mfaChallengeExpiryDuration: z.number().optional(),
   mfaRateLimitChallengeAndVerify: z.number().optional(),
   mfaEnrolledFactors: z.number().optional(),
   mfaVerifiedFactors: z.number().optional(),
@@ -72,6 +74,14 @@ export const postgrest = z.object({
   schemas: z.array(z.string()).nullish(),
 });
 
+export const stackVapi = z.object({
+  stackId: z.number(),
+  vapiId: z.number(),
+  vapi: vapiRelease.optional(),
+});
+
+export type StackVapi = z.infer<typeof stackVapi>;
+
 export const stack = z.object({
   id: z.number(),
   projectId: z.number(),
@@ -89,14 +99,7 @@ export const stack = z.object({
   storage,
   postgrestEnabled: z.boolean(),
   postgrest,
-  vapis: z
-    .array(
-      z.object({
-        vapiId: z.number(),
-        vapi: vapiRelease.optional(),
-      }),
-    )
-    .nullable(),
+  vapis: z.array(stackVapi).nullable(),
 });
 
 export type Stack = z.infer<typeof stack>;
@@ -112,11 +115,65 @@ export const instanceState_RUNNING = 1;
 export const instanceState_READY = 2;
 export const instanceState_INITIALIZE = 3;
 
+export const instanceZone = z.union([
+  z.literal('default'),
+  z.literal('multi'),
+  z.literal('oci-ap-seoul-1'),
+]);
+
 export const instance = z.object({
   id: z.number(),
   stackId: z.number(),
-  zone: z.string(),
+  zone: instanceZone,
   state: z.number().default(instanceState_NONE),
 });
 
 export type Instance = z.infer<typeof instance>;
+
+export function parseZoneFromProto(zone: stoacloud.v1.InstanceZone) {
+  switch (zone) {
+    case stoacloud.v1.InstanceZone.InstanceZoneDefault:
+      return 'default';
+    case stoacloud.v1.InstanceZone.InstanceZoneMulti:
+      return 'multi';
+    case stoacloud.v1.InstanceZone.InstanceZoneOciApSeoul:
+      return 'oci-ap-seoul-1';
+    default:
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Unknown zone',
+      });
+  }
+}
+
+export function parseShapleStackFromProto(
+  stack: stoacloud.v1.Stack,
+): ShapleStack {
+  return {
+    id: stack.id,
+    name: stack.name,
+    projectId: stack.projectId,
+    gitRepo: stack.gitRepo,
+    description: stack.description,
+    gitBranch: stack.gitBranch,
+    domain: stack.domain,
+    authEnabled: stack.authEnabled,
+    auth: stack.auth,
+    storageEnabled: stack.storageEnabled,
+    storage: stack.storage,
+    postgrestEnabled: stack.postgrestEnabled,
+    postgrest: stack.postgrest,
+    vapis: stack.vapis.map(
+      ({ vapi, stackId, vapiId }): StackVapi => ({
+        stackId: stackId,
+        vapiId: vapiId,
+        vapi: {
+          id: vapi.id,
+          version: vapi.version,
+          access: vapiAccessToString(vapi.access),
+          packageId: vapi.packageId,
+        },
+      }),
+    ),
+  };
+}

@@ -1,120 +1,24 @@
 import { VapiRelease } from '@/models/vapi';
+import { stoacloud } from '@/protos/stoacloud';
 
-export type StoaCloudError = {
-  error: string;
-};
+export type InstallAuthInput = Omit<
+  Parameters<typeof stoacloud.v1.InstallAuthRequest.fromObject>[0],
+  'id'
+>;
 
-type AuthSMTPInput = {
-  senderName?: string;
-  adminEmail?: string;
-};
+export type InstallStorageInput = Omit<
+  Parameters<typeof stoacloud.v1.InstallStorageRequest.fromObject>[0],
+  'id'
+>;
 
-type AuthExternalOAuthProvider = {
-  enabled?: boolean;
-  name?: string;
-  secret?: string;
-  clientId?: string;
-  skipNonceCheck?: boolean;
-};
-
-type AuthExternalInput = {
-  emailEnabled?: boolean;
-  phoneEnabled?: boolean;
-  iosBundleId?: string;
-  redirectUrl?: string;
-  oauthProviders?: AuthExternalOAuthProvider[];
-};
-
-type AuthJWTInput = {
-  exp?: string;
-};
-
-type AuthMailerInput = {
-  autoConfirm?: boolean;
-  confirmationSubject?: string;
-  recoverySubject?: string;
-  inviteSubject?: string;
-  emailChangeSubject?: string;
-  magicLinkSubject?: string;
-  recoveryTemplate?: string;
-  inviteTemplate?: string;
-  emailChangeTemplate?: string;
-  confirmationTemplate?: string;
-  magicLinkTemplate?: string;
-};
-
-type AuthSMSInput = {
-  autoConfirm?: boolean;
-  otpExp?: string;
-  otpLength?: number;
-  provider?: string;
-  twilioAccountSid?: string;
-  twilioAuthToken?: string;
-  twilioMessageServiceSid?: string;
-  twilioContentSid?: string;
-  twilioVerifyAccountSid?: string;
-  twilioVerifyAuthToken?: string;
-  twilioVerifyMessageServiceSid?: string;
-  messagebirdAccessKey?: string;
-  messagebirdOrginator?: string;
-  vonageApiKey?: string;
-  vonageApiSecret?: string;
-  vonageFrom?: string;
-  testOtp?: string;
-  testOtpValidUntil?: string;
-};
-
-type AuthMFAInput = {
-  enabled?: boolean;
-  challengeExpiryDuration?: string;
-  rateLimitChallengeAndVerify?: number;
-  maxEnrolledFactors?: number;
-  maxVerifiedFactors?: number;
-};
-
-type AuthCaptchaInput = {
-  enabled?: boolean;
-  secret?: string;
-  provider?: string;
-};
-
-type AuthInput = {
-  smtp?: AuthSMTPInput;
-  external?: AuthExternalInput;
-  jwt?: AuthJWTInput;
-  mailer?: AuthMailerInput;
-  sms?: AuthSMSInput;
-  mfa?: AuthMFAInput;
-  securityCaptcha?: AuthCaptchaInput;
-  rateLimitEmailSent?: number;
-  rateLimitSmsSent?: number;
-  rateLimitVerify?: number;
-  rateLimitTokenRefresh?: number;
-  rateLimitSso?: number;
-};
-
-type InstallInput = {
-  waiting?: boolean;
-  waitTimeout?: string;
-};
-
-export type InstallAuthInput = InstallInput & AuthInput;
-
-type StorageInput = {
-  tenantId: string;
-};
-
-export type InstallStorageInput = InstallInput & StorageInput;
-
-type PostgrestInput = {
-  schemas: string[];
-};
-
-export type InstallPostgrestInput = InstallInput & PostgrestInput;
+export type InstallPostgrestInput = Omit<
+  Parameters<typeof stoacloud.v1.InstallPostgrestRequest.fromObject>[0],
+  'id'
+>;
 
 export type InstallVapiInput = {
   vapiId: number;
-} & InstallInput;
+};
 
 export type SearchVapisInput = {
   name?: string;
@@ -150,15 +54,13 @@ export type GetProjectsInput = {
   perPage?: number;
 };
 
-export type CreateInstanceInput = {
-  name?: string | null;
-  zone?: string | null;
-  stackId: number;
-};
+export type CreateInstanceInput = Parameters<
+  typeof stoacloud.v1.CreateInstanceRequest.fromObject
+>[0];
 
-export type DeployStackInput = {
-  timeout?: string;
-};
+export type DeployStackInput = Parameters<
+  typeof stoacloud.v1.DeployStackRequest.fromObject
+>[0];
 
 export type GetVapiPackagesInput = {
   name: string;

@@ -5,7 +5,16 @@ import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
 import _ from 'lodash';
-import { Stack } from '@/models/stack';
+import {
+  Instance,
+  parseShapleStackFromProto,
+  parseZoneFromProto,
+  ShapleStack,
+  Stack,
+  StackVapi,
+} from '@/models/stack';
+import { vapiAccessToString, VapiPackage } from '@/models/vapi';
+import { stoacloud } from '@/protos/stoacloud';
 
 const logger = getLogger('server.domain.stack.service');
 
@@ -65,12 +74,8 @@ export class StackService {
         switch (_.lowerCase(name)) {
           case 'auth': {
             await this.stoacloudService.installAuth(stackId, {
-              mailer: {
-                autoConfirm: true,
-              },
-              external: {
-                emailEnabled: true,
-              },
+              mailerAutoConfirm: true,
+              externalEmailEnabled: true,
             });
             break;
           }
@@ -199,24 +204,30 @@ export class StackService {
     }
   }
 
-  async getStack(stackId: number): Promise<Stack> {
+  async getStack(stackId: number) {
     const [shapleStack, thread] = await Promise.all([
       this.stoacloudService.getStack(stackId),
       this.threadStore.findThreadByStackId(stackId),
     ]);
 
-    const stack = {
-      ...shapleStack,
-      thread,
+    const stack: Stack = {
+      ...parseShapleStackFromProto(shapleStack),
+      thread: thread,
     };
-    logger.debug('call getStack', { stack });
     return stack;
   }
 
   async getInstancesInStack(stackId: number) {
     const instances = await this.stoacloudService.getInstancesInStack(stackId);
     return {
-      instances,
+      instances: instances.map(
+        (instance): Instance => ({
+          id: instance.id,
+          stackId: instance.stackId,
+          state: instance.state,
+          zone: parseZoneFromProto(instance.zone),
+        }),
+      ),
       after: null,
     };
   }

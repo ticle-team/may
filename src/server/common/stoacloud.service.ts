@@ -1,8 +1,4 @@
 import { Service } from 'typedi';
-import { Axios, AxiosError, isAxiosError } from 'axios';
-import { Instance, ShapleStack } from '@/models/stack';
-import { Project } from '@/models/project';
-import { TRPCError } from '@trpc/server';
 import {
   CreateInstanceInput,
   DeployStackInput,
@@ -13,99 +9,63 @@ import {
   InstallStorageInput,
   InstallVapiInput,
   RegisterVapisInput,
-  RegisterVapisOutput,
   SearchVapisInput,
-  SearchVapisOutput,
-  StoaCloudError,
 } from '@/models/stoacloud';
-import { camelToSnake, snakeToCamel } from '@/util/cases';
 import { getLogger } from '@/logger';
-import { VapiPackage, VapiRelease } from '@/models/vapi';
-import qs from 'qs';
+import { stoacloud } from '@/protos/stoacloud';
+import { credentials, Metadata } from '@grpc/grpc-js';
+import { google } from '@/protos/google/protobuf/empty';
+import { ShapleStack, StackVapi } from '@/models/stack';
+import { vapiAccessToString, VapiPackage } from '@/models/vapi';
+import { Project } from '@/models/project';
 
 const logger = getLogger('server.common.stoacloud.service');
 
+function createStoaCloudServiceClient() {
+  const creds =
+    process.env.STOACLOUD_API_GRPC_SECURE == 'true'
+      ? credentials.createSsl()
+      : credentials.createInsecure();
+
+  const addr = process.env.STOACLOUD_API_GRPC_ADDR || 'localhost';
+  const port = process.env.STOACLOUD_API_GRPC_PORT || '50051';
+  return new stoacloud.v1.StoaCloudServiceClient(`${addr}:${port}`, creds, {
+    'grpc.service_config': '{"loadBalancingConfig":[{"round_robin":{}}]}',
+  });
+}
+
 @Service()
 export class StoaCloudService {
-  private readonly axios = new Axios({
-    baseURL: process.env.STOACLOUD_API_URL,
-    headers: {
-      'X-StoaCloud-Client': 'may',
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-    responseType: 'json',
-    validateStatus: (status) => {
-      return status >= 200 && status < 300;
-    },
-  });
-
-  constructor() {
-    this.axios.interceptors.request.use(
-      (req) => {
-        logger.info('call stoacloud API', { req });
-        if (req.data) {
-          if (req.headers.get('Content-Type') === 'application/json') {
-            req.data = JSON.stringify(camelToSnake(req.data));
-          }
-        }
-        return req;
-      },
-      (err) => {
-        logger.error('failure request interceptor of stoacloud API', { err });
-        throw err;
-      },
-    );
-    this.axios.interceptors.response.use(
-      (res) => {
-        if (res.data) {
-          if (res.config.responseType === 'json') {
-            res.data = snakeToCamel(JSON.parse(res.data));
-          }
-        }
-        return res;
-      },
-      (err) => {
-        logger.error('failure stoacloud API', { err });
-        if (isAxiosError<StoaCloudError>(err)) {
-          err = err as AxiosError<StoaCloudError>;
-          const error = err.response?.data?.error;
-
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: error,
-          });
-        }
-
-        throw err;
-      },
-    );
-  }
+  private readonly client = createStoaCloudServiceClient();
 
   async createProject(name: string, description: string) {
-    const { data: project } = await this.axios.post<Project>('/v1/projects', {
-      name,
-      description,
-    });
-
-    return project;
+    return await this.client.CreateProject(
+      stoacloud.v1.CreateProjectRequest.fromObject({
+        name,
+        description,
+        userIds: [],
+      }),
+    );
   }
 
   async deleteProject(projectId: number) {
-    await this.axios.delete(`/v1/projects/${projectId}`);
+    await this.client.DeleteProject(
+      stoacloud.v1.ProjectId.fromObject({ id: projectId }),
+    );
   }
 
   async getProject(projectId: number) {
-    const { data } = await this.axios.get<Project>(`/v1/projects/${projectId}`);
-
-    return data;
+    return await this.client.GetProject(
+      stoacloud.v1.ProjectId.fromObject({ id: projectId }),
+    );
   }
 
-  async getProjects(input: GetProjectsInput): Promise<Project[]> {
-    const { data } = await this.axios.get<Project[]>(`/v1/projects`, {
-      params: input,
-    });
-    return data;
+  async getProjects(input: GetProjectsInput) {
+    const { projects } = await this.client.GetProjects(
+      stoacloud.v1.GetProjectsRequest.fromObject(input),
+    );
+
+    return projects;
   }
 
   async createStack(
@@ -113,99 +73,122 @@ export class StoaCloudService {
     projectId: number,
     name: string,
     description: string,
-  ): Promise<ShapleStack> {
-    const { data: stack } = await this.axios.post<ShapleStack>('/v1/stacks', {
-      siteUrl,
-      projectId: projectId,
-      name,
-      description,
-    });
-
-    return stack;
+  ) {
+    return await this.client.CreateStack(
+      stoacloud.v1.CreateStackRequest.fromObject({
+        siteUrl,
+        projectId,
+        name,
+        description,
+      }),
+    );
   }
 
-  async getStack(stackId: number): Promise<ShapleStack> {
-    const { data: stack } = await this.axios.get<ShapleStack>(
-      `/v1/stacks/${stackId}`,
+  async getStack(stackId: number) {
+    return await this.client.GetStackById(
+      stoacloud.v1.StackId.fromObject({ id: stackId }),
     );
-    return stack;
   }
 
   async installAuth(stackId: number, input: InstallAuthInput) {
-    await this.axios.post(`/v1/stacks/${stackId}/auth`, input);
+    await this.client.InstallAuth(
+      stoacloud.v1.InstallAuthRequest.fromObject({
+        ...input,
+        id: stackId,
+        isUpdate: input.isUpdate,
+      }),
+    );
   }
 
   async uninstallAuth(stackId: number) {
-    await this.axios.delete(`/v1/stacks/${stackId}/auth`);
+    await this.client.UninstallAuth(
+      stoacloud.v1.StackId.fromObject({ id: stackId }),
+    );
   }
 
   async installStorage(stackId: number, input: InstallStorageInput) {
-    await this.axios.post(`/v1/stacks/${stackId}/storage`, input);
+    await this.client.InstallStorage(
+      stoacloud.v1.InstallStorageRequest.fromObject({
+        ...input,
+        id: stackId,
+      }),
+    );
   }
 
   async uninstallStorage(stackId: number) {
-    await this.axios.delete(`/v1/stacks/${stackId}/storage`);
+    await this.client.UninstallStorage(
+      stoacloud.v1.StackId.fromObject({ id: stackId }),
+    );
   }
 
   async installPostgrest(stackId: number, input: InstallPostgrestInput) {
-    await this.axios.post(`/v1/stacks/${stackId}/postgrest`, input);
+    await this.client.InstallPostgrest(
+      stoacloud.v1.InstallPostgrestRequest.fromObject({
+        ...input,
+        id: stackId,
+      }),
+    );
   }
 
   async uninstallPostgrest(stackId: number) {
-    await this.axios.delete(`/v1/stacks/${stackId}/postgrest`);
+    await this.client.UninstallPostgrest(
+      stoacloud.v1.StackId.fromObject({ id: stackId }),
+    );
   }
 
   async deleteStack(stackId: number) {
-    await this.axios.delete(`/v1/stacks/${stackId}`);
+    await this.client.DeleteStack(
+      stoacloud.v1.StackId.fromObject({ id: stackId }),
+    );
   }
 
   async installVapi(stackId: number, input: InstallVapiInput) {
-    await this.axios.post(`/v1/stacks/${stackId}/vapis`, input);
+    await this.client.InstallVapi(
+      stoacloud.v1.InstallVapiRequest.fromObject({
+        ...input,
+        stackId,
+      }),
+    );
   }
 
   async uninstallVapi(stackId: number, vapiId: number) {
-    await this.axios.delete(`/v1/stacks/${stackId}/vapis/${vapiId}`);
-  }
-
-  async getVapiRelease(id: number) {
-    await this.axios.get(`/v1/vapi-releases/${id}`);
-  }
-
-  async getVapiPackage(id: number) {
-    await this.axios.get(`/v1/vapis/${id}`);
+    await this.client.UninstallVapi(
+      stoacloud.v1.UninstallVapiRequest.fromObject({
+        stackId,
+        vapiId,
+      }),
+    );
   }
 
   async getVapiReleasesInPackage(packageId: number) {
-    const { data } = await this.axios.get<VapiRelease[]>(
-      `/v1/vapis/${packageId}/releases`,
+    const { releases } = await this.client.GetVapiReleasesInPackage(
+      stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
     );
-    return data;
+
+    return releases;
   }
 
   async getVapiReleaseInPackage(packageId: number, version: string) {
-    const { data } = await this.axios.get<VapiRelease>(
-      `/v1/vapis/${packageId}/releases/${version}`,
+    return await this.client.GetVapiReleaseByVersionInPackage(
+      stoacloud.v1.GetVapiReleaseByVersionInPackageRequest.fromObject({
+        packageId,
+        version,
+      }),
     );
-    return data;
   }
 
   async getVapiPackages(input: GetVapiPackagesInput) {
-    const { data } = await this.axios.get<VapiPackage[]>(
-      `/v1/vapis?${qs.stringify(input)}`,
+    const res = await this.client.GetVapiPackages(
+      stoacloud.v1.GetVapiPackagesRequest.fromObject(input),
     );
 
-    return data;
+    return res.packages;
   }
 
   async searchVapis(input: SearchVapisInput) {
-    const { data } = await this.axios.get<SearchVapisOutput>(
-      '/v1/vapis:search',
-      {
-        params: input,
-      },
+    return await this.client.SearchVapis(
+      stoacloud.v1.SearchVapisRequest.fromObject(input),
     );
-
-    return data;
   }
 
   async registerVapis(
@@ -213,63 +196,75 @@ export class StoaCloudService {
     githubToken: string | null,
     input: RegisterVapisInput,
   ) {
-    const { data } = await this.axios.post<RegisterVapisOutput[]>(
-      '/v1/vapis:deploy',
-      input,
-      {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          ...(githubToken
-            ? {
-                'X-Github-Token': githubToken,
-              }
-            : {}),
-        },
-      },
+    const md = new Metadata();
+    md.set('authorization', `Bearer ${jwt}`);
+    md.set('x-github-token', githubToken || '');
+
+    const res = await this.client.RegisterVapi(
+      stoacloud.v1.RegisterVapiRequest.fromObject({
+        ...input,
+      }),
+      md,
     );
-    return data;
+
+    return res.results;
   }
 
   async deleteAllVapiReleases(jwt: string, packageId?: number) {
-    const requestPath = packageId
-      ? `/v1/vapis/${packageId}/releases`
-      : '/v1/vapi-releases';
-    await this.axios.delete(requestPath, {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
+    const md = new Metadata();
+    md.set('authorization', `Bearer ${jwt}`);
+
+    if (packageId) {
+      await this.client.DeleteAllVapiReleasesInPackage(
+        stoacloud.v1.VapiPackageId.fromObject({ id: packageId! }),
+        md,
+      );
+    } else {
+      await this.client.DeleteAllVapiReleases(new google.protobuf.Empty(), md);
+    }
   }
 
   async deleteAllVapiPackages(jwt: string, projectId?: number) {
-    const requestPath = projectId
-      ? `/v1/projects/${projectId}/v1/vapis`
-      : '/v1/vapis';
-    await this.axios.delete(requestPath, {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
+    const md = new Metadata();
+    md.set('authorization', `Bearer ${jwt}`);
+
+    if (projectId) {
+      await this.client.DeleteAllVapiPackagesInProject(
+        stoacloud.v1.ProjectId.fromObject({ id: projectId }),
+        md,
+      );
+    } else {
+      await this.client.DeleteAllVapiPackages(new google.protobuf.Empty(), md);
+    }
   }
 
   async deleteVapiRelease(jwt: string, releaseId: number) {
-    await this.axios.delete(`/v1/vapi-releases/${releaseId}`, {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
+    const md = new Metadata();
+    md.set('authorization', `Bearer ${jwt}`);
+
+    await this.client.DeleteVapiRelease(
+      stoacloud.v1.VapiReleaseId.fromObject({ id: releaseId }),
+      md,
+    );
   }
 
   async deleteVapiPackage(jwt: string, packageId: number) {
-    await this.axios.delete(`/v1/vapis/${packageId}`, {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-      },
-    });
+    const md = new Metadata();
+    md.set('authorization', `Bearer ${jwt}`);
+
+    await this.client.DeleteVapiPackage(
+      stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
+      md,
+    );
   }
 
-  async addProjectUser(projectId: number, memberId: string) {
-    await this.axios.put(`/v1/projects/${projectId}/members/${memberId}`);
+  async addProjectMember(projectId: number, memberId: string) {
+    return await this.client.AddProjectMember(
+      stoacloud.v1.AddProjectMemberRequest.fromObject({
+        id: projectId,
+        memberId,
+      }),
+    );
   }
 
   async resetSchema() {
@@ -277,32 +272,51 @@ export class StoaCloudService {
       throw new Error('resetSchema is not allowed in production');
     }
 
-    await this.axios.post('/reset-schema', undefined, {
-      responseType: 'text',
-    });
+    await this.client.ResetSchema(new google.protobuf.Empty());
   }
 
   async createInstance(input: CreateInstanceInput) {
-    const { data } = await this.axios.post<Instance>('/v1/instances', input);
-    return data;
+    if (!input.zone) {
+      input.zone = stoacloud.v1.InstanceZone.InstanceZoneDefault;
+    }
+
+    return await this.client.CreateInstance(
+      stoacloud.v1.CreateInstanceRequest.fromObject(input),
+    );
   }
 
   async stopInstance(instanceId: number) {
-    await this.axios.post(`/v1/instances/${instanceId}/controls:stop`);
+    await this.client.StopInstance(
+      stoacloud.v1.InstanceId.fromObject({ id: instanceId }),
+    );
   }
 
   async deleteInstance(instanceId: number) {
-    await this.axios.delete(`/v1/instances/${instanceId}`);
+    await this.client.DeleteInstance(
+      stoacloud.v1.InstanceId.fromObject({ id: instanceId }),
+    );
   }
 
   async deployStack(instanceId: number, input?: DeployStackInput) {
-    await this.axios.post(`/v1/instances/${instanceId}/controls:deploy`, input);
+    await this.client.DeployStack(
+      stoacloud.v1.DeployStackRequest.fromObject({
+        id: instanceId,
+        ...(input ?? {}),
+      }),
+    );
   }
 
   async getInstancesInStack(stackId: number) {
-    const { data } = await this.axios.get<Instance[]>(
-      `/v1/stacks/${stackId}/instances`,
+    const { instances } = await this.client.GetStackInstances(
+      stoacloud.v1.StackId.fromObject({ id: stackId }),
     );
-    return data;
+
+    return instances;
+  }
+
+  async getVapiPackage(packageId: number) {
+    return await this.client.GetVapiPackageById(
+      stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
+    );
   }
 }

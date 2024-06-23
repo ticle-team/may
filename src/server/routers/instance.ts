@@ -1,4 +1,4 @@
-import { router, authedProcedure } from '../trpc';
+import { authedProcedure, router } from '../trpc';
 import { z } from 'zod';
 import { instance } from '@/models/stack';
 import { InstanceService } from '@/server/domain/instance/instance.service';
@@ -33,21 +33,6 @@ export default router({
     .mutation(async () => {
       return;
     }),
-  get: authedProcedure
-    .input(
-      z.object({
-        instanceId: z.number(),
-      }),
-    )
-    .output(instance)
-    .query(async () => {
-      return {
-        id: 0,
-        stackId: 0,
-        state: 0,
-        zone: '',
-      };
-    }),
   create: authedProcedure
     .input(
       z.object({
@@ -57,7 +42,7 @@ export default router({
       }),
     )
     .output(instance)
-    .mutation(async ({ input: { stackId, zone, name } }) =>
+    .mutation(({ input: { stackId, zone, name } }) =>
       instanceService.createInstance(stackId, zone ?? null, name ?? null),
     ),
   deployStack: authedProcedure

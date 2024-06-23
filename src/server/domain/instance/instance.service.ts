@@ -1,6 +1,7 @@
 import { Service } from 'typedi';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
-import { instance } from '@/models/stack';
+import { Instance, instance, parseZoneFromProto } from '@/models/stack';
+import { stoacloud } from '@/protos/stoacloud';
 
 @Service()
 export class InstanceService {
@@ -8,16 +9,34 @@ export class InstanceService {
 
   async createInstance(
     stackId: number,
-    zone: string | null,
+    zoneStr: string | null,
     name: string | null,
-  ) {
+  ): Promise<Instance> {
+    let zone = stoacloud.v1.InstanceZone.InstanceZoneDefault;
+    switch (zoneStr) {
+      case 'oci-ap-seoul-1':
+        zone = stoacloud.v1.InstanceZone.InstanceZoneOciApSeoul;
+        break;
+      case 'default':
+        zone = stoacloud.v1.InstanceZone.InstanceZoneDefault;
+        break;
+      case 'multi':
+        zone = stoacloud.v1.InstanceZone.InstanceZoneMulti;
+        break;
+    }
+
     const inst = await this.stoaCloudService.createInstance({
       stackId,
+      name: name ?? undefined,
       zone,
-      name,
     });
-    instance.parse(inst);
-    return inst;
+
+    return {
+      id: inst.id,
+      stackId: inst.stackId,
+      state: inst.state,
+      zone: parseZoneFromProto(inst.zone),
+    };
   }
 
   async deployStack(instanceId: number) {

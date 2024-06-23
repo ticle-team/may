@@ -4,6 +4,7 @@
     "inlineSources": true,
     "sourceRoot": "./src/",
     "lib": ["dom", "dom.iterable", "esnext", "esnext.disposable"],
+    "target": "es2015",
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
