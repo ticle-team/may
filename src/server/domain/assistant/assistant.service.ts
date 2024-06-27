@@ -6,6 +6,7 @@ import { TextDeltaBlock } from 'openai/resources/beta/threads/messages';
 import { TRPCError } from '@trpc/server';
 import { StackCreationEvent } from '@/models/assistant';
 import { ThreadService } from '@/server/domain/thread/thread.service';
+import { Context } from '@/server/context';
 
 const logger = getLogger('AssistantService');
 
@@ -20,9 +21,9 @@ export class AssistantService {
     private readonly stackService: StackService,
   ) {}
 
-  async *runForCreationStack(threadId: number) {
+  async *runForCreationStack(ctx: Context, threadId: number) {
     yield { event: 'begin' };
-    const thread = await this.threadService.get(threadId);
+    const thread = await this.threadService.get(ctx, threadId);
     const assistantStream = this.openaiAssistant.runStream(
       thread.openaiThreadId,
       this.stackCreationAssistantId,
@@ -75,6 +76,7 @@ export class AssistantService {
                     }
                     const { stackId, generator } =
                       await self.stackService.createStackByToolCall(
+                        ctx,
                         toolCallId,
                         runId,
                         threadId,
@@ -83,7 +85,7 @@ export class AssistantService {
                       );
 
                     thread.shapleStackId = stackId;
-                    await self.threadService.save(thread);
+                    await self.threadService.save(ctx, thread);
                     yield* handleStream(generator);
                     yield { event: 'deploy', stackId };
                     break;

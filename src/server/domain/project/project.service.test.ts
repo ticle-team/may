@@ -6,6 +6,8 @@ import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { createStoaCloudServiceMock } from '@/server/common/__mocks__/stoacloud.service';
 import * as uuid from 'uuid';
 import { project } from '@/models/project';
+import { stoacloud } from '@/protos/stoacloud';
+import { google } from '@/protos/google/protobuf/timestamp';
 
 describe('given ProjectService', () => {
   let projectService: ProjectService;
@@ -33,14 +35,20 @@ describe('given ProjectService', () => {
 
   it('should create a project and return the project details', async () => {
     // given
-    const createdProject = {
+    const createdProject = stoacloud.v1.Project.fromObject({
       id: mockData.id,
       name: mockData.name,
       description: mockData.description,
       stacks: [],
-      createdAt: '2024-05-30T12:38:55.605056Z',
-      updatedAt: '2024-05-31T12:38:55.605056Z',
-    };
+      createdAt: google.protobuf.Timestamp.fromObject({
+        seconds: 1680000000,
+        nanos: 0,
+      }),
+      updatedAt: google.protobuf.Timestamp.fromObject({
+        seconds: 1680000000,
+        nanos: 0,
+      }),
+    });
     mockStoaCloudService.createProject.mockResolvedValue(createdProject);
 
     // when
@@ -56,8 +64,12 @@ describe('given ProjectService', () => {
     expect(result.id).toEqual(createdProject.id);
     expect(result.name).toEqual(createdProject.name);
     expect(result.description).toEqual(createdProject.description);
-    expect(result.createdAt).toEqual(createdProject.createdAt);
-    expect(result.updatedAt).toEqual(createdProject.updatedAt);
+    expect(result.createdAt).toEqual(
+      new Date(createdProject.createdAt.seconds * 1000),
+    );
+    expect(result.updatedAt).toEqual(
+      new Date(createdProject.updatedAt.seconds * 1000),
+    );
   });
 
   it('should retrieve and return a project', async () => {

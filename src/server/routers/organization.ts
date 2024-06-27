@@ -1,4 +1,4 @@
-import { router, authedProcedure, baseProcedure } from '../trpc';
+import { authedProcedure, baseProcedure, router } from '../trpc';
 import { z } from 'zod';
 import { getProjectsSchema, organization } from '@/models/organization';
 import { project } from '@/models/project';
@@ -31,7 +31,7 @@ export default router({
           after: z.number().nullish(),
         }),
       )
-      .query(({ input }) => organizationService.getProjects(input)),
+      .query(({ ctx, input }) => organizationService.getProjects(input)),
   }),
   delete: authedProcedure
     .input(

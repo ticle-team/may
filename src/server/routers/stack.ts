@@ -23,7 +23,7 @@ export default router({
       }),
     )
     .output(stack)
-    .query(({ input }) => stackService.getStack(input.stackId)),
+    .query(({ ctx, input }) => stackService.getStack(ctx, input.stackId)),
   instances: router({
     list: authedProcedure
       .input(

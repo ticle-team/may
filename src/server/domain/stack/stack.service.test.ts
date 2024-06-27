@@ -1,5 +1,4 @@
 import { Container } from 'typedi';
-import { PrismaService } from '@/server/common/prisma.service';
 import { resetSchema } from '@/migrate';
 import { StackService } from '@/server/domain/stack/stack.service';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
@@ -14,14 +13,14 @@ import {
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { Thread } from '@prisma/client';
 import { stoacloud } from '@/protos/stoacloud';
-import { google } from '@/protos/google/protobuf/timestamp';
+import { createPrismaClient } from '@/server/prisma';
 import VapiPackageAccess = stoacloud.v1.VapiPackageAccess;
 
 describe('given StackService', () => {
   let stackService: StackService;
   let mockStoaCloudService: StoaCloudServiceMock;
   let mockThreadStore: ThreadStoreMock;
-
+  let prisma = createPrismaClient();
   beforeEach(async () => {
     await resetSchema();
     mockStoaCloudService = createStoaCloudServiceMock();
@@ -29,10 +28,11 @@ describe('given StackService', () => {
     Container.set(StoaCloudService, mockStoaCloudService);
     Container.set(ThreadStore, mockThreadStore);
     stackService = Container.get(StackService);
+
+    await prisma.$connect();
   });
 
   afterEach(async () => {
-    const prisma = Container.get(PrismaService);
     await prisma.$disconnect();
 
     Container.reset();
@@ -92,7 +92,10 @@ describe('given StackService', () => {
       expect(mockThreadStore.findThreadByStackId).toHaveBeenCalledTimes(1);
     });
     // when
-    const result = await stackService.getStack(expectedStack.id);
+    const result = await stackService.getStack(
+      { user: null, tx: prisma },
+      expectedStack.id,
+    );
 
     // then
     expect(result).not.toBeNull();

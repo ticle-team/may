@@ -10,7 +10,7 @@ const logger = getLogger('server.trpc');
  * Initialization of tRPC backend
  * Should be done only once per backend!
  */
-const t = initTRPC.context<Context>().create({
+const t = initTRPC.context<Awaited<Context>>().create({
   transformer: superjson,
   experimental: {
     iterablesAndDeferreds: true,
@@ -33,7 +33,18 @@ const t = initTRPC.context<Context>().create({
  * Export reusable router and procedure helpers
  * that can be used throughout the router
  */
-export const { createCallerFactory, router, procedure: baseProcedure } = t;
+export const { createCallerFactory, router } = t;
+export const baseProcedure = t.procedure.use(
+  ({ ctx: { tx: prisma }, next }) => {
+    return prisma.$transaction(async (_) => {
+      return await next({
+        ctx: {
+          tx: prisma,
+        },
+      });
+    });
+  },
+);
 
 export const authedProcedure = baseProcedure.use(
   async ({ ctx: { user }, next }) => {

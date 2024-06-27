@@ -1,6 +1,5 @@
 import { Service } from 'typedi';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
-import { PrismaService } from '@/server/common/prisma.service';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
@@ -9,12 +8,9 @@ import {
   Instance,
   parseShapleStackFromProto,
   parseZoneFromProto,
-  ShapleStack,
   Stack,
-  StackVapi,
 } from '@/models/stack';
-import { vapiAccessToString, VapiPackage } from '@/models/vapi';
-import { stoacloud } from '@/protos/stoacloud';
+import { Context } from '@/server/context';
 
 const logger = getLogger('server.domain.stack.service');
 
@@ -22,12 +18,12 @@ const logger = getLogger('server.domain.stack.service');
 export class StackService {
   constructor(
     private readonly stoacloudService: StoaCloudService,
-    private readonly prisma: PrismaService,
     private readonly openaiAssistant: OpenAIAssistant,
     private readonly threadStore: ThreadStore,
   ) {}
 
   async createStackByToolCall(
+    ctx: Context,
     toolCallId: string,
     runId: string,
     threadId: number,
@@ -35,7 +31,10 @@ export class StackService {
     projectId: number,
   ) {
     logger.debug('call createStackByToolCall', { args });
-    const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
+    const { openaiThreadId } = await this.threadStore.findThreadById(
+      ctx,
+      threadId,
+    );
 
     const { name, description, dependencies } = JSON.parse(args);
 
@@ -150,25 +149,18 @@ export class StackService {
 
     let generator;
     try {
-      generator = await this.prisma.$transaction(async (tx) => {
-        await tx.thread.update({
-          where: {
-            id: threadId,
-          },
-          data: {
-            shapleStackId: stackId,
-          },
-        });
-
-        return this.openaiAssistant.submitToolOutputsStream(
-          openaiThreadId,
-          runId,
-          toolCallId,
-          JSON.stringify({
-            success: true,
-          }),
-        );
+      await this.threadStore.updateThread(ctx, threadId, {
+        shapleStackId: stackId,
       });
+
+      generator = this.openaiAssistant.submitToolOutputsStream(
+        openaiThreadId,
+        runId,
+        toolCallId,
+        JSON.stringify({
+          success: true,
+        }),
+      );
     } catch (error) {
       logger.error('failed to update thread or submit tool', { error });
       this.stoacloudService.deleteStack(stackId).catch((err) => {
@@ -204,10 +196,10 @@ export class StackService {
     }
   }
 
-  async getStack(stackId: number) {
+  async getStack(ctx: Context, stackId: number) {
     const [shapleStack, thread] = await Promise.all([
       this.stoacloudService.getStack(stackId),
-      this.threadStore.findThreadByStackId(stackId),
+      this.threadStore.findThreadByStackId(ctx, stackId),
     ]);
 
     const stack: Stack = {

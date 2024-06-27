@@ -1,25 +1,26 @@
 import { Container } from 'typedi';
 import { ThreadService } from '@/server/domain/thread/thread.service';
-import { PrismaService } from '@/server/common/prisma.service';
 import {
   createOpenAIAssistantMock,
   OpenAIAssistantMock,
 } from '@/server/common/__mocks__/openai.service';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { resetSchema } from '@/migrate';
+import { createPrismaClient } from '@/server/prisma';
 
 describe('given ThreadService with real ThreadStore', () => {
   const ownerId = '123123';
   let mockOpenAI: OpenAIAssistantMock;
+  let prisma = createPrismaClient();
   beforeEach(async () => {
     await resetSchema();
+    await prisma.$connect();
 
     mockOpenAI = createOpenAIAssistantMock();
     Container.set(OpenAIAssistant, mockOpenAI);
   });
 
   afterEach(async () => {
-    const prisma = Container.get(PrismaService);
     await prisma.user.deleteMany({});
     await prisma.thread.deleteMany({});
     await prisma.$disconnect();
@@ -28,27 +29,34 @@ describe('given ThreadService with real ThreadStore', () => {
   });
 
   it('create thread', async () => {
+    const ctx = {
+      user: null,
+      tx: prisma,
+    };
     const openaiThreadId = '123123';
     mockOpenAI.createThread.mockResolvedValue({ id: openaiThreadId });
     mockOpenAI.deleteThread.mockResolvedValue({
       deleted: true,
     });
 
-    const prisma = Container.get(PrismaService);
     const project = await prisma.shapleProject.create({
       data: {},
     });
 
     const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(ownerId, project.id);
+    const thread = await threadService.create(ctx, ownerId, project.id);
     expect(thread.openaiThreadId).toBe(openaiThreadId);
-    await threadService.delete(thread.id);
+    await threadService.delete(ctx, thread.id);
 
     expect(mockOpenAI.createThread).toHaveBeenCalledTimes(1);
     expect(mockOpenAI.deleteThread).toHaveBeenCalledTimes(1);
   });
 
   it('send message', async () => {
+    const ctx = {
+      user: null,
+      tx: prisma,
+    };
     const openaiThreadId = '123123';
     const messageId = 'message-1';
     mockOpenAI.createThread.mockResolvedValue({ id: openaiThreadId });
@@ -57,17 +65,16 @@ describe('given ThreadService with real ThreadStore', () => {
       deleted: true,
     });
 
-    const prisma = Container.get(PrismaService);
     const project = await prisma.shapleProject.create({
       data: {},
     });
 
     const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(ownerId, project.id);
+    const thread = await threadService.create(ctx, ownerId, project.id);
     expect(thread.openaiThreadId).toBe(openaiThreadId);
-    await threadService.addUserMessage(thread.id, '안녕하세요');
+    await threadService.addUserMessage(ctx, thread.id, '안녕하세요');
 
-    await threadService.delete(thread.id);
+    await threadService.delete(ctx, thread.id);
 
     expect(mockOpenAI.createThread).toHaveBeenCalledTimes(1);
     expect(mockOpenAI.createMessage).toHaveBeenCalledTimes(1);

@@ -13,6 +13,7 @@ import {
 } from '@/server/domain/user/__mocks__/user.stub';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { StackCreationEventText } from '@/models/assistant';
+import { createPrismaClient } from '@/server/prisma';
 
 describe('given thread trpc with mock objects', () => {
   const threadService = createThreadServiceMock();
@@ -25,8 +26,10 @@ describe('given thread trpc with mock objects', () => {
 
   let caller: ReturnType<typeof createCaller>;
   let user;
+  let prisma = createPrismaClient();
   beforeEach(async () => {
     await resetSchema();
+    await prisma.$connect();
     await Container.get(StoaCloudService).resetSchema();
 
     Container.set(ThreadService, threadService);
@@ -35,6 +38,7 @@ describe('given thread trpc with mock objects', () => {
     user = await createUser();
 
     caller = createCaller({
+      tx: prisma,
       user,
     });
   });
@@ -43,6 +47,7 @@ describe('given thread trpc with mock objects', () => {
     Container.reset();
     await deleteUser(user!);
     jest.clearAllMocks();
+    await prisma.$disconnect();
   });
 
   it('when calling thread as a subscription, should return messages streaming', async () => {

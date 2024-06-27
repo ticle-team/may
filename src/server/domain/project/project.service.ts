@@ -1,25 +1,28 @@
 import { Service } from 'typedi';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
-import { CreateProjectRequest, Project } from '@/models/project';
+import {
+  CreateProjectRequest,
+  parseShapleProjectFromProto,
+  Project,
+} from '@/models/project';
 import { getLogger } from '@/logger';
-import { stoacloud } from '@/protos/stoacloud';
-import { StackService } from '@/server/domain/stack/stack.service';
 
 const logger = getLogger('server.domain.stack.service');
 
 @Service()
 export class ProjectService {
-  constructor(
-    private readonly stoaCloudService: StoaCloudService,
-    private readonly stackService: StackService,
-  ) {}
+  constructor(private readonly stoaCloudService: StoaCloudService) {}
 
-  async createProject(request: CreateProjectRequest) {
+  async createProject(request: CreateProjectRequest): Promise<Project> {
     const project = await this.stoaCloudService.createProject(
       request.name,
       request.description,
     );
-    return project;
+
+    return {
+      ...parseShapleProjectFromProto(project),
+      stacks: [],
+    };
   }
 
   async deleteProject(projectId: number) {

@@ -1,14 +1,14 @@
 import { Service } from 'typedi';
-import { PrismaService } from '@/server/common/prisma.service';
 import { TRPCError } from '@trpc/server';
-import { Prisma, Thread } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { Context } from '@/server/context';
 
 @Service()
 export class ThreadStore {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor() {}
 
   async createThread(
-    tx: Prisma.TransactionClient,
+    { tx }: Context,
     authorId: number,
     openaiThreadId: string,
     shapleProjectId: number,
@@ -22,17 +22,21 @@ export class ThreadStore {
     });
   }
 
-  async updateThread(tx: Prisma.TransactionClient, thread: Thread) {
+  updateThread(
+    { tx }: Context,
+    threadId: number,
+    thread: Prisma.ThreadUpdateInput | Prisma.ThreadUncheckedUpdateInput,
+  ) {
     return tx.thread.update({
       where: {
-        id: thread.id,
+        id: threadId,
       },
       data: thread,
     });
   }
 
-  async findThreadById(threadId: number) {
-    const thread = await this.prisma.thread.findUnique({
+  async findThreadById({ tx }: Context, threadId: number) {
+    const thread = await tx.thread.findUnique({
       where: {
         id: threadId,
       },
@@ -47,7 +51,7 @@ export class ThreadStore {
     return thread;
   }
 
-  async deleteThreadById(tx: Prisma.TransactionClient, threadId: number) {
+  async deleteThreadById({ tx }: Context, threadId: number) {
     await tx.thread.delete({
       where: {
         id: threadId,
@@ -55,8 +59,8 @@ export class ThreadStore {
     });
   }
 
-  async findThreadByStackId(stackId: number) {
-    return await this.prisma.thread.findFirst({
+  async findThreadByStackId({ tx }: Context, stackId: number) {
+    return await tx.thread.findFirst({
       where: {
         shapleStackId: stackId,
       },

@@ -1,9 +1,9 @@
 import { Service } from 'typedi';
-import { Prisma } from '@prisma/client';
+import { Context } from '@/server/context';
 
 @Service()
 export class UserStore {
-  async getUser(tx: Prisma.TransactionClient, ownerId: string) {
+  async getUser({ tx }: Context, ownerId: string) {
     const user = await tx.user.findFirst({
       where: {
         ownerId: ownerId,
