@@ -12,12 +12,14 @@ export class ThreadStore {
     authorId: number,
     openaiThreadId: string,
     shapleProjectId: number,
+    state: string,
   ) {
     return tx.thread.create({
       data: {
         authorId,
         openaiThreadId,
         shapleProjectId,
+        state,
       },
     });
   }

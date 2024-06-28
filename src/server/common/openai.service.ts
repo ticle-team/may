@@ -1,9 +1,10 @@
 import { Service } from 'typedi';
 import { OpenAI } from 'openai';
-import { AzureKeyCredential, OpenAIClient } from '@azure/openai';
 import { ChatMessage } from '@/models/ai';
 import { TextContentBlock } from 'openai/resources/beta/threads';
 import { TRPCError } from '@trpc/server';
+import { ChatOpenAI } from '@langchain/openai';
+import { AzureChatOpenAI } from '@langchain/azure-openai';
 
 @Service()
 export class OpenAIAssistant {
@@ -127,19 +128,19 @@ export class OpenAIAssistant {
   async *submitToolOutputsStream(
     threadId: string,
     runId: string,
-    toolCallId: string,
-    output: string,
+    toolOutputs: {
+      toolCallId: string;
+      output: string;
+    }[],
   ): AsyncGenerator<OpenAI.Beta.AssistantStreamEvent> {
     const stream = await this.openai.beta.threads.runs.submitToolOutputs(
       threadId,
       runId,
       {
-        tool_outputs: [
-          {
-            tool_call_id: toolCallId,
-            output: output,
-          },
-        ],
+        tool_outputs: toolOutputs.map(({ toolCallId, output }) => ({
+          tool_call_id: toolCallId,
+          output: output,
+        })),
         stream: true,
       },
     );
@@ -154,20 +155,15 @@ export class OpenAIAssistant {
   }
 }
 
-@Service()
-export class OpenAICompletions {
-  private readonly client = new OpenAIClient(
-    process.env.AZURE_OPENAI_ENDPOINT || '',
-    new AzureKeyCredential(process.env.AZURE_OPENAI_API_KEY!),
-  );
-
-  chat(messages: ChatMessage[]) {
-    return this.client.getChatCompletions(
-      process.env.AZURE_OPENAI_CHAT_COMPLETION_DEPLOYMENT_NAME!,
-      messages.map(({ role, text }) => ({
-        role,
-        content: text,
-      })),
-    );
-  }
+function createChatOpenAI() {
+  return new AzureChatOpenAI({
+    azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
+    azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+    azureOpenAIApiDeploymentName:
+      process.env.AZURE_OPENAI_CHAT_COMPLETION_DEPLOYMENT_NAME,
+    azureOpenAIApiVersion: '2024-05-13',
+  });
 }
+
+@Service({ factory: createChatOpenAI })
+export class OpenAIChat extends ChatOpenAI {}

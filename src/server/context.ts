@@ -2,13 +2,13 @@ import { User } from '@shaple/shaple';
 import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { createRouteHandlerClient } from '@shaple/auth-helpers-nextjs';
-import { PrismaClient } from '@prisma/client';
-import { createPrismaClient } from '@/server/prisma';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaService } from '@/server/common/prisma.service';
+import { Container } from 'typedi';
 
-const prisma = createPrismaClient();
 export interface Context {
   user: User | null;
-  tx: PrismaClient;
+  tx: PrismaClient | Prisma.TransactionClient;
 }
 
 export async function createNextContext(
@@ -41,6 +41,6 @@ export async function createNextContext(
 
   return {
     user,
-    tx: prisma,
+    tx: Container.get(PrismaService),
   };
 }

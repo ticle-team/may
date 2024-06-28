@@ -10,19 +10,24 @@ import { stack } from '@/models/stack';
 import Container from 'typedi';
 import { ProjectService } from '@/server/domain/project/project.service';
 
-const projectService = Container.get(ProjectService);
 export default router({
   create: authedProcedure
     .input(createProjectSchema)
     .output(project)
-    .mutation(({ input }) => projectService.createProject(input)),
+    .mutation(({ input }) =>
+      Container.get(ProjectService).createProject(input),
+    ),
   delete: authedProcedure
     .input(deleteProjectSchema)
-    .mutation(({ input }) => projectService.deleteProject(input.projectId)),
+    .mutation(({ input }) =>
+      Container.get(ProjectService).deleteProject(input.projectId),
+    ),
   get: baseProcedure
     .input(getProjectSchema)
     .output(project)
-    .query(({ input }) => projectService.getProject(input.projectId)),
+    .query(({ input }) =>
+      Container.get(ProjectService).getProject(input.projectId),
+    ),
   stacks: router({
     list: baseProcedure
       .input(

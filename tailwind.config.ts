@@ -21,6 +21,7 @@ const config: Config = {
       danger: colors.red,
       success: colors.green,
       warning: colors.amber,
+      info: colors.blue,
       ...colors,
     },
   },

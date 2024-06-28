@@ -5,7 +5,6 @@ import { project } from '@/models/project';
 import Container from 'typedi';
 import { OrganizationService } from '@/server/domain/organization/organization.service';
 
-const organizationService = Container.get(OrganizationService);
 export default router({
   create: authedProcedure
     .input(
@@ -31,7 +30,9 @@ export default router({
           after: z.number().nullish(),
         }),
       )
-      .query(({ ctx, input }) => organizationService.getProjects(input)),
+      .query(({ ctx, input }) =>
+        Container.get(OrganizationService).getProjects(input),
+      ),
   }),
   delete: authedProcedure
     .input(

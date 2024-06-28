@@ -71,6 +71,9 @@ model Thread {
   shapleProjectId Int?           @map("shaple_project_id")
   shapleProject   ShapleProject? @relation(fields: [shapleProjectId], references: [id])
 
+  state     String @default("none") @map("state")
+  stateInfo Json?  @map("state_info")
+
   @@map("threads")
   @@schema("may")
 }

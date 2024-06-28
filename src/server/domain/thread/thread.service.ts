@@ -4,8 +4,8 @@ import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { TRPCError } from '@trpc/server';
 import { getLogger } from '@/logger';
 import { UserStore } from '@/server/domain/user/user.store';
-import { Thread } from '@prisma/client';
 import { Context } from '@/server/context';
+import { Thread, threadStateInfo, threadStates } from '@/models/thread';
 
 const logger = getLogger('ThreadService');
 
@@ -17,7 +17,7 @@ export class ThreadService {
     private readonly userStore: UserStore,
   ) {}
 
-  async create(ctx: Context, projectId: number) {
+  async create(ctx: Context, projectId: number): Promise<Thread> {
     const ownerId = ctx.user?.id;
     if (!ownerId) {
       throw new TRPCError({
@@ -26,13 +26,21 @@ export class ThreadService {
       });
     }
     const user = await this.userStore.getUser(ctx, ownerId);
-    const thread = await this.openaiAssistant.createThread();
-    return await this.threadStore.createThread(
+    const openaiThread = await this.openaiAssistant.createThread();
+    const thread = await this.threadStore.createThread(
       ctx,
       user.id,
-      thread.id,
+      openaiThread.id,
       projectId,
+      threadStates.stackCreating,
     );
+
+    const stateInfo = threadStateInfo.parse(thread.stateInfo);
+
+    return {
+      ...thread,
+      stateInfo,
+    };
   }
 
   async cancel(ctx: Context, threadId: number) {
@@ -88,11 +96,16 @@ export class ThreadService {
     };
   }
 
-  async get(ctx: Context, threadId: number) {
-    return this.threadStore.findThreadById(ctx, threadId);
-  }
+  async get(ctx: Context, threadId: number): Promise<Thread> {
+    const thread = await this.threadStore.findThreadById(ctx, threadId);
+    const stateInfo = threadStateInfo.parse(thread.stateInfo);
 
-  async save(ctx: Context, thread: Thread) {
-    return this.threadStore.updateThread(ctx, thread.id, thread);
+    return {
+      id: thread.id,
+      shapleProjectId: thread.shapleProjectId,
+      shapleStackId: thread.shapleStackId,
+      state: thread.state,
+      stateInfo,
+    };
   }
 }

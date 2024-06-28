@@ -6,14 +6,17 @@ import {
 } from '@/server/common/__mocks__/openai.service';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { resetSchema } from '@/migrate';
-import { createPrismaClient } from '@/server/prisma';
+import { User } from '@shaple/shaple';
+import { PrismaClient } from '@prisma/client';
+import { PrismaService } from '@/server/common/prisma.service';
 
 describe('given ThreadService with real ThreadStore', () => {
   const ownerId = '123123';
   let mockOpenAI: OpenAIAssistantMock;
-  let prisma = createPrismaClient();
+  let prisma: PrismaClient;
   beforeEach(async () => {
     await resetSchema();
+    prisma = Container.get(PrismaService);
     await prisma.$connect();
 
     mockOpenAI = createOpenAIAssistantMock();
@@ -30,7 +33,9 @@ describe('given ThreadService with real ThreadStore', () => {
 
   it('create thread', async () => {
     const ctx = {
-      user: null,
+      user: {
+        id: ownerId,
+      } as User,
       tx: prisma,
     };
     const openaiThreadId = '123123';
@@ -44,8 +49,7 @@ describe('given ThreadService with real ThreadStore', () => {
     });
 
     const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(ctx, ownerId, project.id);
-    expect(thread.openaiThreadId).toBe(openaiThreadId);
+    const thread = await threadService.create(ctx, project.id);
     await threadService.delete(ctx, thread.id);
 
     expect(mockOpenAI.createThread).toHaveBeenCalledTimes(1);
@@ -54,7 +58,9 @@ describe('given ThreadService with real ThreadStore', () => {
 
   it('send message', async () => {
     const ctx = {
-      user: null,
+      user: {
+        id: ownerId,
+      } as User,
       tx: prisma,
     };
     const openaiThreadId = '123123';
@@ -70,8 +76,7 @@ describe('given ThreadService with real ThreadStore', () => {
     });
 
     const threadService = Container.get(ThreadService);
-    const thread = await threadService.create(ctx, ownerId, project.id);
-    expect(thread.openaiThreadId).toBe(openaiThreadId);
+    const thread = await threadService.create(ctx, project.id);
     await threadService.addUserMessage(ctx, thread.id, '안녕하세요');
 
     await threadService.delete(ctx, thread.id);

@@ -13,10 +13,9 @@ export default router({
   create: authedProcedure
     .input(z.object({ projectId: z.number() }))
     .output(thread)
-    .mutation(async ({ ctx, input: { projectId } }) => {
-      const threadService = Container.get(ThreadService);
-      return threadService.create(ctx, projectId);
-    }),
+    .mutation(({ ctx, input: { projectId } }) =>
+      Container.get(ThreadService).create(ctx, projectId),
+    ),
   messages: router({
     list: authedProcedure
       .input(
@@ -80,12 +79,7 @@ export default router({
     .output(thread)
     .query(async ({ ctx, input: { threadId } }) => {
       const threadService = Container.get(ThreadService);
-      const thread = await threadService.get(ctx, threadId);
-      return {
-        id: thread.id,
-        shapleProjectId: thread.shapleProjectId,
-        shapleStackId: thread.shapleStackId,
-      };
+      return await threadService.get(ctx, threadId);
     }),
   cancel: authedProcedure
     .input(
