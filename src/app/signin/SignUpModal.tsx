@@ -53,7 +53,14 @@ export default function SignUpModal({
         </Transition.Child>
 
         <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <form
+            className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0"
+            onSubmit={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleSignUp();
+            }}
+          >
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -116,17 +123,16 @@ export default function SignUpModal({
                 </div>
                 <div className="mt-10 sm:mt-8">
                   <button
-                    type="button"
+                    type="submit"
                     disabled={loading || email === '' || password === ''}
                     className="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                    onClick={handleSignUp}
                   >
                     Sign Up
                   </button>
                 </div>
               </Dialog.Panel>
             </Transition.Child>
-          </div>
+          </form>
         </div>
       </Dialog>
     </Transition.Root>

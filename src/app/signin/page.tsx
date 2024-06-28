@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { LogoIcon } from '@/app/_components/Icons';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import LoadingSpinner from '@/app/_components/LoadingSpinner';
 import { shapleClient } from '@/app/_services/shapleClient';
 import useToast from '@/app/_hooks/useToast';
@@ -14,25 +14,26 @@ const DISABLED_CALLBACK_URLS = ['/resetpassword'];
 // TODO : will be replaced with the actual redirect URL
 const DEFAULT_REDIRECT_URL = '/projects';
 
-const SignInButton = ({
-  email,
-  password,
-  showErrorToast,
-}: {
-  email: string;
-  password: string;
-  showErrorToast: (title: string, message: string) => void;
-}) => {
+export default function Page() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { renderToastContents, showErrorToast, showSuccessToast } = useToast();
+  const [openSignUpModal, setOpenSignUpModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
-  let callbackUrl = searchParams?.get('callbackUrl') || DEFAULT_REDIRECT_URL;
 
-  if (typeof location !== 'undefined') {
-    const pathname = new URL(callbackUrl, location.origin).pathname;
-    if (DISABLED_CALLBACK_URLS.includes(pathname)) {
-      callbackUrl = DEFAULT_REDIRECT_URL;
+  const callbackUrl = useMemo(() => {
+    const callbackUrl =
+      searchParams?.get('callbackUrl') || DEFAULT_REDIRECT_URL;
+    if (typeof location !== 'undefined') {
+      const pathname = new URL(callbackUrl, location.origin).pathname;
+      if (DISABLED_CALLBACK_URLS.includes(pathname)) {
+        return DEFAULT_REDIRECT_URL;
+      }
     }
-  }
+
+    return callbackUrl;
+  }, [searchParams]);
 
   const handleLogin = async () => {
     if (loading) return;
@@ -53,23 +54,6 @@ const SignInButton = ({
   };
 
   return (
-    <button
-      className="h-11 flex w-full justify-center items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-      disabled={loading || email === '' || password === ''}
-      onClick={handleLogin}
-    >
-      {loading ? <LoadingSpinner /> : 'Sign in'}
-    </button>
-  );
-};
-
-export default function Page() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { renderToastContents, showErrorToast, showSuccessToast } = useToast();
-  const [openSignUpModal, setOpenSignUpModal] = useState(false);
-
-  return (
     <>
       {renderToastContents()}
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 w-full">
@@ -83,7 +67,14 @@ export default function Page() {
         </div>
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-          <div className="space-y-6">
+          <form
+            className="space-y-6"
+            onSubmit={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleLogin();
+            }}
+          >
             <div>
               <label
                 htmlFor="email"
@@ -137,13 +128,15 @@ export default function Page() {
             </div>
 
             <Suspense>
-              <SignInButton
-                email={email}
-                password={password}
-                showErrorToast={showErrorToast}
-              />
+              <button
+                className="h-11 flex w-full justify-center items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                disabled={loading || email === '' || password === ''}
+                type="submit"
+              >
+                {loading ? <LoadingSpinner /> : 'Sign in'}
+              </button>
             </Suspense>
-          </div>
+          </form>
 
           <p className="mt-10 text-center text-sm text-gray-500">
             Not a member?{' '}
