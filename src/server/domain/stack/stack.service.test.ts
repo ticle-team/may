@@ -11,18 +11,19 @@ import {
   ThreadStoreMock,
 } from '@/server/domain/thread/__mocks__/thread.store';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
-import { Thread } from '@prisma/client';
+import { PrismaClient, Thread } from '@prisma/client';
 import { stoacloud } from '@/protos/stoacloud';
-import { createPrismaClient } from '@/server/prisma';
+import { PrismaService } from '@/server/common/prisma.service';
 import VapiPackageAccess = stoacloud.v1.VapiPackageAccess;
 
 describe('given StackService', () => {
   let stackService: StackService;
   let mockStoaCloudService: StoaCloudServiceMock;
   let mockThreadStore: ThreadStoreMock;
-  let prisma = createPrismaClient();
+  let prisma: PrismaClient;
   beforeEach(async () => {
     await resetSchema();
+    prisma = Container.get(PrismaService);
     mockStoaCloudService = createStoaCloudServiceMock();
     mockThreadStore = createThreadStoreMock();
     Container.set(StoaCloudService, mockStoaCloudService);
@@ -86,6 +87,21 @@ describe('given StackService', () => {
       openaiThreadId: '',
       shapleStackId: 1,
       shapleProjectId: 1,
+      stateInfo: {
+        current_step: 6,
+        name: 'New Stack',
+        description: 'This is a new stack',
+        dependencies: {
+          base_apis: [],
+          vapis: [
+            {
+              id: 1,
+              name: 'vapi',
+            },
+          ],
+        },
+      },
+      state: 'stack_created',
     };
     mockThreadStore.findThreadByStackId.mockResolvedValue(expectedThread);
     cleanup.defer(() => {

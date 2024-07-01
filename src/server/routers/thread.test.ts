@@ -13,7 +13,9 @@ import {
 } from '@/server/domain/user/__mocks__/user.stub';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { StackCreationEventText } from '@/models/assistant';
-import { createPrismaClient } from '@/server/prisma';
+import { PrismaService } from '@/server/common/prisma.service';
+import { PrismaClient } from '@prisma/client';
+import { Context } from '@/server/context';
 
 describe('given thread trpc with mock objects', () => {
   const threadService = createThreadServiceMock();
@@ -26,9 +28,11 @@ describe('given thread trpc with mock objects', () => {
 
   let caller: ReturnType<typeof createCaller>;
   let user;
-  let prisma = createPrismaClient();
+  let prisma: PrismaClient;
+  let ctx: Context;
   beforeEach(async () => {
     await resetSchema();
+    prisma = Container.get(PrismaService);
     await prisma.$connect();
     await Container.get(StoaCloudService).resetSchema();
 
@@ -37,10 +41,11 @@ describe('given thread trpc with mock objects', () => {
 
     user = await createUser();
 
-    caller = createCaller({
+    ctx = {
       tx: prisma,
       user,
-    });
+    };
+    caller = createCaller(ctx);
   });
 
   afterEach(async () => {
@@ -92,6 +97,9 @@ describe('given thread trpc with mock objects', () => {
     expect(completed).toBe(true);
     expect(answers).toEqual(['h', 'e', 'l', 'l', 'o']);
 
-    expect(assistantService.runForCreationStack).toHaveBeenCalledWith(threadId);
+    expect(assistantService.runForCreationStack).toHaveBeenCalledWith(
+      ctx,
+      threadId,
+    );
   });
 });

@@ -14,7 +14,7 @@ export class ThreadStore {
     shapleProjectId: number,
     state: string,
   ) {
-    return tx.thread.create({
+    return await tx.thread.create({
       data: {
         authorId,
         openaiThreadId,

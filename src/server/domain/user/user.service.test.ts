@@ -1,15 +1,17 @@
 import { resetSchema } from '@/migrate';
 import { Container } from 'typedi';
 import { UserService } from '@/server/domain/user/user.service';
-import { createPrismaClient } from '@/server/prisma';
+import { PrismaService } from '@/server/common/prisma.service';
+import { User } from '@shaple/shaple';
 
 describe('given UserService with real UserStore', () => {
   const ownerId = '123123';
   const userService = Container.get(UserService);
-  const prisma = createPrismaClient();
+  let prisma: PrismaService;
 
   beforeEach(async () => {
     await resetSchema();
+    prisma = Container.get(PrismaService);
     await prisma.$connect();
   });
 
@@ -22,7 +24,9 @@ describe('given UserService with real UserStore', () => {
 
   it('when getting new user, then should create new user', async () => {
     const ctx = {
-      user: null,
+      user: {
+        id: ownerId,
+      } as User,
       tx: prisma,
     };
     const existingUser = await prisma.user.findUnique({
@@ -32,7 +36,7 @@ describe('given UserService with real UserStore', () => {
     });
     expect(existingUser).toBeNull();
 
-    const user = await userService.getUser(ctx, ownerId);
+    const user = await userService.getUser(ctx);
     expect(user.ownerId).toBe(ownerId);
     expect(user.nickname).toBeNull();
     expect(user.description).toBeNull();

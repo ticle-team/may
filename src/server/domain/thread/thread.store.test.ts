@@ -3,12 +3,14 @@ import { resetSchema } from '@/migrate';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { UserStore } from '@/server/domain/user/user.store';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
-import { createPrismaClient } from '@/server/prisma';
+import { PrismaService } from '@/server/common/prisma.service';
+import { PrismaClient } from '@prisma/client';
 
 describe('given ThreadStore', () => {
-  let prisma = createPrismaClient();
+  let prisma: PrismaClient;
   beforeEach(async () => {
     await resetSchema();
+    prisma = Container.get(PrismaService);
     await prisma.$connect();
     await Container.get(StoaCloudService).resetSchema();
   });
@@ -35,6 +37,7 @@ describe('given ThreadStore', () => {
       user.id,
       'openai-thread-id',
       project.id,
+      'none',
     );
     expect(thread.id).toBeGreaterThan(0);
   });
