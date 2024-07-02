@@ -13,7 +13,7 @@ import UserMessageForm from './UserMessageForm';
 import Conversation from './Conversation';
 import Button from '@/app/_components/Button';
 import { StopIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
-import Stack from './Stack';
+import StackContainer from './StackContainer';
 import { CreatingStackStateInfoJson } from '@/models/thread';
 
 export default function Page() {
@@ -252,7 +252,8 @@ export default function Page() {
           </div>
           <div className="flex flex-col w-6/12 h-full">
             <div className="flex flex-row w-full h-full justify-center">
-              <Stack
+              <StackContainer
+                showError={(message: string) => showErrorToast('', message)}
                 progress={stateInfo.current_step}
                 name={stateInfo.name}
                 description={stateInfo.description}

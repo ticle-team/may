@@ -2,6 +2,8 @@ import { CheckCircleIcon, StopIcon } from '@heroicons/react/24/solid';
 import _ from 'lodash';
 import { useMemo } from 'react';
 import classNames from 'classnames';
+import { trpc } from '@/app/_trpc/client';
+import Badge from '@/app/_components/Badge';
 
 const STEP_TITLES = [
   'Understanding service planning',
@@ -71,13 +73,15 @@ function Timeline({ progress }: { progress: number }) {
   );
 }
 
-export default function Stack({
+export default function StackContainer({
+  showError,
   progress,
   name,
   description,
   baseApis,
   vapis,
 }: {
+  showError: (message: string) => void;
   progress: number;
   name: string;
   description: string;
@@ -90,47 +94,65 @@ export default function Stack({
     name: string;
   }[];
 }) {
+  const { data: vapiReleases, error } =
+    trpc.vapi.getLatestReleasesByNames.useQuery({
+      names: vapis.map(({ name }) => name),
+    });
+  if (error) {
+    showError(error.message);
+  }
+
   return (
-    <div className="flex flex-col w-full h-full px-1">
-      <Timeline progress={progress} />
-      <br />
-      <br />
-      <div className="prose pl-8">
-        <h1
-          className={classNames({
-            'text-gray-300': name == '',
-          })}
-        >
-          {name == '' ? '{Stack}' : name}
-        </h1>
-        <p
-          className={classNames('pl-8', {
-            'text-gray-300': description == '',
-          })}
-        >
-          {description == '' ? '...' : description}
-        </p>
-        {baseApis.length > 0 && (
-          <>
-            <h2>Base APIs</h2>
-            <ul>
-              {baseApis.map(({ id, name }) => (
-                <li key={`base-api-${id}`}>{name}</li>
-              ))}
-            </ul>
-          </>
-        )}
-        {vapis.length > 0 && (
-          <>
-            <h2>VAPIs</h2>
-            <ul>
-              {vapis.map(({ id, name }) => (
-                <li key={`vapi-${id}`}>{name}</li>
-              ))}
-            </ul>
-          </>
-        )}
+    <>
+      <div className="flex flex-col w-full h-full px-1">
+        <Timeline progress={progress} />
+        <br />
+        <br />
+        <div className="prose pl-8">
+          <h1
+            className={classNames({
+              'text-gray-300': name == '',
+            })}
+          >
+            {name == '' ? '{Stack}' : name}
+          </h1>
+          <p
+            className={classNames('pl-8', {
+              'text-gray-300': description == '',
+            })}
+          >
+            {description == '' ? '...' : description}
+          </p>
+          {baseApis.length > 0 && (
+            <>
+              <h2>Base APIs</h2>
+              <ul>
+                {baseApis.map(({ id, name }) => (
+                  <li key={`base-api-${id}`}>{name}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          {vapiReleases && (
+            <>
+              <h2>VAPIs</h2>
+              <ul>
+                {vapiReleases.map((rel) => (
+                  <li key={`vapi-${rel.id}`} className="flex gap-1">
+                    <span>{rel.package?.name}</span>
+                    {rel.package?.author && (
+                      <span className="text-blueGray-400">
+                        @{rel.package?.author?.name}
+                      </span>
+                    )}
+                    <Badge>RANK: {rel.package?.overallRank}</Badge>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

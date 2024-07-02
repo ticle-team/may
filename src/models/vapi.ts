@@ -6,6 +6,11 @@ export const vapiPackage = z.object({
   name: z.string(),
   gitBranch: z.string(),
   gitRepo: z.string(),
+  author: z.object({
+    id: z.number(),
+    name: z.string(),
+  }),
+  overallRank: z.number(),
 });
 
 export type VapiPackage = z.infer<typeof vapiPackage>;
@@ -29,4 +34,28 @@ export function vapiAccessToString(access: number): string {
     default:
       return 'unknown';
   }
+}
+
+export function parseVapiReleaseFromProto(
+  vapiRelProto: stoacloud.v1.VapiRelease,
+): VapiRelease {
+  return {
+    id: vapiRelProto.id,
+    version: vapiRelProto.version,
+    access: vapiAccessToString(vapiRelProto.access),
+    packageId: vapiRelProto.packageId,
+  };
+}
+
+export function parseVapiPackageFromProto(
+  vapiPackProto: stoacloud.v1.VapiPackage,
+): VapiPackage {
+  return {
+    id: vapiPackProto.id,
+    name: vapiPackProto.name,
+    gitBranch: vapiPackProto.gitBranch,
+    gitRepo: vapiPackProto.gitRepo,
+    author: vapiPackProto.author,
+    overallRank: vapiPackProto.overallRank,
+  };
 }

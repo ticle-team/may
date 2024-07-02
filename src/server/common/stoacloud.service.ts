@@ -15,9 +15,6 @@ import { getLogger } from '@/logger';
 import { stoacloud } from '@/protos/stoacloud';
 import { credentials, Metadata } from '@grpc/grpc-js';
 import { google } from '@/protos/google/protobuf/empty';
-import { ShapleStack, StackVapi } from '@/models/stack';
-import { vapiAccessToString, VapiPackage } from '@/models/vapi';
-import { Project } from '@/models/project';
 
 const logger = getLogger('server.common.stoacloud.service');
 
