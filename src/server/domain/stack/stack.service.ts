@@ -3,7 +3,6 @@ import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
-import _ from 'lodash';
 import {
   Instance,
   parseShapleStackFromProto,
@@ -59,43 +58,37 @@ export class StackService {
       return { stackId: 0, output: err };
     }
 
-    for (const { name } of baseApis) {
-      try {
-        switch (_.lowerCase(name)) {
-          case 'auth': {
-            await this.stoacloudService.installAuth(stackId, {
-              mailerAutoConfirm: true,
-              externalEmailEnabled: true,
-            });
-            break;
-          }
-          case 'storage': {
-            await this.stoacloudService.installStorage(stackId, {
-              tenantId: name,
-            });
-            break;
-          }
-          case 'database': {
-            await this.stoacloudService.installPostgrest(stackId, {
-              schemas: ['public'],
-            });
-            break;
-          }
-        }
-      } catch (e) {
-        logger.error('failed to install base api', { e });
-        this.stoacloudService.deleteStack(stackId).catch((err) => {
-          logger.error('failed to delete stack', { err });
+    const baseApiNames = baseApis.map((api) => api.name.toLowerCase());
+    try {
+      if (baseApiNames.includes('auth')) {
+        await this.stoacloudService.installAuth(stackId, {
+          mailerAutoConfirm: true,
+          externalEmailEnabled: true,
         });
-        const output = {
-          success: false,
-          message: 'failed to install base api',
-        };
-        return {
-          stackId: 0,
-          output,
-        };
       }
+      if (baseApiNames.includes('storage')) {
+        await this.stoacloudService.installStorage(stackId, {
+          tenantId: 'storage',
+        });
+      }
+      if (baseApiNames.includes('database')) {
+        await this.stoacloudService.installPostgrest(stackId, {
+          schemas: ['public'],
+        });
+      }
+    } catch (e) {
+      logger.error('failed to install base api', { e });
+      this.stoacloudService.deleteStack(stackId).catch((err) => {
+        logger.error('failed to delete stack', { err });
+      });
+      const output = {
+        success: false,
+        message: 'failed to install base api',
+      };
+      return {
+        stackId: 0,
+        output,
+      };
     }
 
     const vapiReleases = [];
