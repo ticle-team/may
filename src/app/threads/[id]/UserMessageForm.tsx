@@ -1,16 +1,17 @@
-'use client';
 import { useEffect, useRef, useState } from 'react';
-import { PaperAirplaneIcon, StopCircleIcon } from '@heroicons/react/20/solid';
 import classNames from 'classnames';
+import { PaperAirplaneIcon, StopCircleIcon } from '@heroicons/react/24/outline';
 
 export default function UserMessageForm({
   answering,
   onSubmit,
   onStopAnswering,
+  color = 'secondary',
 }: {
   answering: boolean;
   onSubmit: (message: string) => Promise<void>;
   onStopAnswering: () => Promise<void>;
+  color: 'primary' | 'secondary';
 }) {
   const [userMessage, setUserMessage] = useState('');
   const userInputRef = useRef<HTMLInputElement>(null);
@@ -35,14 +36,17 @@ export default function UserMessageForm({
         });
       }}
     >
-      <div className="relative mt-2 rounded-md shadow-sm border-none">
+      <div className="relative">
         <input
           type="text"
           className={classNames(
-            'flex flex-row w-full p-4 pr-10 border-none bg-secondary-700 rounded-xl',
+            'flex flex-row w-full px-6 py-5 border-none rounded placeholder:text-white text-base',
             {
               'text-gray-400': answering,
               'text-white': !answering,
+              'bg-secondary-700': color === 'secondary',
+              'bg-primary-500 focus:ring-primary-600 focus:ring-1':
+                color === 'primary',
             },
           )}
           placeholder="Type a message"
@@ -53,26 +57,24 @@ export default function UserMessageForm({
         />
         {!answering ? (
           <button
-            className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer disabled:cursor-not-allowed"
+            className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer"
             type="submit"
           >
             <PaperAirplaneIcon
-              className="h-5 w-5 text-secondary-400 hover:text-secondary-300 active:text-secondary-500 disabled:text-secondary-400"
-              aria-hidden="true"
+              className={classNames(
+                'h-7.5 w-7.5 text-gray-200 hover:text-gray-50 active:text-gray-300',
+              )}
             />
           </button>
         ) : (
           <button
-            className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer disabled:cursor-not-allowed"
+            className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer"
             type="button"
             onClick={() => {
               onStopAnswering();
             }}
           >
-            <StopCircleIcon
-              className="h-5 w-5 text-secondary-400 hover:text-secondary-300 active:text-secondary-500 disabled:text-secondary-400"
-              aria-hidden="true"
-            />
+            <StopCircleIcon className="h-7.5 w-7.5 text-gray-200 hover:text-gray-50 active:text-gray-300" />
           </button>
         )}
       </div>

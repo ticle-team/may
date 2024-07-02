@@ -12,9 +12,9 @@ import {
 import UserMessageForm from './UserMessageForm';
 import Conversation from './Conversation';
 import Button from '@/app/_components/Button';
-import { StopIcon, CheckCircleIcon } from '@heroicons/react/24/solid';
 import StackContainer from './StackContainer';
 import { CreatingStackStateInfoJson } from '@/models/thread';
+import { Timeline } from '@/app/threads/[id]/Timeline';
 
 export default function Page() {
   const router = useRouter();
@@ -226,41 +226,40 @@ export default function Page() {
   return (
     <>
       {renderToastContents()}
-      <br />
       {initialized ? (
-        <div className="flex flex-row gap-2 px-1 w-full h-full">
-          <div className="flex flex-col w-6/12 h-full">
-            <div className="flex flex-row w-full h-5/6">
+        <div className="flex flex-col px-5.5 py-6 w-full h-full">
+          <div className="flex flex-row w-full my-7 h-7 justify-center">
+            <Timeline progress={stateInfo.current_step} />
+          </div>
+          <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
+            <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
               <Conversation history={conversation}>
                 {!answering && thread.data?.shapleStackId && (
                   <div className="flex flex-row -mt-2.5 justify-center">
-                    <Button color="success" size="lg" onClick={goToStack}>
+                    <Button color="secondary" size="lg" onClick={goToStack}>
                       Go to stack
                     </Button>
                   </div>
                 )}
               </Conversation>
             </div>
-            <br />
-            <div className="flex flex-row w-full">
-              <UserMessageForm
-                answering={answering}
-                onSubmit={handleSubmitUserMessage}
-                onStopAnswering={handleStopAnswering}
-              />
-            </div>
-          </div>
-          <div className="flex flex-col w-6/12 h-full">
-            <div className="flex flex-row w-full h-full justify-center">
+            <div className="flex flex-col justify-center items-center w-6/12 h-full bg-gray-100 border border-gray-200 rounded">
               <StackContainer
                 showError={(message: string) => showErrorToast('', message)}
-                progress={stateInfo.current_step}
                 name={stateInfo.name}
                 description={stateInfo.description}
                 baseApis={stateInfo.dependencies.base_apis}
                 vapis={stateInfo.dependencies.vapis}
               />
             </div>
+          </div>
+          <div className="flex w-full pt-0.5">
+            <UserMessageForm
+              answering={answering}
+              onSubmit={handleSubmitUserMessage}
+              onStopAnswering={handleStopAnswering}
+              color="primary"
+            />
           </div>
         </div>
       ) : (

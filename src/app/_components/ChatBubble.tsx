@@ -12,6 +12,8 @@ type ChatBubbleProps = {
   color: 'primary' | 'secondary';
 };
 
+export function icon() {}
+
 function ChatBubble({
   self = false,
   name,
@@ -31,21 +33,14 @@ function ChatBubble({
     >
       <Icon className="flex flex-col w-8 h-8 rounded-full" />
       <div
-        className={classNames(
-          `flex flex-col leading-1.5 p-4 border-${color}-200 bg-${color}-700 w-fit max-w-full`,
-          {
-            'rounded-e-xl rounded-es-xl': !self,
-            'rounded-s-xl rounded-se-xl': self,
-          },
-        )}
+        className={classNames(`flex flex-col p-6 w-fit max-w-full`, {
+          'rounded-e-xl rounded-es-xl': !self,
+          'rounded-s-xl rounded-se-xl': self,
+          'border-secondary-200 bg-secondary-700': color === 'secondary',
+          'border-primary-200 bg-primary-200': color === 'primary',
+        })}
       >
-        <div className="flex flex-row items-center space-x-2 rtl:space-x-reverse">
-          <span className="text-sm font-semibold text-white">{name}</span>
-          {time && (
-            <time className="text-sm font-normal text-gray-400">{time}</time>
-          )}
-        </div>
-        <div className="prose prose-invert prose-sm w-fit max-w-full">
+        <article className="prose prose-sm w-fit max-w-full">
           {markdown ? (
             <Markdown remarkPlugins={[[remarkGfm, { singleTilde: false }]]}>
               {message}
@@ -53,7 +48,7 @@ function ChatBubble({
           ) : (
             <p>{message}</p>
           )}
-        </div>
+        </article>
       </div>
     </div>
   );

@@ -39,7 +39,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         className={`grow ${currentPage?.hideSideMenu ?? true ? '' : 'pl-72'}`}
       >
         <Header hidden={currentPage?.hideHeader} />
-        <div className="flex flex-col items-center h-[calc(100%-64px)]">
+        <div className="flex flex-col items-center h-full">
           {children}
           <ChatBar
             hidden={currentPage?.hideChatBar}

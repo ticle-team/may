@@ -5,84 +5,14 @@ import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import Badge from '@/app/_components/Badge';
 
-const STEP_TITLES = [
-  'Understanding service planning',
-  'Create a statement of service',
-  'API Recommendations',
-  'Create VAPIs',
-  'Configure the Ticle stack',
-  'Deploy the stack',
-] as const;
-
-function Timeline({ progress }: { progress: number }) {
-  const steps = useMemo(() => {
-    return _.range(1, 6 + 1).map((i) => {
-      return {
-        title: STEP_TITLES[i - 1],
-        beforeCompleted: i - 1 <= progress,
-        completed: i <= progress,
-        afterCompleted: i + 1 <= progress,
-      };
-    });
-  }, [progress]);
-  const maxSteps = steps.length;
-
-  return (
-    <ol className="grid grid-cols-6 gap-0">
-      {steps.map(({ beforeCompleted, completed, afterCompleted, title }, i) => (
-        <li className="flex flex-col items-center" key={`timeline-step-${i}`}>
-          <div className="flex flex-row items-center w-full">
-            <hr
-              className={classNames('grow', {
-                'border-0': i === 0,
-                'border-2': i !== 0,
-                'border-success-400': beforeCompleted && completed,
-                'border-info-100': !beforeCompleted || !completed,
-              })}
-            />
-            <div
-              className={classNames(
-                'z-10 flex items-center justify-center w-8 h-8 rounded-full ring-white ring-4 shrink-0',
-                {
-                  'bg-info-100 text-black': !completed,
-                  'bg-success-400 text-white': completed,
-                },
-              )}
-            >
-              {completed ? (
-                <CheckCircleIcon className="w-6 h-6" />
-              ) : (
-                <StopIcon className="w-6 h-6" />
-              )}
-            </div>
-            <hr
-              className={classNames('grow', {
-                'border-0': i === maxSteps - 1,
-                'border-2': i !== maxSteps - 1,
-                'border-success-400': completed && afterCompleted,
-                'border-info-100': !completed || !afterCompleted,
-              })}
-            />
-          </div>
-          <div className="flex mt-3 w-full justify-center text-sm font-semibold text-gray-400">
-            <span className="text-center">{title}</span>
-          </div>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 export default function StackContainer({
   showError,
-  progress,
   name,
   description,
   baseApis,
   vapis,
 }: {
   showError: (message: string) => void;
-  progress: number;
   name: string;
   description: string;
   baseApis: {
@@ -104,54 +34,54 @@ export default function StackContainer({
 
   return (
     <>
-      <div className="flex flex-col w-full h-full px-1">
-        <Timeline progress={progress} />
-        <br />
-        <br />
-        <div className="prose pl-8">
-          <h1
-            className={classNames({
-              'text-gray-300': name == '',
-            })}
-          >
-            {name == '' ? '{Stack}' : name}
-          </h1>
-          <p
-            className={classNames('pl-8', {
-              'text-gray-300': description == '',
-            })}
-          >
-            {description == '' ? '...' : description}
-          </p>
-          {baseApis.length > 0 && (
-            <>
-              <h2>Base APIs</h2>
-              <ul>
-                {baseApis.map(({ id, name }) => (
-                  <li key={`base-api-${id}`}>{name}</li>
-                ))}
-              </ul>
-            </>
-          )}
-          {vapiReleases && (
-            <>
-              <h2>VAPIs</h2>
-              <ul>
-                {vapiReleases.map((rel) => (
-                  <li key={`vapi-${rel.id}`} className="flex gap-1">
-                    <span>{rel.package?.name}</span>
-                    {rel.package?.author && (
-                      <span className="text-blueGray-400">
-                        @{rel.package?.author?.name}
-                      </span>
-                    )}
-                    <Badge>RANK: {rel.package?.overallRank}</Badge>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+      <div className="flex flex-col w-full h-full p-4 overflow-y-auto">
+        <div className="flex justify-end px-2 font-semibold text-xs text-gray-300">
+          Dashboard
         </div>
+        {name != '' ? (
+          <article className="prose px-7 pt-4.5 pb-12">
+            <h1>{name}</h1>
+            {description != '' && (
+              <p className="text-slate-500 -mt-4">{description}</p>
+            )}
+            {baseApis.length > 0 && (
+              <>
+                <h2>Base APIs</h2>
+                <ul className="-mt-4">
+                  {baseApis.map(({ id, name }) => (
+                    <li className="text-slate-500" key={`base-api-${id}`}>
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {vapiReleases && vapiReleases.length > 0 && (
+              <>
+                <h2>VAPIs</h2>
+                <ul className="-mt-4">
+                  {vapiReleases.map((rel) => (
+                    <li key={`vapi-${rel.id}`} className="space-x-2">
+                      <span className="text-slate-500">
+                        {rel.package?.name}
+                      </span>
+                      {rel.package?.author && (
+                        <span className="text-gray-400">
+                          @{rel.package?.author?.name}
+                        </span>
+                      )}
+                      <Badge>RANK: {rel.package?.overallRank}</Badge>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </article>
+        ) : (
+          <p className="flex justify-center items-center w-full h-full text-gray-400 text-2xl font-semibold">
+            {'{Stack}'}
+          </p>
+        )}
       </div>
     </>
   );
