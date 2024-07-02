@@ -176,14 +176,29 @@ export class StackService {
     }
   }
 
-  async getStack(ctx: Context, stackId: number) {
+  async getStack(ctx: Context, stackId: number): Promise<Stack> {
     const [shapleStack, thread] = await Promise.all([
       this.stoacloudService.getStack(stackId),
       this.threadStore.findThreadByStackId(ctx, stackId),
     ]);
 
-    const stack: Stack = {
-      ...parseShapleStackFromProto(shapleStack),
+    const vapiPackages = await Promise.all(
+      shapleStack.vapis.map(async ({ vapi }) => {
+        return await this.stoacloudService.getVapiPackage(vapi.packageId);
+      }),
+    );
+
+    const stack = parseShapleStackFromProto(shapleStack);
+    return {
+      ...stack,
+      vapis:
+        stack.vapis?.map((vapi, i) => {
+          if (!vapi?.vapi) {
+            return vapi;
+          }
+          vapi.vapi.package = vapiPackages[i];
+          return vapi;
+        }) ?? null,
       thread: thread
         ? {
             ...thread,
@@ -191,7 +206,6 @@ export class StackService {
           }
         : null,
     };
-    return stack;
   }
 
   async getInstancesInStack(stackId: number) {

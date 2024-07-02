@@ -23,35 +23,33 @@ export default function StackStructureContainer({ stack }: Props) {
   useEffect(() => {
     setVapiDocsContent(null);
     if (!selectedVapi) return;
-    fetchVapiDocs();
-  }, [selectedVapi]);
+    (async () => {
+      if (isVapiDocsloading || !selectedVapi || !selectedVapi.package || !stack)
+        return;
 
-  const fetchVapiDocs = useCallback(async () => {
-    if (isVapiDocsloading || !selectedVapi || !selectedVapi.package || !stack)
-      return;
+      try {
+        setVapiDocsLoading(true);
+        const { data, error } = await shapleClient.auth.getSession();
+        if (!data) throw error;
+        const githubAccessToken = data?.session?.provider_token;
+        // TODO: Implement open guthub Oauth login modal when providerToken is not available or provider is not github
 
-    try {
-      setVapiDocsLoading(true);
-      const { data, error } = await shapleClient.auth.getSession();
-      if (!data) throw error;
-      const githubAccessToken = data?.session?.provider_token;
-      // TODO: Implement open guthub Oauth login modal when providerToken is not available or provider is not github
+        // TODO: In this function, 'vapi docs' that are inquired through github api must be modified to look up the archived 'vapi docs' later.
+        const result = await getVapiDocs({
+          vapiName: selectedVapi.package.name,
+          githubRepo: selectedVapi.package.gitRepo,
+          githubBranch: selectedVapi.package.gitBranch ?? 'main',
+          githubAccessToken: githubAccessToken ?? '',
+        });
 
-      // TODO: In this function, 'vapi docs' that are inquired through github api must be modified to look up the archived 'vapi docs' later.
-      const result = await getVapiDocs({
-        vapiName: selectedVapi.package.name,
-        githubRepo: selectedVapi.package.gitRepo,
-        githubBranch: selectedVapi.package.gitBranch ?? 'main',
-        githubAccessToken: githubAccessToken ?? '',
-      });
-
-      if (!result) return;
-      setVapiDocsContent(result);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setVapiDocsLoading(false);
-    }
+        if (!result) return;
+        setVapiDocsContent(result);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setVapiDocsLoading(false);
+      }
+    })();
   }, [selectedVapi]);
 
   const handleClickVapi = (vapi: VapiRelease | null) => {
