@@ -11,22 +11,30 @@ export class VapiService {
   constructor(private readonly stoacloud: StoaCloudService) {}
 
   async getLatestReleasesByNames(names: string[]): Promise<VapiRelease[]> {
-    return await Promise.all(
-      names.map(async (name) => {
-        const vapiPackages = await this.stoacloud.getVapiPackages({
-          name,
-        });
+    return (
+      await Promise.all(
+        names.map(async (name) => {
+          const vapiPackages = await this.stoacloud.getVapiPackages({
+            name,
+          });
 
-        const vapiReleaseProto = await this.stoacloud.getVapiReleaseInPackage(
-          vapiPackages[0].id,
-          'latest',
-        );
+          if (vapiPackages.length === 0) {
+            return null;
+          }
 
-        return {
-          ...parseVapiReleaseFromProto(vapiReleaseProto),
-          package: parseVapiPackageFromProto(vapiPackages[0]),
-        };
-      }),
-    );
+          const vapiReleaseProto = await this.stoacloud.getVapiReleaseInPackage(
+            vapiPackages[0].id,
+            'latest',
+          );
+
+          return {
+            ...parseVapiReleaseFromProto(vapiReleaseProto),
+            package: parseVapiPackageFromProto(vapiPackages[0]),
+          };
+        }),
+      )
+    )
+      .filter((vapiRelease) => vapiRelease !== null)
+      .map((vapiRelease): VapiRelease => vapiRelease!);
   }
 }
