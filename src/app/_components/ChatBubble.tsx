@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { UserIcon, GlobeAltIcon } from '@heroicons/react/20/solid';
+import { AIBotIcon, UserIcon } from '@/app/_components/Icons';
 
 type ChatBubbleProps = {
   self?: boolean;
@@ -22,20 +22,20 @@ function ChatBubble({
   markdown = false,
   color = 'primary',
 }: ChatBubbleProps) {
-  const Icon = self ? UserIcon : GlobeAltIcon;
+  const Icon = self ? UserIcon : AIBotIcon;
 
   return (
     <div
-      className={classNames('flex gap-2.5 w-full', {
-        'flex-row items-start': !self,
-        'flex-row-reverse items-end': self,
+      className={classNames('flex gap-2 w-full items-start', {
+        'flex-row': !self,
+        'flex-row-reverse': self,
       })}
     >
-      <Icon className="flex flex-col w-8 h-8 rounded-full" />
+      <Icon className="flex flex-col w-8 h-8" />
       <div
         className={classNames(`flex flex-col p-6 w-fit max-w-full`, {
           'rounded-e-xl rounded-es-xl': !self,
-          'rounded-s-xl rounded-se-xl': self,
+          'rounded-s-xl rounded-ee-xl': self,
           'border-secondary-200 bg-secondary-700': color === 'secondary',
           'border-primary-200 bg-primary-200': color === 'primary',
         })}

@@ -62,7 +62,7 @@ export default function UserMessageForm({
           >
             <PaperAirplaneIcon
               className={classNames(
-                'h-7.5 w-7.5 text-gray-200 hover:text-gray-50 active:text-gray-300',
+                'h-7.5 w-7.5 text-white opacity-75 hover:opacity-100 active:opacity-50',
               )}
             />
           </button>
@@ -74,7 +74,7 @@ export default function UserMessageForm({
               onStopAnswering();
             }}
           >
-            <StopCircleIcon className="h-7.5 w-7.5 text-gray-200 hover:text-gray-50 active:text-gray-300" />
+            <StopCircleIcon className="h-7.5 w-7.5 text-white opacity-75 hover:opacity-100 active:opacity-50" />
           </button>
         )}
       </div>

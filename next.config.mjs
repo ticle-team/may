@@ -21,7 +21,6 @@ export default (phase, { defaultConfig }) => {
   };
 
   const k8sEnv = process.env.K8S_ENV || 'local';
-  console.log(`[${phase}] env='${k8sEnv}'`);
 
   switch (k8sEnv) {
     case 'local': {

@@ -245,7 +245,6 @@ export default function Page() {
             </div>
             <div className="flex flex-col justify-center items-center w-6/12 h-full bg-gray-100 border border-gray-200 rounded">
               <StackContainer
-                showError={(message: string) => showErrorToast('', message)}
                 name={stateInfo.name}
                 description={stateInfo.description}
                 baseApis={stateInfo.dependencies.base_apis}

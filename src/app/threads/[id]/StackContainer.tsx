@@ -1,18 +1,12 @@
-import { CheckCircleIcon, StopIcon } from '@heroicons/react/24/solid';
-import _ from 'lodash';
-import { useMemo } from 'react';
-import classNames from 'classnames';
 import { trpc } from '@/app/_trpc/client';
 import Badge from '@/app/_components/Badge';
 
 export default function StackContainer({
-  showError,
   name,
   description,
   baseApis,
   vapis,
 }: {
-  showError: (message: string) => void;
   name: string;
   description: string;
   baseApis: {
@@ -29,7 +23,7 @@ export default function StackContainer({
       names: vapis.map(({ name }) => name),
     });
   if (error) {
-    showError(error.message);
+    console.warn('trpc.vapi.getLatestReleasesByNames error: ', error);
   }
 
   return (
