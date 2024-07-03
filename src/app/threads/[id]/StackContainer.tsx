@@ -10,11 +10,9 @@ export default function StackContainer({
   name: string;
   description: string;
   baseApis: {
-    id: number;
     name: string;
   }[];
   vapis: {
-    id: number;
     name: string;
   }[];
 }) {
@@ -42,8 +40,8 @@ export default function StackContainer({
               <>
                 <h2>Base APIs</h2>
                 <ul className="-mt-4">
-                  {baseApis.map(({ id, name }) => (
-                    <li className="text-slate-500" key={`base-api-${id}`}>
+                  {baseApis.map(({ name }, idx) => (
+                    <li className="text-slate-500" key={`base-api-${idx}`}>
                       {name}
                     </li>
                   ))}

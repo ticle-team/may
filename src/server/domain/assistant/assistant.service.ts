@@ -157,6 +157,8 @@ export class AssistantService {
                   output: JSON.stringify(output),
                 });
               }
+              logger.debug('submit tool outputs', { toolOutputs });
+
               const generator = self.openaiAssistant.submitToolOutputsStream(
                 thread.openaiThreadId,
                 runId,

@@ -13,13 +13,11 @@ export const creatingStackStateInfoJson = z.object({
   dependencies: z.object({
     base_apis: z.array(
       z.object({
-        id: z.number(),
         name: z.string(),
       }),
     ),
     vapis: z.array(
       z.object({
-        id: z.number(),
         name: z.string(),
       }),
     ),
@@ -36,13 +34,11 @@ export const installStackArgs = z.object({
   dependencies: z.object({
     baseApis: z.array(
       z.object({
-        id: z.number(),
         name: z.string(),
       }),
     ),
     vapis: z.array(
       z.object({
-        id: z.number(),
         name: z.string(),
       }),
     ),

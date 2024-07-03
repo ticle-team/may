@@ -1,6 +1,5 @@
 import { Service } from 'typedi';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
-import { OpenAIAssistant } from '@/server/common/openai.service';
 import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { getLogger } from '@/logger';
 import {
@@ -11,6 +10,7 @@ import {
 } from '@/models/stack';
 import { Context } from '@/server/context';
 import { threadStateInfo } from '@/models/thread';
+import _ from 'lodash';
 
 const logger = getLogger('server.domain.stack.service');
 
@@ -18,7 +18,6 @@ const logger = getLogger('server.domain.stack.service');
 export class StackService {
   constructor(
     private readonly stoacloudService: StoaCloudService,
-    private readonly openaiAssistant: OpenAIAssistant,
     private readonly threadStore: ThreadStore,
   ) {}
 
@@ -58,23 +57,29 @@ export class StackService {
       return { stackId: 0, output: err };
     }
 
-    const baseApiNames = baseApis.map((api) => api.name.toLowerCase());
+    let baseApiNames = baseApis.map((api) => api.name.toLowerCase());
     try {
-      if (baseApiNames.includes('auth')) {
+      if (_.includes(baseApiNames, 'auth')) {
         await this.stoacloudService.installAuth(stackId, {
           mailerAutoConfirm: true,
           externalEmailEnabled: true,
         });
+        baseApiNames = baseApiNames.filter((name) => name != 'auth');
+        logger.debug('install auth', { stackId });
       }
-      if (baseApiNames.includes('storage')) {
+      if (_.includes(baseApiNames, 'storage')) {
         await this.stoacloudService.installStorage(stackId, {
           tenantId: 'storage',
         });
+        baseApiNames = baseApiNames.filter((name) => name != 'storage');
+        logger.debug('install storage', { stackId });
       }
-      if (baseApiNames.includes('database')) {
+      if (_.includes(baseApiNames, 'database')) {
         await this.stoacloudService.installPostgrest(stackId, {
           schemas: ['public'],
         });
+        baseApiNames = baseApiNames.filter((name) => name != 'database');
+        logger.debug('install database', { stackId });
       }
     } catch (e) {
       logger.error('failed to install base api', { e });
@@ -91,12 +96,31 @@ export class StackService {
       };
     }
 
+    if (baseApiNames.length > 0) {
+      logger.error('unknown base api names', { baseApiNames });
+      this.stoacloudService.deleteStack(stackId).catch((err) => {
+        logger.error('failed to delete stack', { err });
+      });
+      const output = {
+        success: false,
+        message: `unknown base api names: ${baseApiNames.map((t) => `'${t}'`).join(', ')}`,
+      };
+      return {
+        stackId: 0,
+        output,
+      };
+    }
+
     const vapiReleases = [];
     for (const { name } of vapis) {
       try {
         const vapiPackages = await this.stoacloudService.getVapiPackages({
           name,
         });
+
+        if (vapiPackages.length === 0) {
+          continue;
+        }
 
         // TODO: handle case when multi vapiPackages found
         const vapiRelease = await this.stoacloudService.getVapiReleaseInPackage(
@@ -147,11 +171,17 @@ export class StackService {
     }
 
     try {
-      const output = {
-        success: true,
-      };
+      const message =
+        'succeeded install vapis: ' +
+        vapiReleases.map((v) => `'${v.name}'`).join(', ');
 
-      return { stackId, output };
+      return {
+        stackId,
+        output: {
+          success: true,
+          message,
+        },
+      };
     } catch (error) {
       logger.error('failed to update thread or submit tool', { error });
       this.stoacloudService.deleteStack(stackId).catch((err) => {
