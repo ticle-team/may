@@ -17,16 +17,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       '/organizations',
       { hideSideMenu: false, hideHeader: false, hideChatBar: true },
     ],
-    ['/stage', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
+    ['/stage', { hideSideMenu: false, hideHeader: false, hideChatBar: true }],
     [
       '/projects',
-      { hideSideMenu: false, hideHeader: false, hideChatBar: false },
+      { hideSideMenu: false, hideHeader: false, hideChatBar: true },
     ],
-    ['/planet', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
-    ['/guide', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
+    ['/planet', { hideSideMenu: false, hideHeader: false, hideChatBar: true }],
+    ['/guide', { hideSideMenu: false, hideHeader: false, hideChatBar: true }],
     ['/signin', { hideSideMenu: true, hideHeader: true, hideChatBar: true }],
-    ['/chat', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
-    ['/stacks', { hideSideMenu: false, hideHeader: false, hideChatBar: false }],
+    ['/chat', { hideSideMenu: false, hideHeader: false, hideChatBar: true }],
+    ['/stacks', { hideSideMenu: false, hideHeader: false, hideChatBar: true }],
+    ['/threads', { hideSideMenu: true, hideHeader: true, hideChatBar: true }],
   ]);
 
   const currentPath = `/${usePathname().split('/')[1]}`;
