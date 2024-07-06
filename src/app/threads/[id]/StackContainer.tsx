@@ -62,7 +62,10 @@ export default function StackContainer({
                           @{rel.package?.author?.name}
                         </span>
                       )}
-                      <Badge>RANK: {rel.package?.overallRank}</Badge>
+                      <Badge>
+                        RANK:&nbsp;
+                        {Math.floor((rel.package?.overallRank ?? 0) * 10) / 10}
+                      </Badge>
                     </li>
                   ))}
                 </ul>

@@ -111,7 +111,7 @@ export class StackService {
       };
     }
 
-    const vapiReleases = [];
+    const vapiReleases: { id: number; name: string }[] = [];
     for (const { name } of vapis) {
       try {
         const vapiPackages = await this.stoacloudService.getVapiPackages({
@@ -172,8 +172,14 @@ export class StackService {
 
     try {
       const message =
-        'succeeded install vapis: ' +
-        vapiReleases.map((v) => `'${v.name}'`).join(', ');
+        'skip install vapis: ' +
+        vapis
+          .filter((v) => {
+            return vapiReleases.findIndex((r) => r.name === v.name) === -1;
+          })
+          .map((v) => `'${v.name}'`)
+          .join(', ') +
+        '. Because they are not found.';
 
       return {
         stackId,
