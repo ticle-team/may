@@ -22,7 +22,7 @@
     "docker:push": "docker push icn.ocir.io/axqafkgb0llg/may:latest",
     "docker": "run-s docker:*",
     "setup:kind": "cd stoacloud && make setup-test",
-    "setup:stoacloud:build": "cd stoacloud && docker build -t stoacloud/stoacloud:latest . && kind load docker-image stoacloud/stoacloud:latest --name kind --verbosity 1",
+    "setup:stoacloud:build": "cd stoacloud && docker build --rm -t stoacloud/stoacloud:latest . && kind load docker-image stoacloud/stoacloud:latest --name kind --verbosity 1",
     "setup:stoacloud:dev": "bash testdata/k8s/stoacloud/dev/kube-configmap.yaml.sh && kubectl --context kind-kind -n default apply -f testdata/k8s/stoacloud/dev && kubectl wait --context kind-kind --namespace default --for=condition=ready pod --selector=app=shaple-builder --timeout=60s",
     "setup:stoacloud:test": "bash testdata/k8s/stoacloud/test/kube-configmap.yaml.sh && kubectl --context kind-kind -n default apply -f testdata/k8s/stoacloud/test && kubectl wait --context kind-kind --namespace default --for=condition=ready pod --selector=app=shaple-builder-test --timeout=60s",
     "setup:stoacloud": "run-s setup:stoacloud:*",

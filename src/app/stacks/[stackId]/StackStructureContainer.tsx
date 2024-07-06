@@ -8,6 +8,7 @@ import { getVapiDocs } from '@/util/utils';
 import VapiDetail from './VapiDetail';
 import StackFeatures from './StackFeatures';
 import DialogModal from '@/app/_components/Dialog';
+import { trpc } from '@/app/_trpc/client';
 
 type Props = {
   stack: Stack;
@@ -19,6 +20,10 @@ export default function StackStructureContainer({ stack }: Props) {
   const [isVapiDocsloading, setVapiDocsLoading] = useState<boolean>(false);
   const [showDeleteVapiDialog, setShowDeleteVapiDialog] =
     useState<boolean>(false);
+
+  const { data: vapiDocsUrl } = trpc.vapi.getVapiDocsUrl.useQuery({
+    vapiReleaseId: selectedVapi?.id ?? 0,
+  });
 
   useEffect(() => {
     setVapiDocsContent(null);
@@ -91,7 +96,7 @@ export default function StackStructureContainer({ stack }: Props) {
         <div className="flex flex-col w-[calc(75%-100px)]">
           <VapiDetail
             loading={isVapiDocsloading}
-            docsContent={vapiDocsContent ?? null}
+            docsUrl={vapiDocsUrl ?? null}
             vapi={selectedVapi}
             onClickUninstallVapiBtn={() => setShowDeleteVapiDialog(true)}
           />

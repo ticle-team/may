@@ -45,8 +45,8 @@ spec:
                 --s3.secretKey $S3_SECRET_KEY \
                 --db.host postgres.default.svc.cluster.local \
                 --server.includeDebug true \
-                --storage.url http://storage-shaple.default.svc.cluster.local:5000 \
-                --auth.url http://gotrue-shaple.default.svc.cluster.local:9999
+                --storage.url http://shaple.local.shaple.io/storage/v1 \
+                --auth.url http://shaple.local.shaple.io/auth/v1
           ports:
             - containerPort: 8080
           env:

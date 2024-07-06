@@ -49,7 +49,7 @@ export class StackService {
           stackId: 0,
           err: {
             success: false,
-            message: 'failed to create stack',
+            message: 'failed to create stack\n' + err.details,
           },
         };
       });

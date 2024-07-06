@@ -1,4 +1,4 @@
-import { baseProcedure, router } from '@/server/trpc';
+import { authedProcedure, baseProcedure, router } from '@/server/trpc';
 import { vapiRelease } from '@/models/vapi';
 import { z } from 'zod';
 import { Container } from 'typedi';
@@ -14,6 +14,16 @@ const vapiRouter = router({
     .output(z.array(vapiRelease))
     .query(({ input }) =>
       Container.get(VapiService).getLatestReleasesByNames(input.names),
+    ),
+  getVapiDocsUrl: authedProcedure
+    .input(
+      z.object({
+        vapiReleaseId: z.number(),
+      }),
+    )
+    .output(z.string().nullable())
+    .query(({ ctx, input }) =>
+      Container.get(VapiService).getVapiDocsUrl(ctx, input.vapiReleaseId),
     ),
 });
 

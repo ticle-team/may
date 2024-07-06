@@ -35,6 +35,19 @@ function createStoaCloudServiceClient() {
 export class StoaCloudService {
   private readonly client = createStoaCloudServiceClient();
 
+  async getVapiDocsUrl(jwt: string | null, vapiReleaseId: number) {
+    const md = new Metadata();
+    md.set('authorization', `Bearer ${jwt}`);
+
+    const { url } = await this.client.GetVapiDocsUrl(
+      stoacloud.v1.GetVapiDocsUrlRequest.fromObject({
+        releaseId: vapiReleaseId,
+      }),
+      md,
+    );
+    return url;
+  }
+
   async createProject(name: string, description: string) {
     return await this.client.CreateProject(
       stoacloud.v1.CreateProjectRequest.fromObject({

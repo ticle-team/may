@@ -15,6 +15,11 @@ export async function createNextContext(
   cookie: ReadonlyRequestCookies,
   opts: FetchCreateContextFnOptions,
 ): Promise<Context> {
+  const ctx: Context = {
+    user: null,
+    tx: Container.get(PrismaService),
+  };
+
   const shapleClient = createRouteHandlerClient(
     { cookies: () => cookie },
     {
@@ -28,19 +33,15 @@ export async function createNextContext(
     error,
   } = await shapleClient.auth.getSession();
 
-  let user = null;
   if (!error && session) {
-    user = session.user;
-    user.user_metadata.jwt = session.access_token;
+    ctx.user = session.user;
+    ctx.user.user_metadata.jwt = session.access_token;
   }
 
   const githubTokenHeader = opts.req.headers.get('X-Github-Token');
-  if (user && githubTokenHeader) {
-    user.user_metadata.githubToken = githubTokenHeader;
+  if (ctx.user && githubTokenHeader) {
+    ctx.user.user_metadata.githubToken = githubTokenHeader;
   }
 
-  return {
-    user,
-    tx: Container.get(PrismaService),
-  };
+  return ctx;
 }

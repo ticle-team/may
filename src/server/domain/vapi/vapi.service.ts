@@ -5,6 +5,7 @@ import {
   parseVapiReleaseFromProto,
   VapiRelease,
 } from '@/models/vapi';
+import { Context } from '@/server/context';
 
 @Service()
 export class VapiService {
@@ -36,5 +37,22 @@ export class VapiService {
     )
       .filter((vapiRelease) => vapiRelease !== null)
       .map((vapiRelease): VapiRelease => vapiRelease!);
+  }
+
+  async getVapiDocsUrl(
+    ctx: Context,
+    vapiReleaseId: number,
+  ): Promise<string | null> {
+    if (vapiReleaseId <= 0) {
+      return null;
+    }
+
+    const jwt = ctx.user?.user_metadata?.jwt ?? null;
+    const url = await this.stoacloud.getVapiDocsUrl(jwt, vapiReleaseId);
+    if (url === '') {
+      return null;
+    }
+
+    return url;
   }
 }
