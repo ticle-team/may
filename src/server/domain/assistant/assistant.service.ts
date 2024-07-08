@@ -29,7 +29,10 @@ export class AssistantService {
     private readonly stackService: StackService,
   ) {}
 
-  async *runForCreationStack(ctx: Context, threadId: number) {
+  async *runForCreationStack(
+    ctx: Context,
+    threadId: number,
+  ): AsyncGenerator<StackCreationEvent, void> {
     yield { event: 'begin' };
     const thread = await this.threadStore.findThreadById(ctx, threadId);
     const assistantStream = this.openaiAssistant.runStream(
@@ -88,6 +91,7 @@ export class AssistantService {
                     }
                     logger.debug('call deploy_stack', { args });
 
+                    yield { event: 'deploy.begin' };
                     const {
                       data: stackInfo,
                       error,
@@ -133,6 +137,7 @@ export class AssistantService {
                       stateInfo,
                       state: threadStates.stackCreated,
                     });
+                    yield { event: 'deploy.end', stackId };
                     break;
                   }
                   case 'create_vapis': {

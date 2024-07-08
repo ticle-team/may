@@ -15,6 +15,7 @@ import Button from '@/app/_components/Button';
 import StackContainer from './StackContainer';
 import { CreatingStackStateInfoJson } from '@/models/thread';
 import { Timeline } from '@/app/threads/[id]/Timeline';
+import RingSpinner from '@/app/_components/RingSpinner';
 
 export default function Page() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function Page() {
   const [initialized, setInitialized] = useState(false);
   const [enabledChat, setEnabledChat] = useState(false);
   const utils = trpc.useUtils();
+  const [deploying, setDeploying] = useState(false);
 
   const thread = trpc.thread.get.useQuery(
     {
@@ -88,8 +90,13 @@ export default function Page() {
     (async () => {
       for (const { event } of run.data) {
         switch (event) {
-          case 'deploy': {
+          case 'deploy.end': {
+            setDeploying(false);
             await thread.refetch();
+            break;
+          }
+          case 'deploy.begin': {
+            setDeploying(true);
             break;
           }
           case 'end': {
@@ -234,6 +241,12 @@ export default function Page() {
           <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
             <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
               <Conversation history={conversation}>
+                {!answering && deploying && (
+                  <div className="flex flex-row justify-center items-center animate-pulse text-primary-500">
+                    <RingSpinner shape="with-bg" className="flex w-5 h-5" />
+                    &nbsp;<p>Deploying...</p>
+                  </div>
+                )}
                 {!answering && thread.data?.shapleStackId && (
                   <div className="flex flex-row -mt-2.5 justify-center">
                     <Button color="secondary" size="lg" onClick={goToStack}>

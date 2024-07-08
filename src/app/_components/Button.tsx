@@ -5,6 +5,7 @@ type Props = React.PropsWithChildren<{
   size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl';
   disabled?: boolean;
   onClick?: () => void | Promise<void>;
+  className?: string;
 }>;
 
 export default function Button({
@@ -13,8 +14,9 @@ export default function Button({
   color = 'primary',
   size = 'base',
   disabled = false,
+  className,
 }: Props) {
-  const buttonClass = classNames({
+  const buttonClass = classNames(className ?? '', {
     'flex focus:outline-none focus:ring-0': true,
     'text-white bg-primary-700 hover:bg-primary-600 focus:bg-primary-800 ring-primary-700':
       color === 'primary' && !disabled,
