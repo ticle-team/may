@@ -14,13 +14,20 @@ export default function UserMessageForm({
   color: 'primary' | 'secondary';
 }) {
   const [userMessage, setUserMessage] = useState('');
+  const [enabled, setEnabled] = useState(true);
   const userInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!answering) {
-      userInputRef.current?.focus();
+      setEnabled(true);
     }
   }, [answering]);
+
+  useEffect(() => {
+    if (enabled) {
+      userInputRef.current?.focus();
+    }
+  }, [enabled]);
 
   return (
     <form
@@ -31,6 +38,7 @@ export default function UserMessageForm({
         }
 
         e.preventDefault();
+        setEnabled(false);
         onSubmit(userMessage).finally(() => {
           setUserMessage('');
         });
@@ -42,8 +50,8 @@ export default function UserMessageForm({
           className={classNames(
             'flex flex-row w-full px-6 py-5 border-none rounded placeholder:text-white text-base',
             {
-              'text-gray-400': answering,
-              'text-white': !answering,
+              'text-gray-400': !enabled,
+              'text-white': enabled,
               'bg-secondary-700': color === 'secondary',
               'bg-primary-500 focus:ring-primary-600 focus:ring-1':
                 color === 'primary',
@@ -52,10 +60,10 @@ export default function UserMessageForm({
           placeholder="Type a message"
           value={userMessage}
           onChange={(e) => setUserMessage(e.target.value)}
-          disabled={answering}
+          disabled={!enabled}
           ref={userInputRef}
         />
-        {!answering ? (
+        {enabled ? (
           <button
             className="absolute inset-y-0 right-0 flex items-center pr-3 hover:cursor-pointer"
             type="submit"
