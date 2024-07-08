@@ -1,5 +1,6 @@
 import { Service } from 'typedi';
-import { OpenAI } from 'openai';
+import { AzureOpenAI, OpenAI } from 'openai';
+import { AzureKeyCredential, OpenAIClient } from '@azure/openai';
 import { ChatMessage } from '@/models/ai';
 import { TextContentBlock } from 'openai/resources/beta/threads';
 import { TRPCError } from '@trpc/server';
@@ -8,9 +9,11 @@ import { AzureChatOpenAI } from '@langchain/azure-openai';
 
 @Service()
 export class OpenAIAssistant {
-  private readonly openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY || '',
+  private readonly openai = new AzureOpenAI({
     dangerouslyAllowBrowser: true,
+    apiKey: process.env.AZURE_OPENAI_API_KEY || '',
+    apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
+    endpoint: process.env.AZURE_OPENAI_ENDPOINT || 'https://api.openai.com',
   });
 
   getAssistant(assistantId: string) {
