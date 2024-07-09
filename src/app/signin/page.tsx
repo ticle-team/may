@@ -8,6 +8,8 @@ import LoadingSpinner from '@/app/_components/LoadingSpinner';
 import { shapleClient } from '@/app/_services/shapleClient';
 import useToast from '@/app/_hooks/useToast';
 import SignUpModal from '@/app/signin/SignUpModal';
+import { TicleLogo } from '@/app/_components/TicleLogo';
+import RingSpinner from '@/app/_components/RingSpinner';
 
 // TODO : will be replaced with the actual redirect URL
 const DISABLED_CALLBACK_URLS = ['/resetpassword'];
@@ -80,7 +82,7 @@ function SignInForm({
             value={email}
             placeholder="Email address"
             onChange={(e) => setEmail(e.target.value)}
-            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
           />
         </div>
       </div>
@@ -94,12 +96,12 @@ function SignInForm({
             Password
           </label>
           <div className="text-sm">
-            <Link
-              href="#"
-              className="font-semibold text-indigo-600 hover:text-indigo-500"
-            >
-              Forgot password?
-            </Link>
+            {/*<Link*/}
+            {/*  href="#"*/}
+            {/*  className="font-semibold text-primary-600 hover:text-primary-500"*/}
+            {/*>*/}
+            {/*  Forgot password?*/}
+            {/*</Link>*/}
           </div>
         </div>
         <div className="mt-2">
@@ -111,17 +113,20 @@ function SignInForm({
             value={password}
             placeholder={'Password'}
             onChange={(e) => setPassword(e.target.value)}
-            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
           />
         </div>
       </div>
 
       <button
-        className="h-11 flex w-full justify-center items-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        className="h-11 flex w-full justify-center items-center rounded-md bg-primary-500 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-400 disabled:bg-primary-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
         disabled={loading || email === '' || password === ''}
         type="submit"
       >
-        {loading ? <LoadingSpinner /> : 'Sign in'}
+        Sign in
+        {loading && (
+          <RingSpinner shape="with-bg" className="flex w-6 h-6 ml-1.5" />
+        )}
       </button>
     </form>
   );
@@ -137,7 +142,7 @@ export default function Page() {
       <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 w-full">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <div className="flex shrink-0 justify-center">
-            <LogoIcon />
+            <TicleLogo color="black" text="none" className="flex size-2/12" />
           </div>
           <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
             Sign in to your account
@@ -153,7 +158,7 @@ export default function Page() {
             Not a member?{' '}
             <button
               onClick={() => setOpenSignUpModal(true)}
-              className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+              className="font-semibold leading-6 text-primary-600 hover:text-primary-500"
             >
               Sign up now!
             </button>

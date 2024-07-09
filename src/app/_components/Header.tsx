@@ -22,7 +22,7 @@ export default function Header({ hidden = true }: Props) {
   const handleSignOut = async () => {
     await shapleClient.auth.signOut();
     await utils.user.me.invalidate();
-    router.replace('/');
+    router.replace('/signin');
   };
 
   useEffect(() => {
