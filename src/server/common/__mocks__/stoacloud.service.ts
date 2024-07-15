@@ -21,5 +21,6 @@ export function createStoaCloudServiceMock(): StoaCloudServiceMock {
     installVapi: jest.fn(),
     uninstallVapi: jest.fn(),
     getVapiPackage: jest.fn(),
+    getUser: jest.fn(),
   };
 }

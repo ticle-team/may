@@ -1,5 +1,6 @@
 import { Service } from 'typedi';
 import { Context } from '@/server/context';
+import { Prisma } from '.prisma/client';
 
 @Service()
 export class UserStore {
@@ -14,23 +15,23 @@ export class UserStore {
             organization: true,
           },
         },
+        shapleUser: true,
       },
     });
 
-    if (user) {
-      return user;
-    }
+    return user;
+  }
 
-    return tx.user.create({
-      data: {
-        ownerId: ownerId,
-      },
+  async createUser({ tx }: Context, data: Prisma.UserUncheckedCreateInput) {
+    return await tx.user.create({
+      data: data,
       include: {
         memberships: {
           include: {
             organization: true,
           },
         },
+        shapleUser: true,
       },
     });
   }

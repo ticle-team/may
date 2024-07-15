@@ -18,7 +18,7 @@ export class ThreadService {
   ) {}
 
   async create(ctx: Context, projectId: number): Promise<Thread> {
-    const ownerId = ctx.user?.id;
+    const ownerId = ctx.session?.user?.id;
     if (!ownerId) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',

@@ -15,6 +15,7 @@ import { getLogger } from '@/logger';
 import { stoacloud } from '@/protos/stoacloud';
 import { credentials, Metadata } from '@grpc/grpc-js';
 import { google } from '@/protos/google/protobuf/empty';
+import { Context } from '@/server/context';
 
 const logger = getLogger('server.common.stoacloud.service');
 
@@ -328,5 +329,16 @@ export class StoaCloudService {
     return await this.client.GetVapiPackageById(
       stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
     );
+  }
+
+  async getUser({ session }: Context) {
+    if (!session) {
+      throw new Error('Unauthorized');
+    }
+
+    const md = new Metadata();
+    md.set('authorization', `Bearer ${session.access_token}`);
+
+    return await this.client.GetUser(google.protobuf.Empty.fromObject({}), md);
   }
 }

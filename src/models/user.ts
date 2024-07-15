@@ -4,8 +4,9 @@ import { organization } from '@/models/organization';
 export const user = z.object({
   id: z.number(),
   organizations: organization.array(),
-  nickname: z.nullable(z.string()),
+  name: z.nullable(z.string()),
   description: z.nullable(z.string().optional()),
+  ownerId: z.string(),
 });
 
 export type User = z.infer<typeof user>;

@@ -48,11 +48,12 @@ model User {
   updatedAt          DateTime       @updatedAt @map("updated_at")
   deletedAt          Int            @default(0) @map("deleted_at")
   ownerId            String         @unique @map("owner_id")
-  nickname           String?        @map("nickname")
   description        String?        @map("description")
   threads            Thread[]
   ownedOrganizations Organization[] @relation("Owner")
   memberships        Membership[]
+  shapleUserId       Int            @unique @map("shaple_user_id")
+  shapleUser         ShapleUser     @relation(fields: [shapleUserId], references: [id])
 
   @@map("users")
   @@schema("may")
@@ -99,8 +100,10 @@ model ShapleUser {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
   deletedAt        BigInt   @default(0) @map("deleted_at")
-  gitPrivateKeyPem Bytes    @map("git_private_key_pem")
+  gitPrivateKeyPem Bytes?   @map("git_private_key_pem")
   ownerId          String   @unique @map("owner_id")
+  name             String   @map("name")
+  user             User?
 
   @@map("users")
   @@schema("shaple_builder")

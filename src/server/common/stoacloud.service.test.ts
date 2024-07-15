@@ -2,7 +2,7 @@ import { setTimeout } from 'timers/promises';
 import { Container } from 'typedi';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import * as uuid from 'uuid';
-import { createClient, User } from '@shaple/shaple';
+import { createClient, Session, User } from '@shaple/shaple';
 import {
   createUser,
   deleteUser,
@@ -237,36 +237,38 @@ describe('given stoacloud service', () => {
       const gitPrivateKeyPem = readFileSync(
         './stoacloud/testdata/shaple-testvapis_github_rsa',
       );
-      let user: User;
+      let session: Session;
 
       beforeEach(async () => {
-        const prisma = Container.get(PrismaService);
-        user = await createUser();
-        await prisma.shapleUser.create({
-          data: {
-            ownerId: user.id,
-            gitPrivateKeyPem,
-          },
-        });
-        await scs.addProjectMember(projectId, user.id);
+        session = await createUser();
       });
 
       afterEach(async () => {
-        await deleteUser(user);
+        await deleteUser(session);
+      });
+
+      it('when get user, then it is OK', async () => {
+        const prisma = Container.get(PrismaService);
+        const shapleUser = await scs.getUser({
+          session,
+          tx: prisma,
+          githubToken: null,
+        });
+        expect(shapleUser).toBeDefined();
+        expect(shapleUser.id).toBeGreaterThan(0);
+        expect(shapleUser.ownerId).toBe(session.user.id);
       });
 
       it('when register vapi, then it is OK', async () => {
         const prisma = Container.get(PrismaService);
-
-        const {
-          data: { session },
-          error,
-        } = await shaple.auth.getSession();
-        expect(error).toBeNull();
-        expect(session).not.toBeNull();
-
-        const jwt = session?.access_token;
-        expect(jwt).toBeDefined();
+        await prisma.shapleUser.create({
+          data: {
+            ownerId: session.user.id,
+            gitPrivateKeyPem,
+            name: 'dennispark',
+          },
+        });
+        await scs.addProjectMember(projectId, session.user.id);
 
         await using cleanup = new AsyncDisposableStack();
         const outputs = await scs.registerVapis(session!.access_token, null, {

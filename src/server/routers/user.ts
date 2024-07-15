@@ -26,16 +26,7 @@ export default router({
         };
       }),
   }),
-  me: authedProcedure.output(MayUser).query(async ({ ctx }) => {
-    const mayUser = await Container.get(UserService).getUser(ctx);
-    return {
-      id: mayUser.id,
-      organizations: mayUser.memberships.map((membership) => ({
-        id: membership.organization.id,
-        name: membership.organization.name,
-      })),
-      nickname: mayUser.nickname,
-      description: mayUser.description,
-    };
-  }),
+  me: authedProcedure
+    .output(MayUser)
+    .query(({ ctx }) => Container.get(UserService).getUser(ctx)),
 });

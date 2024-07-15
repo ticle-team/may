@@ -1,4 +1,4 @@
-import { User } from '@shaple/shaple';
+import { Session, User } from '@shaple/shaple';
 import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
 import { createRouteHandlerClient } from '@shaple/auth-helpers-nextjs';
@@ -7,8 +7,9 @@ import { PrismaService } from '@/server/common/prisma.service';
 import { Container } from 'typedi';
 
 export interface Context {
-  user: User | null;
+  session: Session | null;
   tx: PrismaClient | Prisma.TransactionClient;
+  githubToken: string | null;
 }
 
 export async function createNextContext(
@@ -16,7 +17,8 @@ export async function createNextContext(
   opts: FetchCreateContextFnOptions,
 ): Promise<Context> {
   const ctx: Context = {
-    user: null,
+    session: null,
+    githubToken: null,
     tx: Container.get(PrismaService),
   };
 
@@ -34,13 +36,12 @@ export async function createNextContext(
   } = await shapleClient.auth.getSession();
 
   if (!error && session) {
-    ctx.user = session.user;
-    ctx.user.user_metadata.jwt = session.access_token;
+    ctx.session = session;
   }
 
   const githubTokenHeader = opts.req.headers.get('X-Github-Token');
-  if (ctx.user && githubTokenHeader) {
-    ctx.user.user_metadata.githubToken = githubTokenHeader;
+  if (githubTokenHeader) {
+    ctx.githubToken = githubTokenHeader;
   }
 
   return ctx;

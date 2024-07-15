@@ -2,17 +2,27 @@ import { resetSchema } from '@/migrate';
 import { Container } from 'typedi';
 import { UserService } from '@/server/domain/user/user.service';
 import { PrismaService } from '@/server/common/prisma.service';
-import { User } from '@shaple/shaple';
+import { Session, User } from '@shaple/shaple';
+import { StoaCloudService } from '@/server/common/stoacloud.service';
+import {
+  createStoaCloudServiceMock,
+  StoaCloudServiceMock,
+} from '@/server/common/__mocks__/stoacloud.service';
+import { stoacloud } from '@/protos/stoacloud';
 
 describe('given UserService with real UserStore', () => {
   const ownerId = '123123';
-  const userService = Container.get(UserService);
+  let userService: UserService;
   let prisma: PrismaService;
+  let stoaCloudService: StoaCloudServiceMock;
 
   beforeEach(async () => {
     await resetSchema();
     prisma = Container.get(PrismaService);
     await prisma.$connect();
+    stoaCloudService = createStoaCloudServiceMock();
+    Container.set(StoaCloudService, stoaCloudService);
+    userService = Container.get(UserService);
   });
 
   afterEach(async () => {
@@ -23,12 +33,28 @@ describe('given UserService with real UserStore', () => {
   });
 
   it('when getting new user, then should create new user', async () => {
+    using stack = new DisposableStack();
     const ctx = {
-      user: {
-        id: ownerId,
-      } as User,
+      session: {
+        user: {
+          id: ownerId,
+        },
+      } as Session,
       tx: prisma,
+      githubToken: null,
     };
+    stoaCloudService.getUser.mockReturnValueOnce(
+      Promise.resolve(
+        stoacloud.v1.User.fromObject({
+          id: 1,
+          name: 'dennis',
+          ownerId: '123123',
+        }),
+      ),
+    );
+    stack.defer(async () => {
+      expect(stoaCloudService.getUser).toHaveBeenCalled();
+    });
     const existingUser = await prisma.user.findUnique({
       where: {
         ownerId: ownerId,
@@ -38,9 +64,6 @@ describe('given UserService with real UserStore', () => {
 
     const user = await userService.getUser(ctx);
     expect(user.ownerId).toBe(ownerId);
-    expect(user.nickname).toBeNull();
-    expect(user.description).toBeNull();
-    expect(user.memberships).toHaveLength(0);
 
     const newUser = await prisma.user.findUnique({
       where: {

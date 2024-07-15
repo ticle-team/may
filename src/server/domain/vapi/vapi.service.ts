@@ -47,7 +47,7 @@ export class VapiService {
       return null;
     }
 
-    const jwt = ctx.user?.user_metadata?.jwt ?? null;
+    const jwt = ctx.session?.access_token ?? null;
     const url = await this.stoacloud.getVapiDocsUrl(jwt, vapiReleaseId);
     if (url === '') {
       return null;

@@ -27,7 +27,7 @@ describe('given thread trpc with mock objects', () => {
   );
 
   let caller: ReturnType<typeof createCaller>;
-  let user;
+  let session;
   let prisma: PrismaClient;
   let ctx: Context;
   beforeEach(async () => {
@@ -39,18 +39,19 @@ describe('given thread trpc with mock objects', () => {
     Container.set(ThreadService, threadService);
     Container.set(AssistantService, assistantService);
 
-    user = await createUser();
+    session = await createUser();
 
     ctx = {
       tx: prisma,
-      user,
+      session: session,
+      githubToken: null,
     };
     caller = createCaller(ctx);
   });
 
   afterEach(async () => {
     Container.reset();
-    await deleteUser(user!);
+    await deleteUser(session!);
     jest.clearAllMocks();
     await prisma.$disconnect();
   });
@@ -60,17 +61,17 @@ describe('given thread trpc with mock objects', () => {
     const projectId = 1;
     assistantService.runForCreationStack.mockImplementationOnce(
       async function* () {
-        yield { event: 'text', text: 'h' };
+        yield { id: '', event: 'text', text: 'h' };
         await setTimeout(100);
-        yield { event: 'text', text: 'e' };
+        yield { id: '', event: 'text', text: 'e' };
         await setTimeout(100);
-        yield { event: 'text', text: 'l' };
+        yield { id: '', event: 'text', text: 'l' };
         await setTimeout(100);
-        yield { event: 'text', text: 'l' };
+        yield { id: '', event: 'text', text: 'l' };
         await setTimeout(100);
-        yield { event: 'text', text: 'o' };
+        yield { id: '', event: 'text', text: 'o' };
         await setTimeout(100);
-        yield { event: 'done' };
+        yield { id: '', event: 'text.done' };
       },
     );
 
@@ -86,7 +87,7 @@ describe('given thread trpc with mock objects', () => {
           const { text } = ev as StackCreationEventText;
           answers.push(text);
           break;
-        case 'done':
+        case 'text.done':
           completed = true;
           break;
       }
