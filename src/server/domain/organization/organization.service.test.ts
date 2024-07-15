@@ -3,47 +3,53 @@ import { PrismaService } from '@/server/common/prisma.service';
 import { resetSchema } from '@/migrate';
 import { OrganizationService } from '@/server/domain/organization/organization.service';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
-import { createStoaCloudServiceMock } from '@/server/common/__mocks__/stoacloud.service';
 import * as uuid from 'uuid';
-import { stoacloud } from '@/protos/stoacloud';
+import { Session } from '@shaple/shaple';
+import {
+  createUser,
+  deleteUser,
+} from '@/server/domain/user/__mocks__/user.stub';
+import { Context } from '@/server/context';
 
 describe('given OrganizationService', () => {
   let organizationService: OrganizationService;
-  let mockStoaCloudService: any;
-  let mockData = {
-    orgId: 1,
-    id: 1,
-    name: `test-project-${uuid.v4()}`,
-    description: 'test description 1',
-  };
+  let stoaCloudService: StoaCloudService;
+  let session: Session;
+  let prisma: PrismaService;
 
   beforeEach(async () => {
+    session = await createUser();
     await resetSchema();
-    mockStoaCloudService = createStoaCloudServiceMock();
-    Container.set(StoaCloudService, mockStoaCloudService);
+    stoaCloudService = Container.get(StoaCloudService);
     organizationService = Container.get(OrganizationService);
+    prisma = Container.get(PrismaService);
   });
 
   afterEach(async () => {
-    const prisma = Container.get(PrismaService);
     await prisma.$disconnect();
-
+    await stoaCloudService.resetSchema();
     Container.reset();
+    await deleteUser(session);
   });
 
   it('should retrieve and return a project list', async () => {
     // given
-    const createdProjects = [
-      stoacloud.v1.Project.fromObject({
-        id: mockData.id,
-        name: mockData.name,
-        description: mockData.description,
-        stacks: [],
-        createdAt: { seconds: 10, nanos: 1 },
-        updatedAt: { seconds: 10, nanos: 1 },
-      }),
-    ];
-    mockStoaCloudService.getProjects.mockResolvedValue(createdProjects);
+    const mockData = {
+      orgId: 1,
+      id: 1,
+      name: `test-project-${uuid.v4()}`,
+      description: 'test description 1',
+    };
+    const ctx = {
+      session,
+      tx: prisma,
+    } as Context;
+    const createdProject = await stoaCloudService.createProject(
+      mockData.name,
+      mockData.description,
+      [session.user.id],
+    );
+    const createdProjects = [createdProject];
 
     // when
     const getProjectsRequest = {
@@ -51,8 +57,10 @@ describe('given OrganizationService', () => {
       page: 1,
       perPage: 10,
     };
-    const { projects: result } =
-      await organizationService.getProjects(getProjectsRequest);
+    const { projects: result } = await organizationService.getProjects(
+      ctx,
+      getProjectsRequest,
+    );
 
     // then
     expect(result).not.toBeNull();

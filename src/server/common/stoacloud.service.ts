@@ -76,9 +76,19 @@ export class StoaCloudService {
     );
   }
 
-  async getProjects(input: GetProjectsInput) {
+  async getProjects({
+    name = undefined,
+    perPage,
+    page,
+    memberId = undefined,
+  }: GetProjectsInput) {
     const { projects } = await this.client.GetProjects(
-      stoacloud.v1.GetProjectsRequest.fromObject(input),
+      stoacloud.v1.GetProjectsRequest.fromObject({
+        name,
+        perPage,
+        page,
+        memberId,
+      }),
     );
 
     return projects;

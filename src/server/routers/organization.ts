@@ -22,7 +22,7 @@ export default router({
       };
     }),
   projects: router({
-    list: baseProcedure
+    list: authedProcedure
       .input(getProjectsSchema)
       .output(
         z.object({
@@ -31,7 +31,7 @@ export default router({
         }),
       )
       .query(({ ctx, input }) =>
-        Container.get(OrganizationService).getProjects(input),
+        Container.get(OrganizationService).getProjects(ctx, input),
       ),
   }),
   delete: authedProcedure

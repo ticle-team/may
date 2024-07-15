@@ -27,6 +27,12 @@ export class UserService {
     let user = await this.userStore.getUser(ctx, ownerId);
     if (!user) {
       const { id: shapleUserId } = await this.stoaCloudService.getUser(ctx);
+      if (shapleUserId == 0) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to get user from Shaple Cloud',
+        });
+      }
       user = await this.userStore.createUser(ctx, {
         ownerId,
         shapleUserId,

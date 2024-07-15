@@ -7,8 +7,8 @@ export const organization = z.object({
 
 export const getProjectsSchema = z.object({
   orgId: z.number(),
-  page: z.number().optional(),
-  perPage: z.number().optional(),
+  page: z.number().default(1),
+  perPage: z.number().default(10),
 });
 
 export type GetProjectsRequest = z.infer<typeof getProjectsSchema>;
