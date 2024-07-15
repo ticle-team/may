@@ -22,8 +22,8 @@ export class UserStore {
     return user;
   }
 
-  async createUser({ tx }: Context, data: Prisma.UserUncheckedCreateInput) {
-    return await tx.user.create({
+  createUser({ tx }: Context, data: Prisma.UserUncheckedCreateInput) {
+    return tx.user.create({
       data: data,
       include: {
         memberships: {

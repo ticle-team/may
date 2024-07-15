@@ -49,14 +49,19 @@ export class StoaCloudService {
     return url;
   }
 
-  async createProject(name: string, description: string) {
-    return await this.client.CreateProject(
-      stoacloud.v1.CreateProjectRequest.fromObject({
-        name,
-        description,
-        userIds: [],
-      }),
-    );
+  async createProject(name: string, description: string, userIds: string[]) {
+    try {
+      return await this.client.CreateProject(
+        stoacloud.v1.CreateProjectRequest.fromObject({
+          name,
+          description,
+          userIds,
+        }),
+      );
+    } catch (e) {
+      logger.error(e);
+      throw e;
+    }
   }
 
   async deleteProject(projectId: number) {
@@ -66,7 +71,7 @@ export class StoaCloudService {
   }
 
   async getProject(projectId: number) {
-    return await this.client.GetProject(
+    return await this.client.GetProjectById(
       stoacloud.v1.ProjectId.fromObject({ id: projectId }),
     );
   }
@@ -203,13 +208,16 @@ export class StoaCloudService {
   }
 
   async registerVapis(
-    jwt: string,
-    githubToken: string | null,
+    { session, githubToken }: Context,
     input: RegisterVapisInput,
   ) {
     const md = new Metadata();
-    md.set('authorization', `Bearer ${jwt}`);
-    md.set('x-github-token', githubToken || '');
+    if (session?.access_token) {
+      md.set('authorization', `Bearer ${session.access_token}`);
+    }
+    if (githubToken) {
+      md.set('x-github-token', githubToken || '');
+    }
 
     const res = await this.client.RegisterVapi(
       stoacloud.v1.RegisterVapiRequest.fromObject({
@@ -249,24 +257,21 @@ export class StoaCloudService {
     }
   }
 
-  async deleteVapiRelease(jwt: string, releaseId: number) {
-    const md = new Metadata();
-    md.set('authorization', `Bearer ${jwt}`);
+  async deleteVapiRelease({ session }: Context, releaseId: number) {
+    try {
+      const md = new Metadata();
+      if (session) {
+        md.set('authorization', `Bearer ${session?.access_token}`);
+      }
 
-    await this.client.DeleteVapiRelease(
-      stoacloud.v1.VapiReleaseId.fromObject({ id: releaseId }),
-      md,
-    );
-  }
-
-  async deleteVapiPackage(jwt: string, packageId: number) {
-    const md = new Metadata();
-    md.set('authorization', `Bearer ${jwt}`);
-
-    await this.client.DeleteVapiPackage(
-      stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
-      md,
-    );
+      await this.client.DeleteVapiRelease(
+        stoacloud.v1.VapiReleaseId.fromObject({ id: releaseId }),
+        md,
+      );
+    } catch (err) {
+      logger.error('error deleting vapi release', { err });
+      throw err;
+    }
   }
 
   async addProjectMember(projectId: number, memberId: string) {

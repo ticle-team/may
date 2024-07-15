@@ -6,6 +6,7 @@ import { getLogger } from '@/logger';
 import { UserStore } from '@/server/domain/user/user.store';
 import { Context } from '@/server/context';
 import { Thread, threadStateInfo, threadStates } from '@/models/thread';
+import { UserService } from '@/server/domain/user/user.service';
 
 const logger = getLogger('ThreadService');
 
@@ -14,7 +15,7 @@ export class ThreadService {
   constructor(
     private readonly openaiAssistant: OpenAIAssistant,
     private readonly threadStore: ThreadStore,
-    private readonly userStore: UserStore,
+    private readonly userService: UserService,
   ) {}
 
   async create(ctx: Context, projectId: number): Promise<Thread> {
@@ -25,7 +26,7 @@ export class ThreadService {
         message: 'Unauthorized',
       });
     }
-    const user = await this.userStore.getUser(ctx, ownerId);
+    const user = await this.userService.getUser(ctx);
     const openaiThread = await this.openaiAssistant.createThread();
     const thread = await this.threadStore.createThread(
       ctx,

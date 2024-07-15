@@ -14,8 +14,8 @@ export default router({
   create: authedProcedure
     .input(createProjectSchema)
     .output(project)
-    .mutation(({ input }) =>
-      Container.get(ProjectService).createProject(input),
+    .mutation(({ ctx, input }) =>
+      Container.get(ProjectService).createProject(ctx, input),
     ),
   delete: authedProcedure
     .input(deleteProjectSchema)
@@ -28,24 +28,4 @@ export default router({
     .query(({ input }) =>
       Container.get(ProjectService).getProject(input.projectId),
     ),
-  stacks: router({
-    list: baseProcedure
-      .input(
-        z.object({
-          projectId: z.number(),
-        }),
-      )
-      .output(
-        z.object({
-          stacks: z.array(stack),
-          after: z.number().nullish(),
-        }),
-      )
-      .query(async () => {
-        return {
-          stacks: [],
-          after: 0,
-        };
-      }),
-  }),
 });

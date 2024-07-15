@@ -63,8 +63,8 @@ export const baseProcedure = t.procedure.use(
 );
 
 export const authedProcedure = baseProcedure.use(
-  async ({ ctx: { user }, next }) => {
-    if (!user) {
+  async ({ ctx: { session }, next }) => {
+    if (!session) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',
         message: 'Requires authentication',
@@ -72,7 +72,7 @@ export const authedProcedure = baseProcedure.use(
     }
 
     return await next({
-      ctx: { user: user! },
+      ctx: { session: session! },
     });
   },
 );

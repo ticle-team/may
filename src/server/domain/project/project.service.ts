@@ -3,20 +3,32 @@ import { StoaCloudService } from '@/server/common/stoacloud.service';
 import {
   CreateProjectRequest,
   parseShapleProjectFromProto,
+  project,
   Project,
 } from '@/models/project';
 import { getLogger } from '@/logger';
+import { Context } from '@/server/context';
+import { UserService } from '@/server/domain/user/user.service';
+import { parseShapleStackFromProto } from '@/models/stack';
 
 const logger = getLogger('server.domain.stack.service');
 
 @Service()
 export class ProjectService {
-  constructor(private readonly stoaCloudService: StoaCloudService) {}
+  constructor(
+    private readonly stoaCloudService: StoaCloudService,
+    private readonly userService: UserService,
+  ) {}
 
-  async createProject(request: CreateProjectRequest): Promise<Project> {
+  async createProject(
+    ctx: Context,
+    request: CreateProjectRequest,
+  ): Promise<Project> {
+    const me = await this.userService.getUser(ctx);
     const project = await this.stoaCloudService.createProject(
       request.name,
       request.description,
+      [me.ownerId],
     );
 
     return {
@@ -29,8 +41,8 @@ export class ProjectService {
     await this.stoaCloudService.deleteProject(projectId);
   }
 
-  async getProject(projectId: number) {
-    const project = await this.stoaCloudService.getProject(projectId);
-    return project;
+  async getProject(projectId: number): Promise<Project> {
+    const projectProto = await this.stoaCloudService.getProject(projectId);
+    return parseShapleProjectFromProto(projectProto);
   }
 }

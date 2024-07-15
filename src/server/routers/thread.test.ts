@@ -31,6 +31,7 @@ describe('given thread trpc with mock objects', () => {
   let prisma: PrismaClient;
   let ctx: Context;
   beforeEach(async () => {
+    session = await createUser();
     await resetSchema();
     prisma = Container.get(PrismaService);
     await prisma.$connect();
@@ -38,8 +39,6 @@ describe('given thread trpc with mock objects', () => {
 
     Container.set(ThreadService, threadService);
     Container.set(AssistantService, assistantService);
-
-    session = await createUser();
 
     ctx = {
       tx: prisma,
@@ -51,9 +50,9 @@ describe('given thread trpc with mock objects', () => {
 
   afterEach(async () => {
     Container.reset();
-    await deleteUser(session!);
     jest.clearAllMocks();
     await prisma.$disconnect();
+    await deleteUser(session!);
   });
 
   it('when calling thread as a subscription, should return messages streaming', async () => {

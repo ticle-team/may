@@ -13,6 +13,7 @@ import { PrismaService } from '@/server/common/prisma.service';
 import { readFileSync } from 'fs';
 import axios from 'axios';
 import { stoacloud } from '@/protos/stoacloud';
+import { Context } from '@/server/context';
 
 describe('given stoacloud service', () => {
   beforeEach(async () => {
@@ -31,6 +32,7 @@ describe('given stoacloud service', () => {
       const project = await scs.createProject(
         `test-project-${uuid.v4()}`,
         'test description 1',
+        [],
       );
       projectId = project.id;
       expect(project.id).toBeGreaterThan(0);
@@ -54,6 +56,7 @@ describe('given stoacloud service', () => {
       const project = await scs.createProject(
         `test-project-${uuid.v4()}`,
         'test description 1',
+        [],
       );
       projectId = project.id;
     });
@@ -238,7 +241,6 @@ describe('given stoacloud service', () => {
         './stoacloud/testdata/shaple-testvapis_github_rsa',
       );
       let session: Session;
-
       beforeEach(async () => {
         session = await createUser();
       });
@@ -260,6 +262,7 @@ describe('given stoacloud service', () => {
       });
 
       it('when register vapi, then it is OK', async () => {
+        const ctx = { session, githubToken: null } as Context;
         const prisma = Container.get(PrismaService);
         await prisma.shapleUser.create({
           data: {
@@ -271,7 +274,7 @@ describe('given stoacloud service', () => {
         await scs.addProjectMember(projectId, session.user.id);
 
         await using cleanup = new AsyncDisposableStack();
-        const outputs = await scs.registerVapis(session!.access_token, null, {
+        const outputs = await scs.registerVapis(ctx, {
           projectId: projectId,
           gitBranch: 'main',
           gitRepo: 'paust-team/shaple-testvapis',
@@ -284,14 +287,14 @@ describe('given stoacloud service', () => {
         );
         cleanup.defer(async () => {
           for (const output of outputs) {
-            await scs.deleteVapiRelease(jwt!, output.releaseId);
+            await scs.deleteVapiRelease(ctx, output.releaseId);
           }
         });
       });
 
       let registerVapiReleaseIds: number[] = [];
-      let jwt: string = '';
       describe('with registered vapis', () => {
+        let ctx: Context;
         beforeEach(async () => {
           const {
             data: { session },
@@ -300,23 +303,38 @@ describe('given stoacloud service', () => {
           expect(error).toBeNull();
           expect(session).not.toBeNull();
 
-          jwt = session?.access_token ?? '';
-          expect(jwt).not.toBe('');
-
-          const outputs = await scs.registerVapis(session!.access_token, null, {
-            projectId: projectId,
-            gitBranch: 'main',
-            gitRepo: 'paust-team/shaple-testvapis',
+          const prisma = Container.get(PrismaService);
+          await prisma.shapleUser.create({
+            data: {
+              ownerId: session!.user.id,
+              gitPrivateKeyPem,
+              name: 'dennispark',
+            },
           });
+          await scs.addProjectMember(projectId, session!.user.id);
+
+          const outputs = await scs.registerVapis(
+            { session, githubToken: null } as Context,
+            {
+              projectId: projectId,
+              gitBranch: 'main',
+              gitRepo: 'paust-team/shaple-testvapis',
+            },
+          );
 
           expect(outputs).toHaveLength(2);
 
           registerVapiReleaseIds = outputs.map((output) => output.releaseId);
+          ctx = {
+            session,
+            githubToken: null,
+          } as Context;
         });
 
         afterEach(async () => {
+          const prisma = Container.get(PrismaService);
           for (const relId of registerVapiReleaseIds) {
-            await scs.deleteVapiRelease(jwt, relId);
+            await scs.deleteVapiRelease(ctx, relId);
           }
         });
 

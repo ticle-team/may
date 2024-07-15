@@ -8,10 +8,16 @@ import * as uuid from 'uuid';
 import { project } from '@/models/project';
 import { stoacloud } from '@/protos/stoacloud';
 import { google } from '@/protos/google/protobuf/timestamp';
+import { Session } from '@shaple/shaple';
+import { Context } from '@/server/context';
+import {
+  createUser,
+  deleteUser,
+} from '@/server/domain/user/__mocks__/user.stub';
 
 describe('given ProjectService', () => {
   let projectService: ProjectService;
-  let mockStoaCloudService: any;
+  let stoaCloudService: StoaCloudService;
   let mockData = {
     orgId: 1,
     id: 1,
@@ -21,8 +27,7 @@ describe('given ProjectService', () => {
 
   beforeEach(async () => {
     await resetSchema();
-    mockStoaCloudService = createStoaCloudServiceMock();
-    Container.set(StoaCloudService, mockStoaCloudService);
+    stoaCloudService = Container.get(StoaCloudService);
     projectService = Container.get(ProjectService);
   });
 
@@ -31,25 +36,21 @@ describe('given ProjectService', () => {
     await prisma.$disconnect();
 
     Container.reset();
+    await stoaCloudService.resetSchema();
   });
 
   it('should create a project and return the project details', async () => {
-    // given
-    const createdProject = stoacloud.v1.Project.fromObject({
-      id: mockData.id,
-      name: mockData.name,
-      description: mockData.description,
-      stacks: [],
-      createdAt: google.protobuf.Timestamp.fromObject({
-        seconds: 1680000000,
-        nanos: 0,
-      }),
-      updatedAt: google.protobuf.Timestamp.fromObject({
-        seconds: 1680000000,
-        nanos: 0,
-      }),
+    await using stack = new AsyncDisposableStack();
+    const prisma = Container.get(PrismaService);
+    const session = await createUser();
+    stack.defer(async () => {
+      await deleteUser(session);
     });
-    mockStoaCloudService.createProject.mockResolvedValue(createdProject);
+    // given
+    const ctx = {
+      session: session,
+      tx: prisma,
+    } as Context;
 
     // when
     const createProjectRequest = {
@@ -57,93 +58,47 @@ describe('given ProjectService', () => {
       name: mockData.name,
       description: mockData.description,
     };
-    const result = await projectService.createProject(createProjectRequest);
+    const result = await projectService.createProject(
+      ctx,
+      createProjectRequest,
+    );
+    stack.defer(async () => {
+      await projectService.deleteProject(result.id);
+    });
 
     // then
     expect(result).not.toBeNull();
-    expect(result.id).toEqual(createdProject.id);
-    expect(result.name).toEqual(createdProject.name);
-    expect(result.description).toEqual(createdProject.description);
-    expect(result.createdAt).toEqual(
-      new Date(createdProject.createdAt.seconds * 1000),
-    );
-    expect(result.updatedAt).toEqual(
-      new Date(createdProject.updatedAt.seconds * 1000),
-    );
+    expect(result.id).not.toEqual(0);
+    expect(result.name).toEqual(mockData.name);
+    expect(result.description).toEqual(mockData.description);
   });
 
   it('should retrieve and return a project', async () => {
     // given
-    const selectedProject = {
-      id: 2,
-      createdAt: new Date('2024-06-05T05:31:38.7425Z'),
-      updatedAt: new Date('2024-06-05T05:31:38.7425Z'),
-      name: 'test1',
-      description: 'test1',
-      stacks: [
-        {
-          id: 1,
-          createdAt: new Date('2024-06-05T05:55:23.338072Z'),
-          updatedAt: new Date('2024-06-05T05:55:23.523317Z'),
-          projectId: 2,
-          project: null,
-          gitRepo: '',
-          gitBranch: '',
-          name: 'MySNS',
-          domain: '5xm64tjweavzel9ley7rna2a3.local.shaple.io',
-          scheme: 'http',
-          siteUrl: 'http://localhost:3000',
-          description: 'Social Networking Service stack',
-          authEnabled: true,
-          auth: {
-            jwtSecret: 'AGe0rYSrkglFRjJsCPJSq8koxhjgitut',
-          },
-          adminApiKey:
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.eir4W8W4FWHjrgck4N68N3ieB59463Qpr1-_TVYk800',
-          anonApiKey:
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.80qKP_y-Md9uLsUOoqRFCkVqD5BvkThhIB_-8Y8bvrc',
-          storageEnabled: true,
-          storage: {
-            s3Bucket: '5xm64tjweavzel9ley7rna2a3.local.shaple.io',
-            tenantId: 'Storage',
-          },
-          postgrestEnabled: true,
-          postgrest: {
-            schemas: ['public'],
-          },
-          vapis: null,
-        },
-      ],
-    };
-    mockStoaCloudService.getProject.mockResolvedValue(selectedProject);
+    const project = await stoaCloudService.createProject(
+      mockData.name,
+      mockData.description,
+      [],
+    );
 
     // when
-    const result = await projectService.getProject(selectedProject.id);
+    const result = await projectService.getProject(project.id);
 
     // then
     expect(result).not.toBeNull();
-    expect(result.id).toEqual(selectedProject.id);
-    expect(result.name).toEqual(selectedProject.name);
-    expect(result.description).toEqual(selectedProject.description);
-    expect(result.createdAt).toEqual(selectedProject.createdAt);
-    expect(result.updatedAt).toEqual(selectedProject.updatedAt);
-    project.parse(result);
-
-    expect(mockStoaCloudService.getProject).toHaveBeenCalledTimes(1);
+    expect(result.id).toEqual(project.id);
+    expect(result.name).toEqual(project.name);
+    expect(result.description).toEqual(project.description);
   });
 
   it('should delete a project', async () => {
     // given
-    const selectedProject = {
-      id: mockData.id,
-      name: mockData.name,
-      description: mockData.description,
-      stacks: [],
-      createdAt: '2024-05-30T12:38:55.605056Z',
-      updatedAt: '2024-05-31T12:38:55.605056Z',
-    };
-    mockStoaCloudService.getProject.mockResolvedValue(selectedProject);
-    const retrieveResult = await projectService.getProject(selectedProject.id);
+    const project = await stoaCloudService.createProject(
+      mockData.name,
+      mockData.description,
+      [],
+    );
+    const retrieveResult = await projectService.getProject(project.id);
 
     // when
     await projectService.deleteProject(retrieveResult.id);

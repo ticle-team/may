@@ -6,15 +6,22 @@ import {
 } from '@/server/common/__mocks__/openai.service';
 import { OpenAIAssistant } from '@/server/common/openai.service';
 import { resetSchema } from '@/migrate';
-import { User } from '@shaple/shaple';
+import { Session, User } from '@shaple/shaple';
 import { PrismaClient } from '@prisma/client';
 import { PrismaService } from '@/server/common/prisma.service';
+import { Context } from '@/server/context';
+import {
+  createUser,
+  deleteUser,
+} from '@/server/domain/user/__mocks__/user.stub';
 
 describe('given ThreadService with real ThreadStore', () => {
   const ownerId = '123123';
   let mockOpenAI: OpenAIAssistantMock;
   let prisma: PrismaClient;
+  let session: Session;
   beforeEach(async () => {
+    session = await createUser();
     await resetSchema();
     prisma = Container.get(PrismaService);
     await prisma.$connect();
@@ -29,15 +36,14 @@ describe('given ThreadService with real ThreadStore', () => {
     await prisma.$disconnect();
 
     Container.reset();
+    await deleteUser(session);
   });
 
   it('create thread', async () => {
     const ctx = {
-      user: {
-        id: ownerId,
-      } as User,
+      session,
       tx: prisma,
-    };
+    } as Context;
     const openaiThreadId = '123123';
     mockOpenAI.createThread.mockResolvedValue({ id: openaiThreadId });
     mockOpenAI.deleteThread.mockResolvedValue({
@@ -58,11 +64,9 @@ describe('given ThreadService with real ThreadStore', () => {
 
   it('send message', async () => {
     const ctx = {
-      user: {
-        id: ownerId,
-      } as User,
+      session,
       tx: prisma,
-    };
+    } as Context;
     const openaiThreadId = '123123';
     const messageId = 'message-1';
     mockOpenAI.createThread.mockResolvedValue({ id: openaiThreadId });

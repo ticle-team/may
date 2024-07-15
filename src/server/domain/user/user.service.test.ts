@@ -9,19 +9,21 @@ import {
   StoaCloudServiceMock,
 } from '@/server/common/__mocks__/stoacloud.service';
 import { stoacloud } from '@/protos/stoacloud';
+import {
+  createUser,
+  deleteUser,
+} from '@/server/domain/user/__mocks__/user.stub';
 
 describe('given UserService with real UserStore', () => {
-  const ownerId = '123123';
   let userService: UserService;
   let prisma: PrismaService;
-  let stoaCloudService: StoaCloudServiceMock;
+  let stoaCloudService: StoaCloudService;
 
   beforeEach(async () => {
     await resetSchema();
     prisma = Container.get(PrismaService);
     await prisma.$connect();
-    stoaCloudService = createStoaCloudServiceMock();
-    Container.set(StoaCloudService, stoaCloudService);
+    stoaCloudService = Container.get(StoaCloudService);
     userService = Container.get(UserService);
   });
 
@@ -30,44 +32,34 @@ describe('given UserService with real UserStore', () => {
     await prisma.$disconnect();
 
     Container.reset();
+    await stoaCloudService.resetSchema();
   });
 
   it('when getting new user, then should create new user', async () => {
-    using stack = new DisposableStack();
+    await using stack = new AsyncDisposableStack();
+    const session = await createUser();
+    stack.defer(async () => {
+      await deleteUser(session);
+    });
     const ctx = {
-      session: {
-        user: {
-          id: ownerId,
-        },
-      } as Session,
+      session: session,
       tx: prisma,
       githubToken: null,
     };
-    stoaCloudService.getUser.mockReturnValueOnce(
-      Promise.resolve(
-        stoacloud.v1.User.fromObject({
-          id: 1,
-          name: 'dennis',
-          ownerId: '123123',
-        }),
-      ),
-    );
-    stack.defer(async () => {
-      expect(stoaCloudService.getUser).toHaveBeenCalled();
-    });
+
     const existingUser = await prisma.user.findUnique({
       where: {
-        ownerId: ownerId,
+        ownerId: session.user.id,
       },
     });
     expect(existingUser).toBeNull();
 
     const user = await userService.getUser(ctx);
-    expect(user.ownerId).toBe(ownerId);
+    expect(user.ownerId).toBe(session.user.id);
 
     const newUser = await prisma.user.findUnique({
       where: {
-        ownerId: ownerId,
+        ownerId: session.user.id,
       },
     });
     expect(newUser).not.toBeNull();
