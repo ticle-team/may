@@ -25,17 +25,16 @@ export default function Conversation({
   );
 
   return (
-    <div className="flex flex-col w-full overflow-y-auto gap-4" ref={chatRef}>
+    <div
+      className="flex flex-col w-full h-full overflow-y-auto gap-6 px-4 py-12"
+      ref={chatRef}
+    >
       {hasNotHistory && (
         <div className="flex flex-row w-full h-full justify-center">
           <div className="flex flex-col justify-center h-full">
-            <div className="relative -top-1/4 prose prose-base">
-              <h2>
-                Hello Builder!
-                <br />
-                <br />
-                What would you like to build?
-              </h2>
+            <div className="relative text-semiblack text-center space-y-2">
+              <div className="font-semibold text-3xl">Hello Builder!</div>
+              <div className="text-lg">What would you like to build?</div>
             </div>
           </div>
         </div>
@@ -47,7 +46,7 @@ export default function Conversation({
           message={text}
           markdown={role == 'assistant'}
           self={role == 'user'}
-          color="secondary"
+          color="primary"
         />
       ))}
       {children}

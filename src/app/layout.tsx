@@ -1,12 +1,17 @@
 import { ReactNode } from 'react';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Poppins } from 'next/font/google';
 import './globals.css';
 import classNames from 'classnames';
 import TRPCProvider from '@/app/_trpc/Provider';
 import Layout from '@/app/_components/Layout';
 
-const inter = Inter({ subsets: ['latin'] });
+const poppins = Poppins({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-poppins',
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+});
 
 export const metadata: Metadata = {
   title: 'Software developer AI Agent',
@@ -22,7 +27,7 @@ export default function RootLayout({
     <html lang="en" className="h-full bg-white">
       <body
         className={classNames(
-          inter.className,
+          poppins.className,
           'flex flex-row justify-center h-full w-full',
         )}
       >

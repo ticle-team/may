@@ -1,4 +1,4 @@
-import { router, authedProcedure } from '../trpc';
+import { authedProcedure, router } from '../trpc';
 import { organization } from '@/models/organization';
 import { z } from 'zod';
 import { user as MayUser } from '@/models/user';
@@ -26,16 +26,7 @@ export default router({
         };
       }),
   }),
-  me: authedProcedure.output(MayUser).query(async ({ ctx: { user } }) => {
-    const mayUser = await Container.get(UserService).getUser(user.id);
-    return {
-      id: mayUser.id,
-      organizations: mayUser.memberships.map((membership) => ({
-        id: membership.organization.id,
-        name: membership.organization.name,
-      })),
-      nickname: mayUser.nickname,
-      description: mayUser.description,
-    };
-  }),
+  me: authedProcedure
+    .output(MayUser)
+    .query(({ ctx }) => Container.get(UserService).getUser(ctx)),
 });

@@ -23,6 +23,7 @@ describe('given openai assistant', () => {
     const resp = await openai.getAssistant(stackCreationAssistantID);
 
     expect(resp.id).toBe(stackCreationAssistantID);
+    console.log(resp);
   });
 
   it.skip('when stack creation though assistant, then response is ok', async () => {

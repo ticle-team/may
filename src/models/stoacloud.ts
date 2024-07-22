@@ -50,8 +50,9 @@ export type RegisterVapisOutput = {
 
 export type GetProjectsInput = {
   name?: string;
-  page?: number;
-  perPage?: number;
+  page: number;
+  perPage: number;
+  memberId?: string;
 };
 
 export type CreateInstanceInput = Parameters<

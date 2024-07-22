@@ -8,6 +8,7 @@ import { getVapiDocs } from '@/util/utils';
 import VapiDetail from './VapiDetail';
 import StackFeatures from './StackFeatures';
 import DialogModal from '@/app/_components/Dialog';
+import { trpc } from '@/app/_trpc/client';
 
 type Props = {
   stack: Stack;
@@ -20,38 +21,40 @@ export default function StackStructureContainer({ stack }: Props) {
   const [showDeleteVapiDialog, setShowDeleteVapiDialog] =
     useState<boolean>(false);
 
+  const { data: vapiDocsUrl } = trpc.vapi.getVapiDocsUrl.useQuery({
+    vapiReleaseId: selectedVapi?.id ?? 0,
+  });
+
   useEffect(() => {
     setVapiDocsContent(null);
     if (!selectedVapi) return;
-    fetchVapiDocs();
-  }, [selectedVapi]);
+    (async () => {
+      if (isVapiDocsloading || !selectedVapi || !selectedVapi.package || !stack)
+        return;
 
-  const fetchVapiDocs = useCallback(async () => {
-    if (isVapiDocsloading || !selectedVapi || !selectedVapi.package || !stack)
-      return;
+      try {
+        setVapiDocsLoading(true);
+        const { data, error } = await shapleClient.auth.getSession();
+        if (!data) throw error;
+        const githubAccessToken = data?.session?.provider_token;
+        // TODO: Implement open guthub Oauth login modal when providerToken is not available or provider is not github
 
-    try {
-      setVapiDocsLoading(true);
-      const { data, error } = await shapleClient.auth.getSession();
-      if (!data) throw error;
-      const githubAccessToken = data?.session?.provider_token;
-      // TODO: Implement open guthub Oauth login modal when providerToken is not available or provider is not github
+        // TODO: In this function, 'vapi docs' that are inquired through github api must be modified to look up the archived 'vapi docs' later.
+        const result = await getVapiDocs({
+          vapiName: selectedVapi.package.name,
+          githubRepo: selectedVapi.package.gitRepo,
+          githubBranch: selectedVapi.package.gitBranch ?? 'main',
+          githubAccessToken: githubAccessToken ?? '',
+        });
 
-      // TODO: In this function, 'vapi docs' that are inquired through github api must be modified to look up the archived 'vapi docs' later.
-      const result = await getVapiDocs({
-        vapiName: selectedVapi.package.name,
-        githubRepo: selectedVapi.package.gitRepo,
-        githubBranch: selectedVapi.package.gitBranch ?? 'main',
-        githubAccessToken: githubAccessToken ?? '',
-      });
-
-      if (!result) return;
-      setVapiDocsContent(result);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setVapiDocsLoading(false);
-    }
+        if (!result) return;
+        setVapiDocsContent(result);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setVapiDocsLoading(false);
+      }
+    })();
   }, [selectedVapi]);
 
   const handleClickVapi = (vapi: VapiRelease | null) => {
@@ -93,7 +96,7 @@ export default function StackStructureContainer({ stack }: Props) {
         <div className="flex flex-col w-[calc(75%-100px)]">
           <VapiDetail
             loading={isVapiDocsloading}
-            docsContent={vapiDocsContent ?? null}
+            docsUrl={vapiDocsUrl ?? null}
             vapi={selectedVapi}
             onClickUninstallVapiBtn={() => setShowDeleteVapiDialog(true)}
           />

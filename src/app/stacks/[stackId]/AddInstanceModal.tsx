@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import Button from '@/app/_components/Button';
 import Dropdown from '@/app/_components/Dropdown';
+import RingSpinner from '@/app/_components/RingSpinner';
 
 // TODO: Change the instance zone items
 const INSTANCE_ZONE_ITEMS = [{ label: 'default', value: 'default' }];
@@ -59,8 +60,16 @@ const AddInstanceModal = ({ onAdd, onCancel }: Props) => {
         <Button color="secondary" onClick={onCancel}>
           cancel
         </Button>
-        <Button color="primary" disabled={loading} onClick={handleAddInstance}>
+        <Button
+          className="flex justify-center items-center"
+          color="primary"
+          disabled={loading}
+          onClick={handleAddInstance}
+        >
           Add
+          {loading && (
+            <RingSpinner shape="with-bg" className="flex w-6 h-6 ml-1.5" />
+          )}
         </Button>
       </div>
     </div>

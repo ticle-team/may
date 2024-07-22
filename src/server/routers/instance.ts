@@ -4,7 +4,6 @@ import { instance } from '@/models/stack';
 import { InstanceService } from '@/server/domain/instance/instance.service';
 import { Container } from 'typedi';
 
-const instanceService = Container.get(InstanceService);
 export default router({
   launch: authedProcedure
     .input(
@@ -43,7 +42,11 @@ export default router({
     )
     .output(instance)
     .mutation(({ input: { stackId, zone, name } }) =>
-      instanceService.createInstance(stackId, zone ?? null, name ?? null),
+      Container.get(InstanceService).createInstance(
+        stackId,
+        zone ?? null,
+        name ?? null,
+      ),
     ),
   deployStack: authedProcedure
     .input(
@@ -51,7 +54,7 @@ export default router({
         instanceId: z.number(),
       }),
     )
-    .mutation(async ({ input: { instanceId } }) => {
-      await instanceService.deployStack(instanceId);
-    }),
+    .mutation(({ input: { instanceId } }) =>
+      Container.get(InstanceService).deployStack(instanceId),
+    ),
 });

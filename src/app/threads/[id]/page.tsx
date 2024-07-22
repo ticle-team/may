@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useState, Suspense, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { trpc } from '@/app/_trpc/client';
 import { useParams, useRouter } from 'next/navigation';
 import useToast from '@/app/_hooks/useToast';
-import { ChatMessage, ChatRole } from '@/models/ai';
+import { ChatMessage } from '@/models/ai';
 import {
-  StackCreationEventDeploy,
   StackCreationEventText,
   StackCreationEventTextCreated,
 } from '@/models/assistant';
 import UserMessageForm from './UserMessageForm';
 import Conversation from './Conversation';
 import Button from '@/app/_components/Button';
+import StackContainer from './StackContainer';
+import { CreatingStackStateInfoJson } from '@/models/thread';
+import { Timeline } from '@/app/threads/[id]/Timeline';
+import RingSpinner from '@/app/_components/RingSpinner';
 
 export default function Page() {
   const router = useRouter();
@@ -23,20 +26,36 @@ export default function Page() {
   const { renderToastContents, showErrorToast, hideToast } = useToast();
   const [initialized, setInitialized] = useState(false);
   const [enabledChat, setEnabledChat] = useState(false);
+  const utils = trpc.useUtils();
+  const [deploying, setDeploying] = useState(false);
 
-  const thread = trpc.thread.get.useQuery({
-    threadId,
-  });
+  const thread = trpc.thread.get.useQuery(
+    {
+      threadId,
+    },
+    {
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+    },
+  );
   if (thread.error) {
     console.error(thread.error);
     showErrorToast('', thread.error.message);
     hideToast(1500);
   }
 
-  const allMessages = trpc.thread.messages.list.useQuery({
-    threadId,
-    limit: 100,
-  });
+  const allMessages = trpc.thread.messages.list.useQuery(
+    {
+      threadId,
+      limit: 100,
+    },
+    {
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      refetchOnReconnect: false,
+    },
+  );
   if (allMessages.error) {
     console.error(allMessages.error);
     showErrorToast('', allMessages.error.message);
@@ -71,11 +90,17 @@ export default function Page() {
     (async () => {
       for (const { event } of run.data) {
         switch (event) {
-          case 'deploy': {
+          case 'deploy.end': {
+            setDeploying(false);
             await thread.refetch();
             break;
           }
+          case 'deploy.begin': {
+            setDeploying(true);
+            break;
+          }
           case 'end': {
+            await thread.refetch();
             await allMessages.refetch();
             break;
           }
@@ -188,32 +213,67 @@ export default function Page() {
     router.push(`/stacks/${thread.data.shapleStackId}`);
   }, [router, thread.data]);
 
+  const stateInfo = useMemo<CreatingStackStateInfoJson>(() => {
+    const defaultStateInfo = {
+      current_step: 0,
+      name: '',
+      description: '',
+      dependencies: {
+        base_apis: [],
+        vapis: [],
+      },
+    };
+
+    return {
+      ...defaultStateInfo,
+      ...(thread.data?.stateInfo ?? {}),
+    };
+  }, [thread.data]);
+
   return (
     <>
       {renderToastContents()}
-      <br />
       {initialized ? (
-        <main className="flex flex-col w-9/12 h-full">
-          <div className="flex flex-row w-full h-5/6">
-            <Conversation history={conversation}>
-              {!answering && thread.data?.shapleStackId && (
-                <div className="flex flex-row -mt-2.5 justify-center">
-                  <Button color="success" size="lg" onClick={goToStack}>
-                    Go to stack
-                  </Button>
-                </div>
-              )}
-            </Conversation>
+        <div className="flex flex-col px-5.5 py-6 w-full h-full">
+          <div className="flex flex-row w-full my-7 h-7 justify-center">
+            <Timeline progress={stateInfo.current_step} />
           </div>
-          <br />
-          <div className="flex flex-row w-full">
+          <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
+            <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
+              <Conversation history={conversation}>
+                {!answering && deploying && (
+                  <div className="flex flex-row justify-center items-center animate-pulse text-primary-500">
+                    <RingSpinner shape="with-bg" className="flex w-5 h-5" />
+                    &nbsp;<p>Deploying...</p>
+                  </div>
+                )}
+                {!answering && thread.data?.shapleStackId && (
+                  <div className="flex flex-row -mt-2.5 justify-center">
+                    <Button color="secondary" size="lg" onClick={goToStack}>
+                      Go to stack
+                    </Button>
+                  </div>
+                )}
+              </Conversation>
+            </div>
+            <div className="flex flex-col justify-center items-center w-6/12 h-full bg-gray-100 border border-gray-200 rounded">
+              <StackContainer
+                name={stateInfo.name}
+                description={stateInfo.description}
+                baseApis={stateInfo.dependencies.base_apis}
+                vapis={stateInfo.dependencies.vapis}
+              />
+            </div>
+          </div>
+          <div className="flex w-full pt-0.5">
             <UserMessageForm
               answering={answering}
               onSubmit={handleSubmitUserMessage}
               onStopAnswering={handleStopAnswering}
+              color="primary"
             />
           </div>
-        </main>
+        </div>
       ) : (
         <p>Loading...</p>
       )}

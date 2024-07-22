@@ -5,7 +5,15 @@ import { StackService } from '@/server/domain/stack/stack.service';
 import { TextDeltaBlock } from 'openai/resources/beta/threads/messages';
 import { TRPCError } from '@trpc/server';
 import { StackCreationEvent } from '@/models/assistant';
-import { ThreadService } from '@/server/domain/thread/thread.service';
+import { Context } from '@/server/context';
+import { ThreadStore } from '@/server/domain/thread/thread.store';
+import {
+  CreatingStackStateInfoJson,
+  installStackArgs,
+  threadStates,
+} from '@/models/thread';
+import { snakeToCamel } from '@/util/cases';
+import { CompletionService } from '@/server/domain/assistant/completion.service';
 
 const logger = getLogger('AssistantService');
 
@@ -16,13 +24,17 @@ export class AssistantService {
 
   constructor(
     private readonly openaiAssistant: OpenAIAssistant,
-    private readonly threadService: ThreadService,
+    private readonly completionService: CompletionService,
+    private readonly threadStore: ThreadStore,
     private readonly stackService: StackService,
   ) {}
 
-  async *runForCreationStack(threadId: number) {
+  async *runForCreationStack(
+    ctx: Context,
+    threadId: number,
+  ): AsyncGenerator<StackCreationEvent, void> {
     yield { event: 'begin' };
-    const thread = await this.threadService.get(threadId);
+    const thread = await this.threadStore.findThreadById(ctx, threadId);
     const assistantStream = this.openaiAssistant.runStream(
       thread.openaiThreadId,
       this.stackCreationAssistantId,
@@ -54,16 +66,20 @@ export class AssistantService {
             case 'thread.message.completed':
               yield { id: data.id, event: 'text.done' };
               break;
-            case 'thread.run.requires_action':
+            case 'thread.run.requires_action': {
               const { id: runId, required_action } = data;
+              const toolOutputs: { toolCallId: string; output: string }[] = [];
               for (const {
                 id: toolCallId,
                 type,
-                function: { arguments: funcArguments, name: funcName },
+                function: { arguments: funcArgs, name: funcName },
               } of required_action?.submit_tool_outputs?.tool_calls ?? []) {
                 if (type != 'function') {
                   continue;
                 }
+
+                const args = snakeToCamel(JSON.parse(funcArgs));
+                let output: Record<string, any> = {};
 
                 switch (funcName) {
                   case 'deploy_stack': {
@@ -73,38 +89,89 @@ export class AssistantService {
                         message: 'Project ID is required for stack deployment',
                       });
                     }
-                    const { stackId, generator } =
-                      await self.stackService.createStackByToolCall(
-                        toolCallId,
-                        runId,
-                        threadId,
-                        funcArguments,
-                        thread.shapleProjectId,
-                      );
+                    logger.debug('call deploy_stack', { args });
 
-                    thread.shapleStackId = stackId;
-                    await self.threadService.save(thread);
-                    yield* handleStream(generator);
-                    yield { event: 'deploy', stackId };
+                    yield { event: 'deploy.begin' };
+                    const {
+                      data: stackInfo,
+                      error,
+                      success,
+                    } = installStackArgs.safeParse(args);
+                    if (!success) {
+                      logger.error('failed to parse installStackArgs', {
+                        error,
+                      });
+                      output = {
+                        success: false,
+                        message: 'failed to parse arguments',
+                      };
+                      break;
+                    }
+
+                    const { stackId, output: deployStackOutput } =
+                      await self.stackService.createStackByToolCall(
+                        ctx,
+                        thread.shapleProjectId,
+                        stackInfo.name,
+                        stackInfo.description,
+                        stackInfo.dependencies.baseApis,
+                        stackInfo.dependencies.vapis,
+                      );
+                    output = deployStackOutput;
+                    if (stackId == 0) {
+                      break;
+                    }
+
+                    const stateInfo: CreatingStackStateInfoJson = {
+                      current_step: 6,
+                      name: stackInfo.name,
+                      description: stackInfo.description,
+                      dependencies: {
+                        vapis: stackInfo.dependencies.vapis,
+                        base_apis: stackInfo.dependencies.baseApis,
+                      },
+                    };
+
+                    await self.threadStore.updateThread(ctx, thread.id, {
+                      shapleStackId: stackId,
+                      stateInfo,
+                      state: threadStates.stackCreated,
+                    });
+                    yield { event: 'deploy.end', stackId };
                     break;
                   }
                   case 'create_vapis': {
-                    const generator =
-                      self.openaiAssistant.submitToolOutputsStream(
-                        thread.openaiThreadId,
-                        runId,
-                        toolCallId,
-                        JSON.stringify({
-                          success: false,
-                          message: 'Not implemented yet',
-                        }),
-                      );
-                    yield* handleStream(generator);
+                    output = {
+                      success: false,
+                      message: 'Not implemented yet',
+                    };
+                    break;
+                  }
+                  default: {
+                    logger.error('Unknown tool call', { funcName });
+                    output = {
+                      success: false,
+                      message: `${funcName} is not existed function.`,
+                    };
                     break;
                   }
                 }
+
+                toolOutputs.push({
+                  toolCallId,
+                  output: JSON.stringify(output),
+                });
               }
+              logger.debug('submit tool outputs', { toolOutputs });
+
+              const generator = self.openaiAssistant.submitToolOutputsStream(
+                thread.openaiThreadId,
+                runId,
+                toolOutputs,
+              );
+              yield* handleStream(generator);
               break;
+            }
             case 'error':
               yield {
                 event: 'error',
@@ -121,6 +188,19 @@ export class AssistantService {
     }
 
     yield* handleStream(assistantStream);
+
+    const { state } = await this.threadStore.findThreadById(ctx, thread.id);
+    if (state == threadStates.stackCreating) {
+      const stateInfoJson =
+        await this.completionService.generateCreatingStackStateInfo(
+          thread.openaiThreadId,
+        );
+      logger.debug('update thread stateInfo', { stateInfoJson });
+      await this.threadStore.updateThread(ctx, thread.id, {
+        stateInfo: stateInfoJson,
+      });
+    }
+
     yield { event: 'end' };
   }
 }

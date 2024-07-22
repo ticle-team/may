@@ -5,7 +5,6 @@ import { vapiRelease } from '@/models/vapi';
 import Container from 'typedi';
 import { StackService } from '@/server/domain/stack/stack.service';
 
-const stackService = Container.get(StackService);
 export default router({
   delete: authedProcedure
     .input(
@@ -23,7 +22,9 @@ export default router({
       }),
     )
     .output(stack)
-    .query(({ input }) => stackService.getStack(input.stackId)),
+    .query(({ ctx, input }) =>
+      Container.get(StackService).getStack(ctx, input.stackId),
+    ),
   instances: router({
     list: authedProcedure
       .input(
@@ -38,7 +39,7 @@ export default router({
         }),
       )
       .query(({ input: { stackId } }) =>
-        stackService.getInstancesInStack(stackId),
+        Container.get(StackService).getInstancesInStack(stackId),
       ),
   }),
   vapis: router({

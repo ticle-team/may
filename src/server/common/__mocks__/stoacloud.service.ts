@@ -20,5 +20,7 @@ export function createStoaCloudServiceMock(): StoaCloudServiceMock {
     uninstallPostgrest: jest.fn(),
     installVapi: jest.fn(),
     uninstallVapi: jest.fn(),
+    getVapiPackage: jest.fn(),
+    getUser: jest.fn(),
   };
 }

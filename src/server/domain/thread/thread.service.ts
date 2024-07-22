@@ -4,8 +4,9 @@ import { ThreadStore } from '@/server/domain/thread/thread.store';
 import { TRPCError } from '@trpc/server';
 import { getLogger } from '@/logger';
 import { UserStore } from '@/server/domain/user/user.store';
-import { PrismaService } from '@/server/common/prisma.service';
-import { Thread } from '@prisma/client';
+import { Context } from '@/server/context';
+import { Thread, threadStateInfo, threadStates } from '@/models/thread';
+import { UserService } from '@/server/domain/user/user.service';
 
 const logger = getLogger('ThreadService');
 
@@ -13,39 +14,54 @@ const logger = getLogger('ThreadService');
 export class ThreadService {
   constructor(
     private readonly openaiAssistant: OpenAIAssistant,
-    private readonly prisma: PrismaService,
     private readonly threadStore: ThreadStore,
-    private readonly userStore: UserStore,
+    private readonly userService: UserService,
   ) {}
 
-  async create(
-    ownerId: string, // this is a string, gotrue user id
-    projectId: number,
-  ) {
-    return this.prisma.$transaction(async (tx) => {
-      const user = await this.userStore.getUser(tx, ownerId);
-      const thread = await this.openaiAssistant.createThread();
-      return await this.threadStore.createThread(
-        tx,
-        user.id,
-        thread.id,
-        projectId,
-      );
-    });
+  async create(ctx: Context, projectId: number): Promise<Thread> {
+    const ownerId = ctx.session?.user?.id;
+    if (!ownerId) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Unauthorized',
+      });
+    }
+    const user = await this.userService.getUser(ctx);
+    const openaiThread = await this.openaiAssistant.createThread();
+    const thread = await this.threadStore.createThread(
+      ctx,
+      user.id,
+      openaiThread.id,
+      projectId,
+      threadStates.stackCreating,
+    );
+
+    const stateInfo = threadStateInfo.parse(thread.stateInfo);
+
+    return {
+      ...thread,
+      stateInfo,
+    };
   }
 
-  async cancel(threadId: number) {
-    const thread = await this.threadStore.findThreadById(threadId);
+  async cancel(ctx: Context, threadId: number) {
+    const thread = await this.threadStore.findThreadById(ctx, threadId);
     await this.openaiAssistant.cancel(thread.openaiThreadId);
   }
 
-  async addUserMessage(threadId: number, message: string) {
-    const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
+  async addUserMessage(ctx: Context, threadId: number, message: string) {
+    const { openaiThreadId } = await this.threadStore.findThreadById(
+      ctx,
+      threadId,
+    );
     return this.openaiAssistant.createMessage(openaiThreadId, message);
   }
 
-  async delete(threadId: number) {
-    const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
+  async delete(ctx: Context, threadId: number) {
+    const { openaiThreadId } = await this.threadStore.findThreadById(
+      ctx,
+      threadId,
+    );
     const { deleted } = await this.openaiAssistant.deleteThread(openaiThreadId);
     if (!deleted) {
       logger.error('failed to delete thread', { threadId });
@@ -54,19 +70,22 @@ export class ThreadService {
         message: 'Failed to delete thread',
       });
     }
-    return this.prisma.$transaction(async (tx) => {
-      return this.threadStore.deleteThreadById(tx, threadId);
-    });
+
+    return this.threadStore.deleteThreadById(ctx, threadId);
   }
 
   async getTextMessages(
+    ctx: Context,
     threadId: number,
     options?: {
       before?: string;
       limit?: number;
     },
   ) {
-    const { openaiThreadId } = await this.threadStore.findThreadById(threadId);
+    const { openaiThreadId } = await this.threadStore.findThreadById(
+      ctx,
+      threadId,
+    );
     const { messages, after } = await this.openaiAssistant.getTextMessages(
       openaiThreadId,
       options,
@@ -78,13 +97,16 @@ export class ThreadService {
     };
   }
 
-  async get(threadId: number) {
-    return this.threadStore.findThreadById(threadId);
-  }
+  async get(ctx: Context, threadId: number): Promise<Thread> {
+    const thread = await this.threadStore.findThreadById(ctx, threadId);
+    const stateInfo = threadStateInfo.parse(thread.stateInfo);
 
-  async save(thread: Thread) {
-    return this.prisma.$transaction(async (tx) => {
-      return this.threadStore.updateThread(tx, thread);
-    });
+    return {
+      id: thread.id,
+      shapleProjectId: thread.shapleProjectId,
+      shapleStackId: thread.shapleStackId,
+      state: thread.state,
+      stateInfo,
+    };
   }
 }

@@ -1,4 +1,4 @@
-import { createClient, User } from '@shaple/shaple';
+import { createClient, Session, User } from '@shaple/shaple';
 
 export const shaple = createClient(
   process.env.NEXT_PUBLIC_SHAPLE_URL!,
@@ -21,10 +21,10 @@ export async function createUser() {
   expect(user).not.toBeNull();
   expect(session).not.toBeNull();
 
-  return user!;
+  return session!;
 }
 
-export async function deleteUser(user: User) {
+export async function deleteUser(session: Session) {
   const { error } = await shaple.auth.signOut();
   expect(error).toBeNull();
   {
@@ -33,7 +33,10 @@ export async function deleteUser(user: User) {
       process.env.SHAPLE_ADMIN_KEY!,
     );
 
-    const { error } = await shaple.auth.admin.deleteUser(user.id, false);
+    const { error } = await shaple.auth.admin.deleteUser(
+      session.user.id,
+      false,
+    );
     expect(error).toBeNull();
   }
 }

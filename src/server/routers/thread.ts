@@ -13,10 +13,9 @@ export default router({
   create: authedProcedure
     .input(z.object({ projectId: z.number() }))
     .output(thread)
-    .mutation(async ({ ctx: { user }, input: { projectId } }) => {
-      const threadService = Container.get(ThreadService);
-      return threadService.create(user.id, projectId);
-    }),
+    .mutation(({ ctx, input: { projectId } }) =>
+      Container.get(ThreadService).create(ctx, projectId),
+    ),
   messages: router({
     list: authedProcedure
       .input(
@@ -32,9 +31,10 @@ export default router({
           nextCursor: z.string().nullish(),
         }),
       )
-      .query(async ({ input: { threadId, cursor, limit } }) => {
+      .query(async ({ ctx, input: { threadId, cursor, limit } }) => {
         const threadService = Container.get(ThreadService);
         const { messages, after } = await threadService.getTextMessages(
+          ctx,
           threadId,
           { before: cursor ?? undefined, limit },
         );
@@ -52,10 +52,10 @@ export default router({
         }),
       )
       .output(z.void())
-      .mutation(async ({ input: { threadId, message } }) => {
+      .mutation(async ({ ctx, input: { threadId, message } }) => {
         const threadService = Container.get(ThreadService);
 
-        await threadService.addUserMessage(threadId, message);
+        await threadService.addUserMessage(ctx, threadId, message);
       }),
   }),
   runForStackCreation: authedProcedure
@@ -64,10 +64,10 @@ export default router({
         threadId: z.number(),
       }),
     )
-    .query(async function* ({ input: { threadId } }) {
+    .query(async function* ({ ctx, input: { threadId } }) {
       const assistantService = Container.get(AssistantService);
 
-      const generator = assistantService.runForCreationStack(threadId);
+      const generator = assistantService.runForCreationStack(ctx, threadId);
       yield* generator;
     }),
   get: authedProcedure
@@ -77,14 +77,9 @@ export default router({
       }),
     )
     .output(thread)
-    .query(async ({ input: { threadId } }) => {
+    .query(async ({ ctx, input: { threadId } }) => {
       const threadService = Container.get(ThreadService);
-      const thread = await threadService.get(threadId);
-      return {
-        id: thread.id,
-        shapleProjectId: thread.shapleProjectId,
-        shapleStackId: thread.shapleStackId,
-      };
+      return await threadService.get(ctx, threadId);
     }),
   cancel: authedProcedure
     .input(
@@ -92,8 +87,8 @@ export default router({
         threadId: z.number(),
       }),
     )
-    .mutation(async ({ input: { threadId } }) => {
+    .mutation(async ({ ctx, input: { threadId } }) => {
       const threadService = Container.get(ThreadService);
-      await threadService.cancel(threadId);
+      await threadService.cancel(ctx, threadId);
     }),
 });

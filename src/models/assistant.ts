@@ -24,8 +24,12 @@ export type StackCreationEventError = {
   error: TRPCError;
 };
 
-export type StackCreationEventDeploy = {
-  event: 'deploy';
+export type StackCreationEventDeployBegin = {
+  event: 'deploy.begin';
+};
+
+export type StackCreationEventDeployEnd = {
+  event: 'deploy.end';
   stackId: number;
 };
 
@@ -39,5 +43,7 @@ export type StackCreationEvent =
   | StackCreationEventText
   | StackCreationEventTextDone
   | StackCreationEventError
-  | StackCreationEventDeploy
-  | StackCreationEventBegin;
+  | StackCreationEventDeployEnd
+  | StackCreationEventDeployBegin
+  | StackCreationEventBegin
+  | StackCreationEventEnd;

@@ -1,9 +1,10 @@
 import { Service } from 'typedi';
-import { Prisma } from '@prisma/client';
+import { Context } from '@/server/context';
+import { Prisma } from '.prisma/client';
 
 @Service()
 export class UserStore {
-  async getUser(tx: Prisma.TransactionClient, ownerId: string) {
+  async getUser({ tx }: Context, ownerId: string) {
     const user = await tx.user.findFirst({
       where: {
         ownerId: ownerId,
@@ -14,23 +15,23 @@ export class UserStore {
             organization: true,
           },
         },
+        shapleUser: true,
       },
     });
 
-    if (user) {
-      return user;
-    }
+    return user;
+  }
 
+  createUser({ tx }: Context, data: Prisma.UserUncheckedCreateInput) {
     return tx.user.create({
-      data: {
-        ownerId: ownerId,
-      },
+      data: data,
       include: {
         memberships: {
           include: {
             organization: true,
           },
         },
+        shapleUser: true,
       },
     });
   }

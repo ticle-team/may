@@ -13,6 +13,9 @@ import {
 } from '@/server/domain/user/__mocks__/user.stub';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
 import { StackCreationEventText } from '@/models/assistant';
+import { PrismaService } from '@/server/common/prisma.service';
+import { PrismaClient } from '@prisma/client';
+import { Context } from '@/server/context';
 
 describe('given thread trpc with mock objects', () => {
   const threadService = createThreadServiceMock();
@@ -24,25 +27,32 @@ describe('given thread trpc with mock objects', () => {
   );
 
   let caller: ReturnType<typeof createCaller>;
-  let user;
+  let session;
+  let prisma: PrismaClient;
+  let ctx: Context;
   beforeEach(async () => {
+    session = await createUser();
     await resetSchema();
+    prisma = Container.get(PrismaService);
+    await prisma.$connect();
     await Container.get(StoaCloudService).resetSchema();
 
     Container.set(ThreadService, threadService);
     Container.set(AssistantService, assistantService);
 
-    user = await createUser();
-
-    caller = createCaller({
-      user,
-    });
+    ctx = {
+      tx: prisma,
+      session: session,
+      githubToken: null,
+    };
+    caller = createCaller(ctx);
   });
 
   afterEach(async () => {
     Container.reset();
-    await deleteUser(user!);
     jest.clearAllMocks();
+    await prisma.$disconnect();
+    await deleteUser(session!);
   });
 
   it('when calling thread as a subscription, should return messages streaming', async () => {
@@ -50,17 +60,17 @@ describe('given thread trpc with mock objects', () => {
     const projectId = 1;
     assistantService.runForCreationStack.mockImplementationOnce(
       async function* () {
-        yield { event: 'text', text: 'h' };
+        yield { id: '', event: 'text', text: 'h' };
         await setTimeout(100);
-        yield { event: 'text', text: 'e' };
+        yield { id: '', event: 'text', text: 'e' };
         await setTimeout(100);
-        yield { event: 'text', text: 'l' };
+        yield { id: '', event: 'text', text: 'l' };
         await setTimeout(100);
-        yield { event: 'text', text: 'l' };
+        yield { id: '', event: 'text', text: 'l' };
         await setTimeout(100);
-        yield { event: 'text', text: 'o' };
+        yield { id: '', event: 'text', text: 'o' };
         await setTimeout(100);
-        yield { event: 'done' };
+        yield { id: '', event: 'text.done' };
       },
     );
 
@@ -76,7 +86,7 @@ describe('given thread trpc with mock objects', () => {
           const { text } = ev as StackCreationEventText;
           answers.push(text);
           break;
-        case 'done':
+        case 'text.done':
           completed = true;
           break;
       }
@@ -87,6 +97,9 @@ describe('given thread trpc with mock objects', () => {
     expect(completed).toBe(true);
     expect(answers).toEqual(['h', 'e', 'l', 'l', 'o']);
 
-    expect(assistantService.runForCreationStack).toHaveBeenCalledWith(threadId);
+    expect(assistantService.runForCreationStack).toHaveBeenCalledWith(
+      ctx,
+      threadId,
+    );
   });
 });

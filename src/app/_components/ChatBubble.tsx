@@ -1,7 +1,7 @@
 import classNames from 'classnames';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { UserIcon, GlobeAltIcon } from '@heroicons/react/20/solid';
+import { AIBotIcon, UserIcon } from '@/app/_components/Icons';
 
 type ChatBubbleProps = {
   self?: boolean;
@@ -12,6 +12,8 @@ type ChatBubbleProps = {
   color: 'primary' | 'secondary';
 };
 
+export function icon() {}
+
 function ChatBubble({
   self = false,
   name,
@@ -20,32 +22,25 @@ function ChatBubble({
   markdown = false,
   color = 'primary',
 }: ChatBubbleProps) {
-  const Icon = self ? UserIcon : GlobeAltIcon;
+  const Icon = self ? UserIcon : AIBotIcon;
 
   return (
     <div
-      className={classNames('flex gap-2.5 w-full', {
-        'flex-row items-start': !self,
-        'flex-row-reverse items-end': self,
+      className={classNames('flex gap-2 w-full items-start', {
+        'flex-row': !self,
+        'flex-row-reverse': self,
       })}
     >
-      <Icon className="flex flex-col w-8 h-8 rounded-full" />
+      <Icon className="flex flex-col w-8 h-8" />
       <div
-        className={classNames(
-          `flex flex-col leading-1.5 p-4 border-${color}-200 bg-${color}-700 w-fit max-w-full`,
-          {
-            'rounded-e-xl rounded-es-xl': !self,
-            'rounded-s-xl rounded-se-xl': self,
-          },
-        )}
+        className={classNames(`flex flex-col p-6 w-fit max-w-full`, {
+          'rounded-e-xl rounded-es-xl': !self,
+          'rounded-s-xl rounded-ee-xl': self,
+          'border-secondary-200 bg-secondary-700': color === 'secondary',
+          'border-primary-200 bg-primary-200': color === 'primary',
+        })}
       >
-        <div className="flex flex-row items-center space-x-2 rtl:space-x-reverse">
-          <span className="text-sm font-semibold text-white">{name}</span>
-          {time && (
-            <time className="text-sm font-normal text-gray-400">{time}</time>
-          )}
-        </div>
-        <div className="prose prose-invert prose-sm w-fit max-w-full">
+        <article className="prose prose-sm w-fit max-w-full">
           {markdown ? (
             <Markdown remarkPlugins={[[remarkGfm, { singleTilde: false }]]}>
               {message}
@@ -53,7 +48,7 @@ function ChatBubble({
           ) : (
             <p>{message}</p>
           )}
-        </div>
+        </article>
       </div>
     </div>
   );
