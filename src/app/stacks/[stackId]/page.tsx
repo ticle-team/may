@@ -20,7 +20,8 @@ export default function Page() {
   const tabs = [
     { name: 'Info' },
     { name: 'Structure' },
-    { name: 'Editor' },
+    // TODO: Not yet implement these tabs
+    // { name: 'Editor' },
     { name: 'Settings' },
   ];
 
