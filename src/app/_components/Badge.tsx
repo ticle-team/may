@@ -9,7 +9,8 @@ type Color =
   | 'blue'
   | 'indigo'
   | 'purple'
-  | 'pink';
+  | 'pink'
+  | 'none';
 export type BadgeProps = {
   children: ReactNode;
   color?: Color;
