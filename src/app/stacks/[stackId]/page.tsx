@@ -45,11 +45,11 @@ export default function Page() {
           <LoadingSpinner />
         </div>
       ) : (
-        <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center">
+        <div className="flex flex-col min-w-[800px] max-w-7xl py-24 items-center h-full">
           <div className="w-full flex justify-start">
             <div className="font-bold text-3xl my-6">{stack?.name}</div>
           </div>
-          <div className="w-full flex flex-col">
+          <div className="w-full h-full flex flex-col">
             <div className="w-full flex">
               <div className="-mb-px flex space-x-8" aria-label="Tabs">
                 {tabs.map((tab) => (
@@ -74,6 +74,11 @@ export default function Page() {
             {selectedTab === 'Info' && <StackInfoContainer stack={stack!} />}
             {selectedTab === 'Structure' && (
               <StackStructureContainer stack={stack!} />
+            )}
+            {selectedTab === 'Settings' && (
+              <div className="flex w-full h-full justify-center items-center text-gray-400 text-2xl font-semibold bg-primary-50 m-8">
+                <span className="relative -top-1/4">TBD</span>
+              </div>
             )}
           </div>
         </div>
