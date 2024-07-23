@@ -9,6 +9,7 @@ export const vapiPackage = z.object({
   author: z.object({
     id: z.number(),
     name: z.string(),
+    profileUrl: z.string(),
   }),
   overallRank: z.number(),
 });
@@ -50,12 +51,17 @@ export function parseVapiReleaseFromProto(
 export function parseVapiPackageFromProto(
   vapiPackProto: stoacloud.v1.VapiPackage,
 ): VapiPackage {
+  const { author } = vapiPackProto;
   return {
     id: vapiPackProto.id,
     name: vapiPackProto.name,
     gitBranch: vapiPackProto.gitBranch,
     gitRepo: vapiPackProto.gitRepo,
-    author: vapiPackProto.author,
+    author: {
+      id: author.id,
+      name: author.name,
+      profileUrl: author.profileUrl,
+    },
     overallRank: vapiPackProto.overallRank,
   };
 }

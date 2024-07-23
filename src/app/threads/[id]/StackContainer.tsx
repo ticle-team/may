@@ -58,9 +58,12 @@ export default function StackContainer({
                         {rel.package?.name}
                       </span>
                       {rel.package?.author && (
-                        <span className="text-gray-400">
+                        <a
+                          className="text-gray-400 hover:text-gray-300"
+                          href={rel.package?.author?.profileUrl}
+                        >
                           @{rel.package?.author?.name}
-                        </span>
+                        </a>
                       )}
                       <Badge>
                         RANK:&nbsp;
