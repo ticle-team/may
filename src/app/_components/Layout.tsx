@@ -4,6 +4,14 @@ import SideMenu from '@/app/_components/SideMenu';
 import Header from '@/app/_components/Header';
 import ChatBar from '@/app/_components/ChatBar';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+
+function End() {
+  useEffect(() => {
+    import('flowbite');
+  }, []);
+  return <></>;
+}
 
 type PageProps = {
   hideSideMenu: boolean;
@@ -48,6 +56,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           />
         </div>
       </div>
+      <End />
     </div>
   );
 }

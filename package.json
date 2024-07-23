@@ -73,6 +73,7 @@
     "disposablestack": "^1.1.6",
     "dotenv": "^16.4.5",
     "dotenv-cli": "^7.4.2",
+    "flowbite-react": "^0.10.1",
     "google-protobuf": "^3.21.2",
     "langchain": "^0.2.8",
     "lodash": "^4.17.21",

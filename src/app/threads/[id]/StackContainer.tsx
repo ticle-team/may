@@ -1,5 +1,6 @@
 import { trpc } from '@/app/_trpc/client';
 import classNames from 'classnames';
+import { Tooltip } from 'flowbite-react';
 
 function Badge({ rank = 0 }: { rank?: number }) {
   const style = {
@@ -26,14 +27,22 @@ function Badge({ rank = 0 }: { rank?: number }) {
   };
 
   return (
-    <span
-      style={style}
-      className={classNames(
-        'inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium ring-1 ring-inset',
-      )}
-    >
-      RANK:&nbsp;{Math.floor((rank ?? 0) * 10) / 10}
-    </span>
+    <>
+      <span
+        data-tooltip-target="tooltip-right"
+        data-tooltip-placement="right"
+        style={style}
+        className={classNames(
+          'inline-flex items-center rounded-md bg-gray-50 text-xs font-medium ring-1 ring-inset',
+        )}
+      >
+        <Tooltip content="The Confidence Score" placement="right" style="light">
+          <span className="flex flex-1 px-2 py-1">
+            Score:&nbsp;{Math.floor((rank ?? 0) * 10) / 10}
+          </span>
+        </Tooltip>
+      </span>
+    </>
   );
 }
 
