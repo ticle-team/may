@@ -15,7 +15,6 @@ export class UserStore {
             organization: true,
           },
         },
-        shapleUser: true,
       },
     });
 
@@ -31,7 +30,6 @@ export class UserStore {
             organization: true,
           },
         },
-        shapleUser: true,
       },
     });
   }
