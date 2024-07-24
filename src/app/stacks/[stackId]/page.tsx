@@ -76,7 +76,7 @@ export default function Page() {
               <StackStructureContainer stack={stack!} />
             )}
             {selectedTab === 'Settings' && (
-              <div className="flex w-full h-full justify-center items-center text-gray-400 text-2xl font-semibold bg-primary-50 m-8">
+              <div className="flex w-full h-full justify-center items-center text-gray-400 text-2xl font-semibold bg-primary-200/30 m-8 backdrop-blur">
                 <span className="relative -top-1/4">TBD</span>
               </div>
             )}
