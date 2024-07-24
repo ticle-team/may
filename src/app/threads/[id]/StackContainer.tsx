@@ -36,7 +36,11 @@ function Badge({ rank = 0 }: { rank?: number }) {
           'inline-flex items-center rounded-md bg-gray-50 text-xs font-medium ring-1 ring-inset',
         )}
       >
-        <Tooltip content="The Confidence Score" placement="right" style="light">
+        <Tooltip
+          content="Score for each API is determined by code integrity & security, reusability, and community support"
+          placement="bottom"
+          style="light"
+        >
           <span className="flex flex-1 px-2 py-1">
             Score:&nbsp;{Math.floor((rank ?? 0) * 10) / 10}
           </span>
