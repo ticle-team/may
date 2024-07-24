@@ -5,12 +5,12 @@ import { PropsWithChildren, useEffect, useMemo, useRef, useState } from 'react';
 import ChatBubble from '@/app/_components/ChatBubble';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/solid';
 
-export default ({
+export default function Conversation({
   history: threadMessages,
   children,
 }: PropsWithChildren<{
   history: ChatMessage[];
-}>) => {
+}>) {
   const scrollTargetRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   useEffect(() => {
@@ -77,4 +77,4 @@ export default ({
       </div>
     </div>
   );
-};
+}
