@@ -11,6 +11,7 @@ import {
 import { Context } from '@/server/context';
 import { threadStateInfo } from '@/models/thread';
 import _ from 'lodash';
+import { parseVapiPackageFromProto } from '@/models/vapi';
 
 const logger = getLogger('server.domain.stack.service');
 
@@ -171,22 +172,20 @@ export class StackService {
     }
 
     try {
-      const message =
-        'skip install vapis: ' +
-        vapis
-          .filter((v) => {
-            return vapiReleases.findIndex((r) => r.name === v.name) === -1;
-          })
-          .map((v) => `'${v.name}'`)
-          .join(', ') +
-        '. Because they are not found.';
+      const notInstalledVapis = vapis.filter(
+        (v) => vapiReleases.findIndex((r) => r.name === v.name) === -1,
+      );
+      const output: Record<string, any> = { success: true };
+      if (notInstalledVapis.length > 0) {
+        output['message'] =
+          'skip install vapis: ' +
+          notInstalledVapis.map((v) => `'${v.name}'`).join(', ') +
+          '. Because they are not found.';
+      }
 
       return {
         stackId,
-        output: {
-          success: true,
-          message,
-        },
+        output,
       };
     } catch (error) {
       logger.error('failed to update thread or submit tool', { error });
@@ -225,7 +224,7 @@ export class StackService {
           if (!vapi?.vapi) {
             return vapi;
           }
-          vapi.vapi.package = vapiPackages[i];
+          vapi.vapi.package = parseVapiPackageFromProto(vapiPackages[i]);
           return vapi;
         }) ?? null,
       thread: thread
