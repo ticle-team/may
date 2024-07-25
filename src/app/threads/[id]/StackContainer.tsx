@@ -1,6 +1,7 @@
 import { trpc } from '@/app/_trpc/client';
 import classNames from 'classnames';
-import { Tooltip } from 'flowbite-react';
+
+const { Tooltip } = require('flowbite-react');
 
 function Badge({ rank = 0 }: { rank?: number }) {
   const style = {
@@ -37,7 +38,7 @@ function Badge({ rank = 0 }: { rank?: number }) {
         )}
       >
         <Tooltip
-          content="Score for each API is determined by code integrity & security, reusability, and community support"
+          content="Score for each API is determined by code integrity & security, reusability, and community rating"
           placement="bottom"
           style="light"
         >

@@ -77,7 +77,7 @@ export default function Page() {
             )}
             {selectedTab === 'Settings' && (
               <div className="flex w-full h-full justify-center items-center text-gray-400 text-2xl font-semibold bg-primary-200/30 m-8 backdrop-blur">
-                <span className="relative -top-1/4">TBD</span>
+                <span className="relative -top-1/4">Coming soon</span>
               </div>
             )}
           </div>
