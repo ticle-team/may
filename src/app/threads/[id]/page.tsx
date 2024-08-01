@@ -26,7 +26,6 @@ export default function Page() {
   const { renderToastContents, showErrorToast, hideToast } = useToast();
   const [initialized, setInitialized] = useState(false);
   const [enabledChat, setEnabledChat] = useState(false);
-  const utils = trpc.useUtils();
   const [deploying, setDeploying] = useState(false);
 
   const thread = trpc.thread.get.useQuery(
@@ -275,7 +274,12 @@ export default function Page() {
           </div>
         </div>
       ) : (
-        <p>Loading...</p>
+        <div className="flex justify-center items-center h-full w-full">
+          <RingSpinner
+            shape="resize"
+            className="flex flex-1 w-1/6 h-1/6 stroke-secondary-600"
+          />
+        </div>
       )}
     </>
   );

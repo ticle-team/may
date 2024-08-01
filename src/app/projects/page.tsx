@@ -50,7 +50,7 @@ export default function Page() {
       });
       setShowCreateProjectDialog(false);
 
-      utils.org.projects.list.invalidate();
+      await utils.org.projects.list.invalidate();
     } catch (error) {
       console.error(error);
       showErrorToast('Failed to create project.');
@@ -64,6 +64,7 @@ export default function Page() {
         projectId: selectedProjectId,
       });
 
+      router.prefetch(`/threads/${threadId}`);
       router.push(`/threads/${threadId}`);
     } catch (error) {
       console.error(error);
@@ -100,16 +101,15 @@ export default function Page() {
       <Modal
         open={showCreateProjectDialog}
         setOpen={setShowCreateProjectDialog}
-        contents={
-          <CreateProjectModal
-            organizationId={organizationId}
-            onCancel={() => {
-              setShowCreateProjectDialog(false);
-            }}
-            onCreate={handleCreateProject}
-          />
-        }
-      />
+      >
+        <CreateProjectModal
+          organizationId={organizationId}
+          onCancel={() => {
+            setShowCreateProjectDialog(false);
+          }}
+          onCreate={handleCreateProject}
+        />
+      </Modal>
       <DialogModal
         open={showCreateStackDialog}
         setOpen={setShowCreateStackDialog}
@@ -159,14 +159,14 @@ export default function Page() {
                 onClick={handleClickProject}
               >
                 <div className="flex flex-col" role="list">
-                  <div
+                  <button
                     className="relative flex justify-center gap-x-6 px-4 py-2 ml-20 hover:bg-gray-50 sm:px-6 lg:px-8 hover:cursor-pointer"
                     onClick={() => setShowCreateStackDialog(true)}
                   >
                     <div className="font-normal text-sm text-primary-500">
                       Create Stack
                     </div>
-                  </div>
+                  </button>
                   {project?.stacks?.map((stack) => (
                     <StackItem
                       key={`stack-${stack.id}`}

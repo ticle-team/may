@@ -1,5 +1,8 @@
 import { Dialog } from '@headlessui/react';
 import Modal from '@/app/_components/Modal';
+import { useEffect, useMemo, useState } from 'react';
+import _ from 'lodash';
+import RingSpinner from '@/app/_components/RingSpinner';
 
 export type DialogProps = {
   title?: React.ReactNode;
@@ -8,13 +11,13 @@ export type DialogProps = {
   confirmText?: string;
   cancelText?: string;
   open: boolean;
-  onConfirm?: () => void;
-  onCancel?: () => void;
+  onConfirm?: () => PromiseLike<void>;
+  onCancel?: () => PromiseLike<void>;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  onClose?: () => void;
+  onClose?: () => PromiseLike<void>;
 };
 
-const DialogModal = ({
+export default function DialogModal({
   title,
   description,
   type,
@@ -26,77 +29,104 @@ const DialogModal = ({
   onCancel,
   setOpen,
   ...props
-}: DialogProps) => {
-  const dialogContents = (
-    <div className="flex flex-col w-full">
-      <div className="sm:flex sm:items-start">
-        <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-          <Dialog.Title
-            as="h3"
-            className="text-base font-semibold leading-6 text-gray-900"
-          >
-            {title}
-          </Dialog.Title>
-          <div className="mt-2">
-            <p className="text-sm text-gray-900">{description}</p>
-          </div>
-        </div>
-      </div>
+}: DialogProps) {
+  const [loading, setLoading] = useState(false);
 
-      <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
-        {type == 'alert' ? (
-          <>
-            <button
-              type="button"
-              className="inline-flex w-full justify-center rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 sm:ml-3 sm:w-auto"
-              onClick={() => {
-                setOpen(false);
-                onClose?.();
-                onConfirm && onConfirm();
-              }}
-            >
-              {confirmText}
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              type="button"
-              className="inline-flex w-full justify-center rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 sm:ml-3 sm:w-auto"
-              onClick={() => {
-                setOpen(false);
-                onClose?.();
-                onConfirm && onConfirm();
-              }}
-            >
-              {confirmText}
-            </button>
-            <button
-              type="button"
-              className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-              onClick={() => {
-                setOpen(false);
-                onClose?.();
-                onCancel && onCancel();
-              }}
-            >
-              {cancelText}
-            </button>
-          </>
-        )}
-      </div>
-    </div>
-  );
+  useEffect(() => {
+    if (open) {
+      setLoading(false);
+    }
+  }, [open]);
+
+  const enabled = useMemo(() => {
+    return !loading && open;
+  }, [open, loading]);
 
   return (
-    <Modal
-      contents={dialogContents}
-      open={open}
-      setOpen={setOpen}
-      onClose={onClose}
-      {...props}
-    ></Modal>
-  );
-};
+    <Modal open={open} setOpen={setOpen} onClose={onClose} {...props}>
+      <div className="flex flex-col w-full">
+        <div className="sm:flex sm:items-start">
+          <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+            <Dialog.Title
+              as="h3"
+              className="text-base font-semibold leading-6 text-gray-900"
+            >
+              {title}
+            </Dialog.Title>
+            <div className="mt-2">
+              <p className="text-sm text-gray-900">{description}</p>
+            </div>
+          </div>
+        </div>
 
-export default DialogModal;
+        <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+          {type == 'alert' ? (
+            <>
+              <button
+                type="button"
+                className="inline-flex w-full justify-center rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 sm:ml-3 sm:w-auto"
+                onClick={
+                  enabled
+                    ? async () => {
+                        setLoading(true);
+                        await onClose?.();
+                        await onConfirm?.();
+                        setOpen(false);
+                      }
+                    : undefined
+                }
+                disabled={!enabled}
+              >
+                {confirmText}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="inline-flex w-full justify-center rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 sm:ml-3 sm:w-auto disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+                onClick={
+                  enabled
+                    ? async () => {
+                        setLoading(true);
+                        await onClose?.();
+                        await onConfirm?.();
+                        setOpen(false);
+                      }
+                    : undefined
+                }
+                disabled={!enabled}
+              >
+                {enabled ? (
+                  confirmText
+                ) : (
+                  <RingSpinner
+                    shape={'resize'}
+                    className="w-5 h-5 stroke-gray-500"
+                  />
+                )}
+              </button>
+              <button
+                type="button"
+                className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
+                onClick={
+                  enabled
+                    ? async () => {
+                        setLoading(true);
+                        await onClose?.();
+                        await onCancel?.();
+                        setOpen(false);
+                      }
+                    : undefined
+                }
+                disabled={!enabled}
+              >
+                {cancelText}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
