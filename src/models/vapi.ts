@@ -51,7 +51,7 @@ export function parseVapiReleaseFromProto(
 export function parseVapiPackageFromProto(
   vapiPackProto: stoacloud.v1.VapiPackage,
 ): VapiPackage {
-  const { author } = vapiPackProto;
+  const author = vapiPackProto.author;
   return {
     id: vapiPackProto.id,
     name: vapiPackProto.name,

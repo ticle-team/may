@@ -216,6 +216,10 @@ export class StackService {
       }),
     );
 
+    if (vapiPackages.length !== shapleStack.vapis.length) {
+      throw new Error('failed to get vapi packages');
+    }
+
     const stack = parseShapleStackFromProto(shapleStack);
     return {
       ...stack,
@@ -224,6 +228,7 @@ export class StackService {
           if (!vapi?.vapi) {
             return vapi;
           }
+          console.log(i, vapi, vapiPackages);
           vapi.vapi.package = parseVapiPackageFromProto(vapiPackages[i]);
           return vapi;
         }) ?? null,
