@@ -31,7 +31,7 @@
     "teardown:stoacloud:test": "kubectl --context kind-kind -n default delete -f testdata/k8s/stoacloud/test",
     "teardown:stoacloud": "run-s teardown:stoacloud:*",
     "teardown:kind": "cd stoacloud && make teardown-test",
-    "teardown": "run-s teardown:*",
+    "teardown": "run-s teardown:kind",
     "test:before": "run-s generate",
     "test:jest": "jest -i",
     "test": "run-s test:*",
