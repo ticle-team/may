@@ -16,6 +16,7 @@ import StackContainer from './StackContainer';
 import { CreatingStackStateInfoJson } from '@/models/thread';
 import { Timeline } from '@/app/threads/[id]/Timeline';
 import RingSpinner from '@/app/_components/RingSpinner';
+import PageLoading from '@/app/_components/PageLoading';
 
 export default function Page() {
   const router = useRouter();
@@ -274,13 +275,16 @@ export default function Page() {
           </div>
         </div>
       ) : (
-        <div className="flex justify-center items-center h-full w-full">
-          <RingSpinner
-            shape="resize"
-            className="flex flex-1 w-1/6 h-1/6 stroke-secondary-600"
-          />
-        </div>
+        <PageLoading />
       )}
+      <End />
     </>
   );
+}
+
+function End() {
+  useEffect(() => {
+    import('flowbite');
+  }, []);
+  return <></>;
 }

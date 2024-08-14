@@ -1,10 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { LogoIcon } from '@/app/_components/Icons';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
-import LoadingSpinner from '@/app/_components/LoadingSpinner';
 import { shapleClient } from '@/app/_services/shapleClient';
 import useToast from '@/app/_hooks/useToast';
 import SignUpModal from '@/app/signin/SignUpModal';
@@ -25,6 +22,7 @@ function SignInForm({
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const callbackUrl = useMemo(() => {
     const callbackUrl =
@@ -38,10 +36,7 @@ function SignInForm({
 
     return callbackUrl;
   }, [searchParams]);
-
   const handleLogin = async () => {
-    if (loading) return;
-    setLoading(true);
     try {
       const res = await shapleClient.auth.signInWithPassword({
         email,
@@ -49,10 +44,12 @@ function SignInForm({
       });
       if (res.error) {
         showErrorToast('Failed to login', 'Invalid email or password');
-      } else if (typeof location !== 'undefined') location.replace(callbackUrl);
+        return;
+      }
+
+      router.replace(callbackUrl);
     } catch (e) {
       showErrorToast('Failed to login', String(e));
-    } finally {
       setLoading(false);
     }
   };
@@ -63,6 +60,10 @@ function SignInForm({
       onSubmit={(e) => {
         e.stopPropagation();
         e.preventDefault();
+
+        if (loading) return;
+        setLoading(true);
+
         handleLogin();
       }}
     >
@@ -83,6 +84,7 @@ function SignInForm({
             placeholder="Email address"
             onChange={(e) => setEmail(e.target.value)}
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+            disabled={loading}
           />
         </div>
       </div>
@@ -114,6 +116,7 @@ function SignInForm({
             placeholder={'Password'}
             onChange={(e) => setPassword(e.target.value)}
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
+            disabled={loading}
           />
         </div>
       </div>

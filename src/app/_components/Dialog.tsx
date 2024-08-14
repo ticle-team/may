@@ -67,15 +67,17 @@ export default function DialogModal({
                 className="inline-flex w-full justify-center rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 sm:ml-3 sm:w-auto"
                 onClick={
                   enabled
-                    ? async () => {
+                    ? () => {
                         setLoading(true);
-                        await onClose?.();
-                        await onConfirm?.();
-                        setOpen(false);
+                        (async () => {
+                          await onConfirm?.();
+                          await onClose?.();
+                          setOpen(false);
+                        })();
                       }
                     : undefined
                 }
-                disabled={!enabled}
+                disabled={!enabled || !onConfirm}
               >
                 {confirmText}
               </button>
@@ -87,15 +89,17 @@ export default function DialogModal({
                 className="inline-flex w-full justify-center rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-600 sm:ml-3 sm:w-auto disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
                 onClick={
                   enabled
-                    ? async () => {
+                    ? () => {
                         setLoading(true);
-                        await onClose?.();
-                        await onConfirm?.();
-                        setOpen(false);
+                        (async () => {
+                          await onConfirm?.();
+                          await onClose?.();
+                          setOpen(false);
+                        })();
                       }
                     : undefined
                 }
-                disabled={!enabled}
+                disabled={!enabled || !onConfirm}
               >
                 {enabled ? (
                   confirmText

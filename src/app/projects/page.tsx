@@ -8,9 +8,10 @@ import Modal from '@/app/_components/Modal';
 import CreateProjectModal from '@/app/projects/CreateProjectModal';
 import useToast from '@/app/_hooks/useToast';
 import DialogModal from '@/app/_components/Dialog';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/app/_hooks/router';
 import StackItem from '@/app/projects/StackItem';
 import ProjectItem from '@/app/projects/ProjectItem';
+import RingSpinner from '@/app/_components/RingSpinner';
 
 export default function Page() {
   const tabs = [{ name: 'All' }, { name: 'Liked' }, { name: 'Archived' }];
@@ -30,12 +31,15 @@ export default function Page() {
   const [showCreateStackDialog, setShowCreateStackDialog] =
     useState<boolean>(false);
 
-  const { data: { projects, after } = {}, error } =
-    trpc.org.projects.list.useQuery({
-      orgId: organizationId,
-      page: 1,
-      perPage: 10,
-    });
+  const {
+    data: { projects, after } = {},
+    error,
+    ...projectsList
+  } = trpc.org.projects.list.useQuery({
+    orgId: organizationId,
+    page: 1,
+    perPage: 10,
+  });
 
   const createProjectMutation = trpc.project.create.useMutation();
   const createThreadMutation = trpc.thread.create.useMutation();
@@ -64,8 +68,8 @@ export default function Page() {
         projectId: selectedProjectId,
       });
 
-      router.prefetch(`/threads/${threadId}`);
       router.push(`/threads/${threadId}`);
+      console.log('router push threadId', threadId);
     } catch (error) {
       console.error(error);
       showErrorToast('Failed to create stack.');
@@ -151,6 +155,12 @@ export default function Page() {
             </div>
           </div>
           <div className="flex flex-col" role="list">
+            {projectsList.isPending && (
+              <RingSpinner
+                shape="resize"
+                className="flex w-1/4 h-1/4 m-auto stroke-primary-600"
+              />
+            )}
             {projects?.map((project) => (
               <ProjectItem
                 key={`project-${project.id}`}

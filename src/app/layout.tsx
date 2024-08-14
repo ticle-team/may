@@ -1,10 +1,12 @@
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Poppins } from 'next/font/google';
 import './globals.css';
 import classNames from 'classnames';
 import TRPCProvider from '@/app/_trpc/Provider';
 import Layout from '@/app/_components/Layout';
+import PageLoading from '@/app/_components/PageLoading';
+import { RouterProvider } from '@/app/_hooks/router';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -31,9 +33,13 @@ export default function RootLayout({
           'flex flex-row justify-center h-full w-full',
         )}
       >
-        <TRPCProvider>
-          <Layout>{children}</Layout>
-        </TRPCProvider>
+        <Suspense fallback={<PageLoading />}>
+          <TRPCProvider>
+            <RouterProvider>
+              <Layout>{children}</Layout>
+            </RouterProvider>
+          </TRPCProvider>
+        </Suspense>
       </body>
     </html>
   );

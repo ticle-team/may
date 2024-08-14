@@ -1,17 +1,8 @@
 'use client';
-
 import SideMenu from '@/app/_components/SideMenu';
 import Header from '@/app/_components/Header';
 import ChatBar from '@/app/_components/ChatBar';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
-
-function End() {
-  useEffect(() => {
-    import('flowbite');
-  }, []);
-  return <></>;
-}
 
 type PageProps = {
   hideSideMenu: boolean;
@@ -20,6 +11,7 @@ type PageProps = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const pages: Map<string, PageProps> = new Map([
     [
       '/organizations',
@@ -38,7 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     ['/threads', { hideSideMenu: true, hideHeader: true, hideChatBar: true }],
   ]);
 
-  const currentPath = `/${usePathname().split('/')[1]}`;
+  const currentPath = `/${pathname.split('/')[1]}`;
   const currentPage = pages.get(currentPath);
 
   return (
@@ -56,7 +48,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           />
         </div>
       </div>
-      <End />
     </div>
   );
 }
