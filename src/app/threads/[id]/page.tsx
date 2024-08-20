@@ -17,6 +17,9 @@ import { CreatingStackStateInfoJson } from '@/models/thread';
 import { Timeline } from '@/app/threads/[id]/Timeline';
 import RingSpinner from '@/app/_components/RingSpinner';
 import PageLoading from '@/app/_components/PageLoading';
+import { skipToken } from '@tanstack/react-query';
+
+const LIMIT_MESSAGES = 100;
 
 export default function Page() {
   const router = useRouter();
@@ -28,6 +31,8 @@ export default function Page() {
   const [initialized, setInitialized] = useState(false);
   const [enabledChat, setEnabledChat] = useState(false);
   const [deploying, setDeploying] = useState(false);
+  const [isGoingToStack, setIsGoingToStack] = useState(false);
+  const utils = trpc.useUtils();
 
   const thread = trpc.thread.get.useQuery(
     {
@@ -46,10 +51,12 @@ export default function Page() {
   }
 
   const allMessages = trpc.thread.messages.list.useQuery(
-    {
-      threadId,
-      limit: 100,
-    },
+    initialized
+      ? {
+          threadId,
+          limit: LIMIT_MESSAGES,
+        }
+      : skipToken,
     {
       refetchOnWindowFocus: false,
       refetchOnMount: false,
@@ -63,11 +70,12 @@ export default function Page() {
   }
 
   const run = trpc.thread.runForStackCreation.useQuery(
+    enabledChat
+      ? {
+          threadId,
+        }
+      : skipToken,
     {
-      threadId,
-    },
-    {
-      enabled: enabledChat,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: false,
@@ -115,15 +123,43 @@ export default function Page() {
     },
   });
 
-  const addUserMessage = trpc.thread.messages.add.useMutation({
-    onSuccess: async () => {
+  const addUserMessage = trpc.thread.messages.add.useMutation<{
+    oldData: typeof allMessages.data;
+  }>({
+    async onSuccess() {
       await allMessages.refetch();
       setEnabledChat(true);
       await run.refetch();
     },
-    onError: (error) => {
+    onError(error, _, context) {
       showErrorToast('', error.message);
       hideToast(1500);
+      if (context && context.oldData) {
+        utils.thread.messages.list.setData(
+          { threadId, limit: LIMIT_MESSAGES },
+          context.oldData,
+        );
+      }
+    },
+    async onMutate({ message }) {
+      await utils.thread.messages.list.cancel();
+      const oldData = utils.thread.messages.list.getData();
+      utils.thread.messages.list.setData(
+        {
+          threadId,
+          limit: LIMIT_MESSAGES,
+        },
+        (old) => ({
+          messages: [
+            { id: '', role: 'user', text: message },
+            ...(old?.messages ?? []),
+          ],
+          nextCursor: old?.nextCursor ?? null,
+        }),
+      );
+      if (oldData) {
+        return { oldData };
+      }
     },
   });
 
@@ -210,6 +246,7 @@ export default function Page() {
       return;
     }
 
+    setIsGoingToStack(true);
     router.push(`/stacks/${thread.data.shapleStackId}`);
   }, [router, thread.data]);
 
@@ -240,21 +277,36 @@ export default function Page() {
           </div>
           <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
             <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
-              <Conversation history={conversation}>
-                {!answering && deploying && (
-                  <div className="flex flex-row justify-center items-center animate-pulse text-primary-500">
-                    <RingSpinner shape="with-bg" className="flex w-5 h-5" />
-                    &nbsp;<p>Deploying...</p>
-                  </div>
-                )}
-                {!answering && thread.data?.shapleStackId && (
-                  <div className="flex flex-row -mt-2.5 justify-center">
-                    <Button color="secondary" size="lg" onClick={goToStack}>
-                      Go to stack
-                    </Button>
-                  </div>
-                )}
-              </Conversation>
+              {!allMessages.isInitialLoading ? (
+                <Conversation history={conversation}>
+                  {!answering && deploying && (
+                    <div className="flex flex-row justify-center items-center animate-pulse text-primary-500">
+                      <RingSpinner shape="with-bg" className="flex w-5 h-5" />
+                      &nbsp;<p>Deploying...</p>
+                    </div>
+                  )}
+                  {!answering && thread.data?.shapleStackId && (
+                    <div className="flex flex-row -mt-2.5 justify-center">
+                      <Button
+                        color="secondary"
+                        size="lg"
+                        onClick={goToStack}
+                        disabled={isGoingToStack}
+                      >
+                        Go to stack
+                        {isGoingToStack && (
+                          <RingSpinner
+                            shape="with-bg"
+                            className="flex w-6 h-6 fill-gray-500 my-auto ml-1"
+                          />
+                        )}
+                      </Button>
+                    </div>
+                  )}
+                </Conversation>
+              ) : (
+                <PageLoading />
+              )}
             </div>
             <div className="flex flex-col justify-center items-center w-6/12 h-full bg-gray-100 border border-gray-200 rounded">
               <StackContainer

@@ -74,6 +74,8 @@ export default function Page() {
       console.error(error);
       showErrorToast('Failed to create stack.');
     }
+
+    return;
   };
 
   const handleClickTab = async (tabName: string) => {

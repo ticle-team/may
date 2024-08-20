@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import classNames from 'classnames';
 import { CheckCircleIcon, StopIcon } from '@heroicons/react/24/solid';
 

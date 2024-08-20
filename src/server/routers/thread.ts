@@ -79,6 +79,7 @@ export default router({
     .output(thread)
     .query(async ({ ctx, input: { threadId } }) => {
       const threadService = Container.get(ThreadService);
+      await threadService.cancel(ctx, threadId);
       return await threadService.get(ctx, threadId);
     }),
   cancel: authedProcedure

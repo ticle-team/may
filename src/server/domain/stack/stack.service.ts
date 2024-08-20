@@ -10,7 +10,7 @@ import {
 } from '@/models/stack';
 import { Context } from '@/server/context';
 import { threadStateInfo } from '@/models/thread';
-import _ from 'lodash';
+import _ from 'lodash-es';
 import { parseVapiPackageFromProto } from '@/models/vapi';
 
 const logger = getLogger('server.domain.stack.service');

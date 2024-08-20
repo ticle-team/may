@@ -13,6 +13,7 @@ RUN yarn install --frozen-lockfile
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
+ENV HOME=/app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -21,10 +22,14 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN yarn prisma generate
-RUN --mount=type=cache,target=/app/.next K8S_ENV=dev yarn build && \
+RUN apk add --no-cache aws-cli
+RUN --mount=type=cache,target=/app/.next echo "START" &&\
+    yarn prisma generate &&\
+    K8S_ENV=dev yarn build && \
+    yarn asset:push:dev &&\
     cp -rf .next .next.dev && \
     K8S_ENV=prod yarn build && \
+    yarn asset:push:prod &&\
     cp -rf .next .next.prod
 
 # Production image, copy all the files and run next
@@ -50,7 +55,6 @@ RUN mkdir -p dev/.next &&\
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next.dev/standalone ./dev/
-COPY --from=builder --chown=nextjs:nodejs /app/.next.dev/static ./dev/.next/static
 
 # Set the correct permission for prerender cache
 RUN mkdir -p prod/.next &&\
@@ -61,7 +65,6 @@ RUN mkdir -p prod/.next &&\
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next.prod/standalone ./prod/
-COPY --from=builder --chown=nextjs:nodejs /app/.next.prod/static ./prod/.next/static
 
 USER nextjs
 
