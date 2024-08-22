@@ -26,9 +26,10 @@ export default function Page() {
   const { id: threadIdStr } = useParams<{
     id: string;
   }>();
-  const threadId = parseInt(threadIdStr);
+  const threadId = useMemo(() => {
+    return parseInt(threadIdStr);
+  }, [threadIdStr]);
   const { renderToastContents, showErrorToast, hideToast } = useToast();
-  const [initialized, setInitialized] = useState(false);
   const [enabledChat, setEnabledChat] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [isGoingToStack, setIsGoingToStack] = useState(false);
@@ -51,12 +52,10 @@ export default function Page() {
   }
 
   const allMessages = trpc.thread.messages.list.useQuery(
-    initialized
-      ? {
-          threadId,
-          limit: LIMIT_MESSAGES,
-        }
-      : skipToken,
+    {
+      threadId,
+      limit: LIMIT_MESSAGES,
+    },
     {
       refetchOnWindowFocus: false,
       refetchOnMount: false,
@@ -133,13 +132,13 @@ export default function Page() {
     },
     onError(error, _, context) {
       showErrorToast('', error.message);
-      hideToast(1500);
       if (context && context.oldData) {
         utils.thread.messages.list.setData(
           { threadId, limit: LIMIT_MESSAGES },
           context.oldData,
         );
       }
+      hideToast(1500);
     },
     async onMutate({ message }) {
       await utils.thread.messages.list.cancel();
@@ -162,13 +161,6 @@ export default function Page() {
       }
     },
   });
-
-  useEffect(() => {
-    (async () => {
-      await cancelThread.mutateAsync({ threadId });
-      setInitialized(true);
-    })();
-  }, [threadId]);
 
   const handleSubmitUserMessage = useCallback(
     async (message: string) => {
@@ -213,7 +205,9 @@ export default function Page() {
         case 'text': {
           const { id, text } = t as StackCreationEventText;
           const lastMsg = lastMessages[lastMessages.length - 1];
-          if (lastMsg.id != id) {
+          if (!lastMsg) {
+            throw new Error('Unexpected text event');
+          } else if (lastMsg.id != id) {
             throw new Error(
               `Unexpected message ID: ${id}, lastMsg.id: ${lastMsg.id}`,
             );
@@ -270,65 +264,61 @@ export default function Page() {
   return (
     <>
       {renderToastContents()}
-      {initialized ? (
-        <div className="flex flex-col px-5.5 py-6 w-full h-full">
-          <div className="flex flex-row w-full my-7 h-7 justify-center">
-            <Timeline progress={stateInfo.current_step} />
+      <div className="flex flex-col px-5.5 py-6 w-full h-full">
+        <div className="flex flex-row w-full my-7 h-7 justify-center">
+          <Timeline progress={stateInfo.current_step} />
+        </div>
+        <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
+          <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
+            {!allMessages.isInitialLoading ? (
+              <Conversation history={conversation}>
+                {!answering && deploying && (
+                  <div className="flex flex-row justify-center items-center animate-pulse text-primary-500">
+                    <RingSpinner shape="with-bg" className="flex w-5 h-5" />
+                    &nbsp;<p>Deploying...</p>
+                  </div>
+                )}
+                {!answering && thread.data?.shapleStackId && (
+                  <div className="flex flex-row -mt-2.5 justify-center">
+                    <Button
+                      color="secondary"
+                      size="lg"
+                      onClick={goToStack}
+                      disabled={isGoingToStack}
+                    >
+                      Go to stack
+                      {isGoingToStack && (
+                        <RingSpinner
+                          shape="with-bg"
+                          className="flex w-6 h-6 fill-gray-500 my-auto ml-1"
+                        />
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </Conversation>
+            ) : (
+              <PageLoading />
+            )}
           </div>
-          <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
-            <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
-              {!allMessages.isInitialLoading ? (
-                <Conversation history={conversation}>
-                  {!answering && deploying && (
-                    <div className="flex flex-row justify-center items-center animate-pulse text-primary-500">
-                      <RingSpinner shape="with-bg" className="flex w-5 h-5" />
-                      &nbsp;<p>Deploying...</p>
-                    </div>
-                  )}
-                  {!answering && thread.data?.shapleStackId && (
-                    <div className="flex flex-row -mt-2.5 justify-center">
-                      <Button
-                        color="secondary"
-                        size="lg"
-                        onClick={goToStack}
-                        disabled={isGoingToStack}
-                      >
-                        Go to stack
-                        {isGoingToStack && (
-                          <RingSpinner
-                            shape="with-bg"
-                            className="flex w-6 h-6 fill-gray-500 my-auto ml-1"
-                          />
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </Conversation>
-              ) : (
-                <PageLoading />
-              )}
-            </div>
-            <div className="flex flex-col justify-center items-center w-6/12 h-full bg-gray-100 border border-gray-200 rounded">
-              <StackContainer
-                name={stateInfo.name}
-                description={stateInfo.description}
-                baseApis={stateInfo.dependencies.base_apis}
-                vapis={stateInfo.dependencies.vapis}
-              />
-            </div>
-          </div>
-          <div className="flex w-full pt-0.5">
-            <UserMessageForm
-              answering={answering}
-              onSubmit={handleSubmitUserMessage}
-              onStopAnswering={handleStopAnswering}
-              color="primary"
+          <div className="flex flex-col justify-center items-center w-6/12 h-full bg-gray-100 border border-gray-200 rounded">
+            <StackContainer
+              name={stateInfo.name}
+              description={stateInfo.description}
+              baseApis={stateInfo.dependencies.base_apis}
+              vapis={stateInfo.dependencies.vapis}
             />
           </div>
         </div>
-      ) : (
-        <PageLoading />
-      )}
+        <div className="flex w-full pt-0.5">
+          <UserMessageForm
+            answering={answering}
+            onSubmit={handleSubmitUserMessage}
+            onStopAnswering={handleStopAnswering}
+            color="primary"
+          />
+        </div>
+      </div>
       <End />
     </>
   );
