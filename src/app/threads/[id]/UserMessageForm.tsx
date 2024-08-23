@@ -10,7 +10,7 @@ export default function UserMessageForm({
 }: {
   answering: boolean;
   onSubmit: (message: string) => Promise<void>;
-  onStopAnswering: () => Promise<void>;
+  onStopAnswering: () => Promise<void> | void;
   color: 'primary' | 'secondary';
 }) {
   const [userMessage, setUserMessage] = useState('');

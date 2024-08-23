@@ -18,7 +18,7 @@ export function RouterProvider({ children }: PropsWithChildren<{}>) {
   return (
     <RouterContext.Provider
       value={{
-        push: (href: string, options?: any) => {
+        push(href: string, options?: any) {
           window.location.href = href;
           setIsNavigating(true);
         },

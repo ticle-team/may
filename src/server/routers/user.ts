@@ -1,4 +1,4 @@
-import { authedProcedure, router } from '../trpc';
+import { authedProcedure, baseProcedure, router } from '../trpc';
 import { organization } from '@/models/organization';
 import { z } from 'zod';
 import { user as MayUser } from '@/models/user';
@@ -26,7 +26,10 @@ export default router({
         };
       }),
   }),
-  me: authedProcedure
-    .output(MayUser)
-    .query(({ ctx }) => Container.get(UserService).getUser(ctx)),
+  me: baseProcedure.output(MayUser.nullish()).query(async ({ ctx }) => {
+    if (!ctx.session) {
+      return null;
+    }
+    return await Container.get(UserService).getUser(ctx);
+  }),
 });

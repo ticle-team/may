@@ -33,7 +33,6 @@ export default function Page() {
   const [enabledChat, setEnabledChat] = useState(false);
   const [deploying, setDeploying] = useState(false);
   const [isGoingToStack, setIsGoingToStack] = useState(false);
-  const utils = trpc.useUtils();
 
   const thread = trpc.thread.get.useQuery(
     {
@@ -86,15 +85,25 @@ export default function Page() {
     hideToast(1500);
   }
 
+  const cancelThread = trpc.thread.cancel.useMutation({
+    onSuccess: async () => {
+      await Promise.all([thread.refetch(), allMessages.refetch()]);
+    },
+    onError: (error) => {
+      showErrorToast('', error.message);
+      hideToast(1500);
+    },
+  });
+
   useEffect(() => {
     // run.data is an array of events
     // for example:
     //   events: begin -> text.created -> text -> text -> text.done -> end
     //   server sent events: begin, text.created, ...
     //   client states: [begin], [begin, text.created], [begin, text.created, text], ...
-    if (!run.data) return;
+    const t = setTimeout(async () => {
+      if (!run.data) return;
 
-    (async () => {
       for (const { event } of run.data) {
         switch (event) {
           case 'deploy.end': {
@@ -107,58 +116,26 @@ export default function Page() {
             break;
           }
           case 'end': {
-            await thread.refetch();
-            await allMessages.refetch();
+            await Promise.all([thread.refetch(), allMessages.refetch()]);
             break;
           }
         }
       }
-    })();
+    });
+    return () => {
+      clearTimeout(t);
+    };
   }, [run.data]);
 
-  const cancelThread = trpc.thread.cancel.useMutation({
+  const addUserMessage = trpc.thread.messages.add.useMutation({
     onSuccess: async () => {
-      await allMessages.refetch();
-    },
-  });
-
-  const addUserMessage = trpc.thread.messages.add.useMutation<{
-    oldData: typeof allMessages.data;
-  }>({
-    async onSuccess() {
       await allMessages.refetch();
       setEnabledChat(true);
       await run.refetch();
     },
-    onError(error, _, context) {
+    onError: (error) => {
       showErrorToast('', error.message);
-      if (context && context.oldData) {
-        utils.thread.messages.list.setData(
-          { threadId, limit: LIMIT_MESSAGES },
-          context.oldData,
-        );
-      }
       hideToast(1500);
-    },
-    async onMutate({ message }) {
-      await utils.thread.messages.list.cancel();
-      const oldData = utils.thread.messages.list.getData();
-      utils.thread.messages.list.setData(
-        {
-          threadId,
-          limit: LIMIT_MESSAGES,
-        },
-        (old) => ({
-          messages: [
-            { id: '', role: 'user', text: message },
-            ...(old?.messages ?? []),
-          ],
-          nextCursor: old?.nextCursor ?? null,
-        }),
-      );
-      if (oldData) {
-        return { oldData };
-      }
     },
   });
 
@@ -176,8 +153,8 @@ export default function Page() {
     [threadId, addUserMessage],
   );
 
-  const handleStopAnswering = useCallback(async () => {
-    await cancelThread.mutateAsync({ threadId });
+  const handleStopAnswering = useCallback(() => {
+    cancelThread.mutate({ threadId });
   }, [threadId, cancelThread]);
 
   const { answering, conversation } = useMemo(() => {
@@ -270,7 +247,7 @@ export default function Page() {
         </div>
         <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
           <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
-            {!allMessages.isInitialLoading ? (
+            {!allMessages.isLoading ? (
               <Conversation history={conversation}>
                 {!answering && deploying && (
                   <div className="flex flex-row justify-center items-center animate-pulse text-primary-500">

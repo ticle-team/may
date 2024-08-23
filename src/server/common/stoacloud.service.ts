@@ -13,9 +13,10 @@ import {
 } from '@/models/stoacloud';
 import { getLogger } from '@/logger';
 import { stoacloud } from '@/protos/stoacloud';
-import { credentials, Metadata } from '@grpc/grpc-js';
+import { credentials, Metadata, ServiceError, status } from '@grpc/grpc-js';
 import { google } from '@/protos/google/protobuf/empty';
 import { Context } from '@/server/context';
+import { TRPCError } from '@trpc/server';
 
 const logger = getLogger('server.common.stoacloud.service');
 
@@ -32,6 +33,40 @@ function createStoaCloudServiceClient() {
   });
 }
 
+function translateGrpcError(e: Error): TRPCError | Error {
+  if (!('code' in e && 'details' in e && 'metadata' in e)) {
+    return e;
+  }
+
+  const err = e as ServiceError;
+  switch (err.code) {
+    case status.NOT_FOUND:
+      return new TRPCError({
+        message: err.message,
+        code: 'NOT_FOUND',
+        cause: err,
+      });
+    case status.ALREADY_EXISTS:
+      return new TRPCError({
+        message: err.message,
+        code: 'CONFLICT',
+        cause: err,
+      });
+    case status.PERMISSION_DENIED:
+      return new TRPCError({
+        message: err.message,
+        code: 'FORBIDDEN',
+        cause: err,
+      });
+    default:
+      return new TRPCError({
+        message: err.message,
+        code: 'INTERNAL_SERVER_ERROR',
+        cause: err,
+      });
+  }
+}
+
 @Service()
 export class StoaCloudService {
   private readonly client = createStoaCloudServiceClient();
@@ -40,40 +75,47 @@ export class StoaCloudService {
     const md = new Metadata();
     md.set('authorization', `Bearer ${jwt}`);
 
-    const { url } = await this.client.GetVapiDocsUrl(
-      stoacloud.v1.GetVapiDocsUrlRequest.fromObject({
-        releaseId: vapiReleaseId,
-      }),
-      md,
-    );
+    const { url } = await this.client
+      .GetVapiDocsUrl(
+        stoacloud.v1.GetVapiDocsUrlRequest.fromObject({
+          releaseId: vapiReleaseId,
+        }),
+        md,
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
     return url;
   }
 
   async createProject(name: string, description: string, userIds: string[]) {
-    try {
-      return await this.client.CreateProject(
+    return await this.client
+      .CreateProject(
         stoacloud.v1.CreateProjectRequest.fromObject({
           name,
           description,
           userIds,
         }),
-      );
-    } catch (e) {
-      logger.error(e);
-      throw e;
-    }
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async deleteProject(projectId: number) {
-    await this.client.DeleteProject(
-      stoacloud.v1.ProjectId.fromObject({ id: projectId }),
-    );
+    await this.client
+      .DeleteProject(stoacloud.v1.ProjectId.fromObject({ id: projectId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async getProject(projectId: number) {
-    return await this.client.GetProjectById(
-      stoacloud.v1.ProjectId.fromObject({ id: projectId }),
-    );
+    return await this.client
+      .GetProjectById(stoacloud.v1.ProjectId.fromObject({ id: projectId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async getProjects({
@@ -82,14 +124,18 @@ export class StoaCloudService {
     page,
     memberId = undefined,
   }: GetProjectsInput) {
-    const { projects } = await this.client.GetProjects(
-      stoacloud.v1.GetProjectsRequest.fromObject({
-        name,
-        perPage,
-        page,
-        memberId,
-      }),
-    );
+    const { projects } = await this.client
+      .GetProjects(
+        stoacloud.v1.GetProjectsRequest.fromObject({
+          name,
+          perPage,
+          page,
+          memberId,
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
 
     return projects;
   }
@@ -100,20 +146,26 @@ export class StoaCloudService {
     name: string,
     description: string,
   ) {
-    return await this.client.CreateStack(
-      stoacloud.v1.CreateStackRequest.fromObject({
-        siteUrl,
-        projectId,
-        name,
-        description,
-      }),
-    );
+    return await this.client
+      .CreateStack(
+        stoacloud.v1.CreateStackRequest.fromObject({
+          siteUrl,
+          projectId,
+          name,
+          description,
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async getStack(stackId: number) {
-    return await this.client.GetStackById(
-      stoacloud.v1.StackId.fromObject({ id: stackId }),
-    );
+    return await this.client
+      .GetStackById(stoacloud.v1.StackId.fromObject({ id: stackId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async installAuth(stackId: number, input: InstallAuthInput) {
@@ -133,88 +185,122 @@ export class StoaCloudService {
   }
 
   async installStorage(stackId: number, input: InstallStorageInput) {
-    await this.client.InstallStorage(
-      stoacloud.v1.InstallStorageRequest.fromObject({
-        ...input,
-        id: stackId,
-      }),
-    );
+    await this.client
+      .InstallStorage(
+        stoacloud.v1.InstallStorageRequest.fromObject({
+          ...input,
+          id: stackId,
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async uninstallStorage(stackId: number) {
-    await this.client.UninstallStorage(
-      stoacloud.v1.StackId.fromObject({ id: stackId }),
-    );
+    await this.client
+      .UninstallStorage(stoacloud.v1.StackId.fromObject({ id: stackId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async installPostgrest(stackId: number, input: InstallPostgrestInput) {
-    await this.client.InstallPostgrest(
-      stoacloud.v1.InstallPostgrestRequest.fromObject({
-        ...input,
-        id: stackId,
-      }),
-    );
+    await this.client
+      .InstallPostgrest(
+        stoacloud.v1.InstallPostgrestRequest.fromObject({
+          ...input,
+          id: stackId,
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async uninstallPostgrest(stackId: number) {
-    await this.client.UninstallPostgrest(
-      stoacloud.v1.StackId.fromObject({ id: stackId }),
-    );
+    await this.client
+      .UninstallPostgrest(stoacloud.v1.StackId.fromObject({ id: stackId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async deleteStack(stackId: number) {
-    await this.client.DeleteStack(
-      stoacloud.v1.StackId.fromObject({ id: stackId }),
-    );
+    await this.client
+      .DeleteStack(stoacloud.v1.StackId.fromObject({ id: stackId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async installVapi(stackId: number, input: InstallVapiInput) {
-    await this.client.InstallVapi(
-      stoacloud.v1.InstallVapiRequest.fromObject({
-        ...input,
-        stackId,
-      }),
-    );
+    await this.client
+      .InstallVapi(
+        stoacloud.v1.InstallVapiRequest.fromObject({
+          ...input,
+          stackId,
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async uninstallVapi(stackId: number, vapiId: number) {
-    await this.client.UninstallVapi(
-      stoacloud.v1.UninstallVapiRequest.fromObject({
-        stackId,
-        vapiId,
-      }),
-    );
+    await this.client
+      .UninstallVapi(
+        stoacloud.v1.UninstallVapiRequest.fromObject({
+          stackId,
+          vapiId,
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async getVapiReleasesInPackage(packageId: number) {
-    const { releases } = await this.client.GetVapiReleasesInPackage(
-      stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
-    );
+    const { releases } = await this.client
+      .GetVapiReleasesInPackage(
+        stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
 
     return releases;
   }
 
   async getVapiReleaseInPackage(packageId: number, version: string) {
-    return await this.client.GetVapiReleaseByVersionInPackage(
-      stoacloud.v1.GetVapiReleaseByVersionInPackageRequest.fromObject({
-        packageId,
-        version,
-      }),
-    );
+    return await this.client
+      .GetVapiReleaseByVersionInPackage(
+        stoacloud.v1.GetVapiReleaseByVersionInPackageRequest.fromObject({
+          packageId,
+          version,
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async getVapiPackages(input: GetVapiPackagesInput) {
-    const res = await this.client.GetVapiPackages(
-      stoacloud.v1.GetVapiPackagesRequest.fromObject(input),
-    );
+    const res = await this.client
+      .GetVapiPackages(stoacloud.v1.GetVapiPackagesRequest.fromObject(input))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
 
     return res.packages;
   }
 
   async searchVapis(input: SearchVapisInput) {
-    return await this.client.SearchVapis(
-      stoacloud.v1.SearchVapisRequest.fromObject(input),
-    );
+    return await this.client
+      .SearchVapis(stoacloud.v1.SearchVapisRequest.fromObject(input))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async registerVapis(
@@ -229,12 +315,16 @@ export class StoaCloudService {
       md.set('x-github-token', githubToken || '');
     }
 
-    const res = await this.client.RegisterVapi(
-      stoacloud.v1.RegisterVapiRequest.fromObject({
-        ...input,
-      }),
-      md,
-    );
+    const res = await this.client
+      .RegisterVapi(
+        stoacloud.v1.RegisterVapiRequest.fromObject({
+          ...input,
+        }),
+        md,
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
 
     return res.results;
   }
@@ -244,26 +334,20 @@ export class StoaCloudService {
     md.set('authorization', `Bearer ${jwt}`);
 
     if (packageId) {
-      await this.client.DeleteAllVapiReleasesInPackage(
-        stoacloud.v1.VapiPackageId.fromObject({ id: packageId! }),
-        md,
-      );
+      await this.client
+        .DeleteAllVapiReleasesInPackage(
+          stoacloud.v1.VapiPackageId.fromObject({ id: packageId! }),
+          md,
+        )
+        .catch((e) => {
+          throw translateGrpcError(e);
+        });
     } else {
-      await this.client.DeleteAllVapiReleases(new google.protobuf.Empty(), md);
-    }
-  }
-
-  async deleteAllVapiPackages(jwt: string, projectId?: number) {
-    const md = new Metadata();
-    md.set('authorization', `Bearer ${jwt}`);
-
-    if (projectId) {
-      await this.client.DeleteAllVapiPackagesInProject(
-        stoacloud.v1.ProjectId.fromObject({ id: projectId }),
-        md,
-      );
-    } else {
-      await this.client.DeleteAllVapiPackages(new google.protobuf.Empty(), md);
+      await this.client
+        .DeleteAllVapiReleases(new google.protobuf.Empty(), md)
+        .catch((e) => {
+          throw translateGrpcError(e);
+        });
     }
   }
 
@@ -274,10 +358,14 @@ export class StoaCloudService {
         md.set('authorization', `Bearer ${session?.access_token}`);
       }
 
-      await this.client.DeleteVapiRelease(
-        stoacloud.v1.VapiReleaseId.fromObject({ id: releaseId }),
-        md,
-      );
+      await this.client
+        .DeleteVapiRelease(
+          stoacloud.v1.VapiReleaseId.fromObject({ id: releaseId }),
+          md,
+        )
+        .catch((e) => {
+          throw translateGrpcError(e);
+        });
     } catch (err) {
       logger.error('error deleting vapi release', { err });
       throw err;
@@ -285,12 +373,16 @@ export class StoaCloudService {
   }
 
   async addProjectMember(projectId: number, memberId: string) {
-    return await this.client.AddProjectMember(
-      stoacloud.v1.AddProjectMemberRequest.fromObject({
-        id: projectId,
-        memberId,
-      }),
-    );
+    return await this.client
+      .AddProjectMember(
+        stoacloud.v1.AddProjectMemberRequest.fromObject({
+          id: projectId,
+          memberId,
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async resetSchema() {
@@ -306,44 +398,60 @@ export class StoaCloudService {
       input.zone = stoacloud.v1.InstanceZone.InstanceZoneDefault;
     }
 
-    return await this.client.CreateInstance(
-      stoacloud.v1.CreateInstanceRequest.fromObject(input),
-    );
+    return await this.client
+      .CreateInstance(stoacloud.v1.CreateInstanceRequest.fromObject(input))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async stopInstance(instanceId: number) {
-    await this.client.StopInstance(
-      stoacloud.v1.InstanceId.fromObject({ id: instanceId }),
-    );
+    await this.client
+      .StopInstance(stoacloud.v1.InstanceId.fromObject({ id: instanceId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async deleteInstance(instanceId: number) {
-    await this.client.DeleteInstance(
-      stoacloud.v1.InstanceId.fromObject({ id: instanceId }),
-    );
+    await this.client
+      .DeleteInstance(stoacloud.v1.InstanceId.fromObject({ id: instanceId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async deployStack(instanceId: number, input?: DeployStackInput) {
-    await this.client.DeployStack(
-      stoacloud.v1.DeployStackRequest.fromObject({
-        id: instanceId,
-        ...(input ?? {}),
-      }),
-    );
+    await this.client
+      .DeployStack(
+        stoacloud.v1.DeployStackRequest.fromObject({
+          id: instanceId,
+          ...(input ?? {}),
+        }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async getInstancesInStack(stackId: number) {
-    const { instances } = await this.client.GetStackInstances(
-      stoacloud.v1.StackId.fromObject({ id: stackId }),
-    );
+    const { instances } = await this.client
+      .GetStackInstances(stoacloud.v1.StackId.fromObject({ id: stackId }))
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
 
     return instances;
   }
 
   async getVapiPackage(packageId: number) {
-    return await this.client.GetVapiPackageById(
-      stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
-    );
+    return await this.client
+      .GetVapiPackageById(
+        stoacloud.v1.VapiPackageId.fromObject({ id: packageId }),
+      )
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 
   async getUser({ session }: Context) {
@@ -354,6 +462,10 @@ export class StoaCloudService {
     const md = new Metadata();
     md.set('authorization', `Bearer ${session.access_token}`);
 
-    return await this.client.GetUser(google.protobuf.Empty.fromObject({}), md);
+    return await this.client
+      .GetUser(google.protobuf.Empty.fromObject({}), md)
+      .catch((e) => {
+        throw translateGrpcError(e);
+      });
   }
 }

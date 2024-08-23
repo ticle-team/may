@@ -12,6 +12,7 @@ import { useRouter } from '@/app/_hooks/router';
 import StackItem from '@/app/projects/StackItem';
 import ProjectItem from '@/app/projects/ProjectItem';
 import RingSpinner from '@/app/_components/RingSpinner';
+import { TRPCClientError } from '@trpc/client';
 
 export default function Page() {
   const tabs = [{ name: 'All' }, { name: 'Liked' }, { name: 'Archived' }];
@@ -56,6 +57,14 @@ export default function Page() {
 
       await utils.org.projects.list.invalidate();
     } catch (error) {
+      if (error instanceof TRPCClientError) {
+        const { code } = error.data;
+        switch (code) {
+          case 'CONFLICT':
+            showErrorToast(`The project name "${name}" is already existed.`);
+            return;
+        }
+      }
       console.error(error);
       showErrorToast('Failed to create project.');
     }
@@ -90,10 +99,6 @@ export default function Page() {
       return setSelectedProjectId(null);
     }
     setSelectedProjectId(projectId);
-  };
-
-  const handleClickStack = (stackId: number) => {
-    router.push(`/stacks/${stackId}`);
   };
 
   useEffect(() => {
@@ -180,11 +185,7 @@ export default function Page() {
                     </div>
                   </button>
                   {project?.stacks?.map((stack) => (
-                    <StackItem
-                      key={`stack-${stack.id}`}
-                      stack={stack}
-                      onClick={handleClickStack}
-                    />
+                    <StackItem key={`stack-${stack.id}`} stack={stack} />
                   ))}
                 </div>
               </ProjectItem>
