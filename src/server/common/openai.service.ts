@@ -1,6 +1,5 @@
 import { Service } from 'typedi';
 import { AzureOpenAI, OpenAI } from 'openai';
-import { AzureKeyCredential, OpenAIClient } from '@azure/openai';
 import { ChatMessage } from '@/models/ai';
 import { TextContentBlock } from 'openai/resources/beta/threads';
 import { TRPCError } from '@trpc/server';
@@ -110,22 +109,25 @@ export class OpenAIAssistant {
   async cancel(threadId: string) {
     const { data } = await this.openai.beta.threads.runs.list(threadId, {
       order: 'desc',
+      limit: 5,
     });
     if (data.length == 0) {
       return;
     }
 
-    for (const { id, status } of data) {
-      if (
-        status != 'in_progress' &&
-        status != 'requires_action' &&
-        status != 'queued'
-      ) {
-        continue;
-      }
-
-      return this.openai.beta.threads.runs.cancel(threadId, id).catch(() => {});
+    const run = data.filter(({ status }) => {
+      return (
+        status == 'in_progress' ||
+        status == 'queued' ||
+        status == 'requires_action'
+      );
+    })[0];
+    if (!run) {
+      return;
     }
+    await this.openai.beta.threads.runs
+      .cancel(threadId, run.id)
+      .catch(() => {});
   }
 
   async *submitToolOutputsStream(

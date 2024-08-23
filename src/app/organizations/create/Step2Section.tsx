@@ -60,7 +60,7 @@ export default function Step2Section({
 }: {
   handleNextStep: () => void;
 }) {
-  const [frequency, setFrequency] = useState(frequencies[0]);
+  const [frequency, setFrequency] = useState(frequencies[0]!);
 
   const handleSelectPlan = (planID: string) => {
     handleNextStep();

@@ -16,18 +16,23 @@ import StackContainer from './StackContainer';
 import { CreatingStackStateInfoJson } from '@/models/thread';
 import { Timeline } from '@/app/threads/[id]/Timeline';
 import RingSpinner from '@/app/_components/RingSpinner';
+import PageLoading from '@/app/_components/PageLoading';
+import { skipToken } from '@tanstack/react-query';
+
+const LIMIT_MESSAGES = 100;
 
 export default function Page() {
   const router = useRouter();
   const { id: threadIdStr } = useParams<{
     id: string;
   }>();
-  const threadId = parseInt(threadIdStr);
+  const threadId = useMemo(() => {
+    return parseInt(threadIdStr);
+  }, [threadIdStr]);
   const { renderToastContents, showErrorToast, hideToast } = useToast();
-  const [initialized, setInitialized] = useState(false);
   const [enabledChat, setEnabledChat] = useState(false);
-  const utils = trpc.useUtils();
   const [deploying, setDeploying] = useState(false);
+  const [isGoingToStack, setIsGoingToStack] = useState(false);
 
   const thread = trpc.thread.get.useQuery(
     {
@@ -48,7 +53,7 @@ export default function Page() {
   const allMessages = trpc.thread.messages.list.useQuery(
     {
       threadId,
-      limit: 100,
+      limit: LIMIT_MESSAGES,
     },
     {
       refetchOnWindowFocus: false,
@@ -63,11 +68,12 @@ export default function Page() {
   }
 
   const run = trpc.thread.runForStackCreation.useQuery(
+    enabledChat
+      ? {
+          threadId,
+        }
+      : skipToken,
     {
-      threadId,
-    },
-    {
-      enabled: enabledChat,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       refetchOnReconnect: false,
@@ -79,15 +85,25 @@ export default function Page() {
     hideToast(1500);
   }
 
+  const cancelThread = trpc.thread.cancel.useMutation({
+    onSuccess: async () => {
+      await Promise.all([thread.refetch(), allMessages.refetch()]);
+    },
+    onError: (error) => {
+      showErrorToast('', error.message);
+      hideToast(1500);
+    },
+  });
+
   useEffect(() => {
     // run.data is an array of events
     // for example:
     //   events: begin -> text.created -> text -> text -> text.done -> end
     //   server sent events: begin, text.created, ...
     //   client states: [begin], [begin, text.created], [begin, text.created, text], ...
-    if (!run.data) return;
+    const t = setTimeout(async () => {
+      if (!run.data) return;
 
-    (async () => {
       for (const { event } of run.data) {
         switch (event) {
           case 'deploy.end': {
@@ -100,20 +116,16 @@ export default function Page() {
             break;
           }
           case 'end': {
-            await thread.refetch();
-            await allMessages.refetch();
+            await Promise.all([thread.refetch(), allMessages.refetch()]);
             break;
           }
         }
       }
-    })();
+    });
+    return () => {
+      clearTimeout(t);
+    };
   }, [run.data]);
-
-  const cancelThread = trpc.thread.cancel.useMutation({
-    onSuccess: async () => {
-      await allMessages.refetch();
-    },
-  });
 
   const addUserMessage = trpc.thread.messages.add.useMutation({
     onSuccess: async () => {
@@ -126,13 +138,6 @@ export default function Page() {
       hideToast(1500);
     },
   });
-
-  useEffect(() => {
-    (async () => {
-      await cancelThread.mutateAsync({ threadId });
-      setInitialized(true);
-    })();
-  }, [threadId]);
 
   const handleSubmitUserMessage = useCallback(
     async (message: string) => {
@@ -148,8 +153,8 @@ export default function Page() {
     [threadId, addUserMessage],
   );
 
-  const handleStopAnswering = useCallback(async () => {
-    await cancelThread.mutateAsync({ threadId });
+  const handleStopAnswering = useCallback(() => {
+    cancelThread.mutate({ threadId });
   }, [threadId, cancelThread]);
 
   const { answering, conversation } = useMemo(() => {
@@ -177,7 +182,9 @@ export default function Page() {
         case 'text': {
           const { id, text } = t as StackCreationEventText;
           const lastMsg = lastMessages[lastMessages.length - 1];
-          if (lastMsg.id != id) {
+          if (!lastMsg) {
+            throw new Error('Unexpected text event');
+          } else if (lastMsg.id != id) {
             throw new Error(
               `Unexpected message ID: ${id}, lastMsg.id: ${lastMsg.id}`,
             );
@@ -210,6 +217,7 @@ export default function Page() {
       return;
     }
 
+    setIsGoingToStack(true);
     router.push(`/stacks/${thread.data.shapleStackId}`);
   }, [router, thread.data]);
 
@@ -233,13 +241,13 @@ export default function Page() {
   return (
     <>
       {renderToastContents()}
-      {initialized ? (
-        <div className="flex flex-col px-5.5 py-6 w-full h-full">
-          <div className="flex flex-row w-full my-7 h-7 justify-center">
-            <Timeline progress={stateInfo.current_step} />
-          </div>
-          <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
-            <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
+      <div className="flex flex-col px-5.5 py-6 w-full h-full">
+        <div className="flex flex-row w-full my-7 h-7 justify-center">
+          <Timeline progress={stateInfo.current_step} />
+        </div>
+        <div className="flex flex-row gap-5 h-5/6 pt-0.5 pb-4 flex-grow">
+          <div className="flex flex-col w-6/12 h-full justify-center bg-gray-100 border border-gray-200 rounded">
+            {!allMessages.isLoading ? (
               <Conversation history={conversation}>
                 {!answering && deploying && (
                   <div className="flex flex-row justify-center items-center animate-pulse text-primary-500">
@@ -249,34 +257,53 @@ export default function Page() {
                 )}
                 {!answering && thread.data?.shapleStackId && (
                   <div className="flex flex-row -mt-2.5 justify-center">
-                    <Button color="secondary" size="lg" onClick={goToStack}>
+                    <Button
+                      color="secondary"
+                      size="lg"
+                      onClick={goToStack}
+                      disabled={isGoingToStack}
+                    >
                       Go to stack
+                      {isGoingToStack && (
+                        <RingSpinner
+                          shape="with-bg"
+                          className="flex w-6 h-6 fill-gray-500 my-auto ml-1"
+                        />
+                      )}
                     </Button>
                   </div>
                 )}
               </Conversation>
-            </div>
-            <div className="flex flex-col justify-center items-center w-6/12 h-full bg-gray-100 border border-gray-200 rounded">
-              <StackContainer
-                name={stateInfo.name}
-                description={stateInfo.description}
-                baseApis={stateInfo.dependencies.base_apis}
-                vapis={stateInfo.dependencies.vapis}
-              />
-            </div>
+            ) : (
+              <PageLoading />
+            )}
           </div>
-          <div className="flex w-full pt-0.5">
-            <UserMessageForm
-              answering={answering}
-              onSubmit={handleSubmitUserMessage}
-              onStopAnswering={handleStopAnswering}
-              color="primary"
+          <div className="flex flex-col justify-center items-center w-6/12 h-full bg-gray-100 border border-gray-200 rounded">
+            <StackContainer
+              name={stateInfo.name}
+              description={stateInfo.description}
+              baseApis={stateInfo.dependencies.base_apis}
+              vapis={stateInfo.dependencies.vapis}
             />
           </div>
         </div>
-      ) : (
-        <p>Loading...</p>
-      )}
+        <div className="flex w-full pt-0.5">
+          <UserMessageForm
+            answering={answering}
+            onSubmit={handleSubmitUserMessage}
+            onStopAnswering={handleStopAnswering}
+            color="primary"
+          />
+        </div>
+      </div>
+      <End />
     </>
   );
+}
+
+function End() {
+  useEffect(() => {
+    import('flowbite');
+  }, []);
+  return <></>;
 }

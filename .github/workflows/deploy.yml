@@ -1,5 +1,5 @@
 name: CD
-run-name: ${{ github.actor }} is deploying shaple-builder 🚀
+run-name: ${{ github.actor }} is deploying MAY🚀
 on:
   issue_comment:
     types: [created]

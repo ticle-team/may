@@ -52,8 +52,6 @@ model User {
   threads            Thread[]
   ownedOrganizations Organization[] @relation("Owner")
   memberships        Membership[]
-  shapleUserId       Int            @unique @map("shaple_user_id")
-  shapleUser         ShapleUser     @relation(fields: [shapleUserId], references: [id])
 
   @@map("users")
   @@schema("may")
@@ -103,7 +101,6 @@ model ShapleUser {
   gitPrivateKeyPem Bytes?   @map("git_private_key_pem")
   ownerId          String   @unique @map("owner_id")
   name             String   @map("name")
-  user             User?
 
   @@map("users")
   @@schema("shaple_builder")

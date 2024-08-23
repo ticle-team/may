@@ -107,6 +107,19 @@ describe('given StackService', () => {
     cleanup.defer(() => {
       expect(mockThreadStore.findThreadByStackId).toHaveBeenCalledTimes(1);
     });
+    mockStoaCloudService.getVapiPackage.mockResolvedValue(
+      stoacloud.v1.VapiPackage.fromObject({
+        id: 1,
+        name: 'vapi',
+        gitBranch: 'main',
+        gitRepo: 'vincent-1014/self_test',
+        author: {
+          id: 1,
+          name: 'vincent',
+          profileUrl: '',
+        },
+      }),
+    );
     // when
     const result = await stackService.getStack(
       { user: null, tx: prisma },

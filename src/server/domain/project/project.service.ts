@@ -3,13 +3,11 @@ import { StoaCloudService } from '@/server/common/stoacloud.service';
 import {
   CreateProjectRequest,
   parseShapleProjectFromProto,
-  project,
   Project,
 } from '@/models/project';
 import { getLogger } from '@/logger';
 import { Context } from '@/server/context';
 import { UserService } from '@/server/domain/user/user.service';
-import { parseShapleStackFromProto } from '@/models/stack';
 
 const logger = getLogger('server.domain.stack.service');
 

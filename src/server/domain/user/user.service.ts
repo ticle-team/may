@@ -35,7 +35,6 @@ export class UserService {
       }
       user = await this.userStore.createUser(ctx, {
         ownerId,
-        shapleUserId,
       });
     }
 
@@ -45,7 +44,6 @@ export class UserService {
         id: membership.organization.id,
         name: membership.organization.name,
       })),
-      name: user.shapleUser.name,
       description: user.description,
       ownerId: user.ownerId,
     };

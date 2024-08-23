@@ -8,9 +8,11 @@ import Modal from '@/app/_components/Modal';
 import CreateProjectModal from '@/app/projects/CreateProjectModal';
 import useToast from '@/app/_hooks/useToast';
 import DialogModal from '@/app/_components/Dialog';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/app/_hooks/router';
 import StackItem from '@/app/projects/StackItem';
 import ProjectItem from '@/app/projects/ProjectItem';
+import RingSpinner from '@/app/_components/RingSpinner';
+import { TRPCClientError } from '@trpc/client';
 
 export default function Page() {
   const tabs = [{ name: 'All' }, { name: 'Liked' }, { name: 'Archived' }];
@@ -30,12 +32,15 @@ export default function Page() {
   const [showCreateStackDialog, setShowCreateStackDialog] =
     useState<boolean>(false);
 
-  const { data: { projects, after } = {}, error } =
-    trpc.org.projects.list.useQuery({
-      orgId: organizationId,
-      page: 1,
-      perPage: 10,
-    });
+  const {
+    data: { projects, after } = {},
+    error,
+    ...projectsList
+  } = trpc.org.projects.list.useQuery({
+    orgId: organizationId,
+    page: 1,
+    perPage: 10,
+  });
 
   const createProjectMutation = trpc.project.create.useMutation();
   const createThreadMutation = trpc.thread.create.useMutation();
@@ -50,8 +55,16 @@ export default function Page() {
       });
       setShowCreateProjectDialog(false);
 
-      utils.org.projects.list.invalidate();
+      await utils.org.projects.list.invalidate();
     } catch (error) {
+      if (error instanceof TRPCClientError) {
+        const { code } = error.data;
+        switch (code) {
+          case 'CONFLICT':
+            showErrorToast(`The project name "${name}" is already existed.`);
+            return;
+        }
+      }
       console.error(error);
       showErrorToast('Failed to create project.');
     }
@@ -65,10 +78,13 @@ export default function Page() {
       });
 
       router.push(`/threads/${threadId}`);
+      console.log('router push threadId', threadId);
     } catch (error) {
       console.error(error);
       showErrorToast('Failed to create stack.');
     }
+
+    return;
   };
 
   const handleClickTab = async (tabName: string) => {
@@ -85,10 +101,6 @@ export default function Page() {
     setSelectedProjectId(projectId);
   };
 
-  const handleClickStack = (stackId: number) => {
-    router.push(`/stacks/${stackId}`);
-  };
-
   useEffect(() => {
     if (error)
       showErrorToast('Failed to load projects. Please try again later.');
@@ -100,16 +112,15 @@ export default function Page() {
       <Modal
         open={showCreateProjectDialog}
         setOpen={setShowCreateProjectDialog}
-        contents={
-          <CreateProjectModal
-            organizationId={organizationId}
-            onCancel={() => {
-              setShowCreateProjectDialog(false);
-            }}
-            onCreate={handleCreateProject}
-          />
-        }
-      />
+      >
+        <CreateProjectModal
+          organizationId={organizationId}
+          onCancel={() => {
+            setShowCreateProjectDialog(false);
+          }}
+          onCreate={handleCreateProject}
+        />
+      </Modal>
       <DialogModal
         open={showCreateStackDialog}
         setOpen={setShowCreateStackDialog}
@@ -151,6 +162,12 @@ export default function Page() {
             </div>
           </div>
           <div className="flex flex-col" role="list">
+            {projectsList.isPending && (
+              <RingSpinner
+                shape="resize"
+                className="flex w-1/4 h-1/4 m-auto stroke-primary-600"
+              />
+            )}
             {projects?.map((project) => (
               <ProjectItem
                 key={`project-${project.id}`}
@@ -159,20 +176,16 @@ export default function Page() {
                 onClick={handleClickProject}
               >
                 <div className="flex flex-col" role="list">
-                  <div
+                  <button
                     className="relative flex justify-center gap-x-6 px-4 py-2 ml-20 hover:bg-gray-50 sm:px-6 lg:px-8 hover:cursor-pointer"
                     onClick={() => setShowCreateStackDialog(true)}
                   >
                     <div className="font-normal text-sm text-primary-500">
                       Create Stack
                     </div>
-                  </div>
+                  </button>
                   {project?.stacks?.map((stack) => (
-                    <StackItem
-                      key={`stack-${stack.id}`}
-                      stack={stack}
-                      onClick={handleClickStack}
-                    />
+                    <StackItem key={`stack-${stack.id}`} stack={stack} />
                   ))}
                 </div>
               </ProjectItem>

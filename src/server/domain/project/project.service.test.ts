@@ -3,17 +3,13 @@ import { PrismaService } from '@/server/common/prisma.service';
 import { resetSchema } from '@/migrate';
 import { ProjectService } from '@/server/domain/project/project.service';
 import { StoaCloudService } from '@/server/common/stoacloud.service';
-import { createStoaCloudServiceMock } from '@/server/common/__mocks__/stoacloud.service';
 import * as uuid from 'uuid';
-import { project } from '@/models/project';
-import { stoacloud } from '@/protos/stoacloud';
-import { google } from '@/protos/google/protobuf/timestamp';
-import { Session } from '@shaple/shaple';
 import { Context } from '@/server/context';
 import {
   createUser,
   deleteUser,
 } from '@/server/domain/user/__mocks__/user.stub';
+import { TRPCError } from '@trpc/server';
 
 describe('given ProjectService', () => {
   let projectService: ProjectService;
@@ -102,5 +98,42 @@ describe('given ProjectService', () => {
 
     // when
     await projectService.deleteProject(retrieveResult.id);
+  });
+
+  it('when duplicate a project, should throw an conflict error', async () => {
+    // given
+    await using stack = new AsyncDisposableStack();
+    const project = await stoaCloudService.createProject(
+      mockData.name,
+      mockData.description,
+      [],
+    );
+    const prisma = Container.get(PrismaService);
+    const session = await createUser();
+    stack.defer(async () => {
+      await deleteUser(session);
+    });
+    // given
+    const ctx = {
+      session: session,
+      tx: prisma,
+    } as Context;
+
+    // when
+    const createProjectRequest = {
+      orgId: 1,
+      name: project.name,
+      description: project.description,
+    };
+
+    // then
+    await expect(
+      projectService
+        .createProject(ctx, createProjectRequest)
+        .catch((e: TRPCError) => {
+          expect(e.code).toBe('CONFLICT');
+          throw e;
+        }),
+    ).rejects.toThrowError(TRPCError);
   });
 });

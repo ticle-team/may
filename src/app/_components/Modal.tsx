@@ -1,14 +1,18 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, PropsWithChildren } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 
 export type ComponentProps = {
-  contents?: React.ReactNode;
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   onClose?: () => void;
 };
 
-const Modal = ({ open, setOpen, contents, onClose }: ComponentProps) => {
+const Modal = ({
+  open,
+  setOpen,
+  onClose,
+  children = <></>,
+}: PropsWithChildren<ComponentProps>) => {
   const handleClose = (value: boolean) => {
     if (!value) {
       onClose?.();
@@ -42,7 +46,7 @@ const Modal = ({ open, setOpen, contents, onClose }: ComponentProps) => {
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
               <Dialog.Panel className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-                {contents}
+                {children}
               </Dialog.Panel>
             </Transition.Child>
           </div>

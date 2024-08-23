@@ -37,5 +37,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-/app.env.dev
-/app.env.prod
+
+# ETC
+/.aws

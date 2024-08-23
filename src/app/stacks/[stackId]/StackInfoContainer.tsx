@@ -81,30 +81,22 @@ export default function StackInfoContainer({ stack }: Props) {
   return (
     <>
       {renderToastContents()}
-      <Modal
-        open={showAddReferenceDialog}
-        setOpen={setShowAddReferenceDialog}
-        contents={
-          <AddReferenceModal
-            onCancel={() => {
-              setShowAddReferenceDialog(false);
-            }}
-            onAdd={handleAddReference}
-          />
-        }
-      />
-      <Modal
-        open={showAddInstanceDialog}
-        setOpen={setShowAddInstanceDialog}
-        contents={
-          <AddInstanceModal
-            onCancel={() => {
-              setShowAddInstanceDialog(false);
-            }}
-            onAdd={handleAddInstance}
-          />
-        }
-      />
+      <Modal open={showAddReferenceDialog} setOpen={setShowAddReferenceDialog}>
+        <AddReferenceModal
+          onCancel={() => {
+            setShowAddReferenceDialog(false);
+          }}
+          onAdd={handleAddReference}
+        />
+      </Modal>
+      <Modal open={showAddInstanceDialog} setOpen={setShowAddInstanceDialog}>
+        <AddInstanceModal
+          onCancel={() => {
+            setShowAddInstanceDialog(false);
+          }}
+          onAdd={handleAddInstance}
+        />
+      </Modal>
       <DialogModal
         open={showEditDescriptionDialog}
         setOpen={setShowEditDescriptionDialog}

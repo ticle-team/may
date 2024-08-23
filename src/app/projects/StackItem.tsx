@@ -1,17 +1,20 @@
 import { ShapleStack, Stack } from '@/models/stack';
 import Badge from '@/app/_components/Badge';
+import { useRouter } from '@/app/_hooks/router';
 
 type Props = {
   stack: ShapleStack;
-  onClick: (id: number) => void;
 };
 
-const StackItem = ({ stack, onClick }: Props) => {
+export default function StackItem({ stack }: Props) {
+  const router = useRouter();
   return (
     <button
       className="relative flex justify-between gap-x-6 px-4 py-5 ml-20 border-t border-gray-100 hover:bg-gray-50 sm:px-6 lg:px-8"
+      // href={`/stacks/${stack.id}`}
+      // prefetch={true}
       onClick={() => {
-        onClick(stack.id);
+        router.push(`/stacks/${stack.id}`);
       }}
     >
       <div className="flex gap-x-5">
@@ -21,6 +24,4 @@ const StackItem = ({ stack, onClick }: Props) => {
       <Badge color="blue">Blue</Badge>
     </button>
   );
-};
-
-export default StackItem;
+}
