@@ -10,7 +10,6 @@ import {
 } from '@/models/stack';
 import { Context } from '@/server/context';
 import { threadStateInfo } from '@/models/thread';
-import _ from 'lodash-es';
 import { parseVapiPackageFromProto } from '@/models/vapi';
 
 const logger = getLogger('server.domain.stack.service');
@@ -60,28 +59,24 @@ export class StackService {
 
     let baseApiNames = baseApis.map((api) => api.name.toLowerCase());
     try {
-      if (_.includes(baseApiNames, 'auth')) {
-        await this.stoacloudService.installAuth(stackId, {
-          mailerAutoConfirm: true,
-          externalEmailEnabled: true,
-        });
-        baseApiNames = baseApiNames.filter((name) => name != 'auth');
-        logger.debug('install auth', { stackId });
-      }
-      if (_.includes(baseApiNames, 'storage')) {
-        await this.stoacloudService.installStorage(stackId, {
-          tenantId: 'storage',
-        });
-        baseApiNames = baseApiNames.filter((name) => name != 'storage');
-        logger.debug('install storage', { stackId });
-      }
-      if (_.includes(baseApiNames, 'database')) {
-        await this.stoacloudService.installPostgrest(stackId, {
-          schemas: ['public'],
-        });
-        baseApiNames = baseApiNames.filter((name) => name != 'database');
-        logger.debug('install database', { stackId });
-      }
+      await this.stoacloudService.installAuth(stackId, {
+        mailerAutoConfirm: true,
+        externalEmailEnabled: true,
+      });
+      baseApiNames = baseApiNames.filter((name) => name != 'auth');
+      logger.debug('install auth', { stackId });
+
+      await this.stoacloudService.installStorage(stackId, {
+        tenantId: 'storage',
+      });
+      baseApiNames = baseApiNames.filter((name) => name != 'storage');
+      logger.debug('install storage', { stackId });
+
+      await this.stoacloudService.installPostgrest(stackId, {
+        schemas: ['public'],
+      });
+      baseApiNames = baseApiNames.filter((name) => name != 'database');
+      logger.debug('install database', { stackId });
     } catch (e) {
       logger.error('failed to install base api', { e });
       this.stoacloudService.deleteStack(stackId).catch((err) => {
